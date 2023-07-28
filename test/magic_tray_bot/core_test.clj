@@ -1,6 +1,6 @@
-(ns salver-bot.core-test
+(ns magic-tray-bot.core-test
   (:require [clojure.test :refer :all]
-            [salver-bot.core :refer :all]))
+            [magic-tray-bot.core :refer :all]))
 
 (deftest a-test
   (testing "FIXME, I fail."

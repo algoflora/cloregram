@@ -1,4 +1,4 @@
-(ns salver-bot.db
+(ns magic-tray-bot.db
   (:require [clojure.java.io :as io]
             [xtdb.api :as xt]))
 
