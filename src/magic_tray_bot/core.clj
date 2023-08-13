@@ -3,8 +3,7 @@
             [dialog.logger :as log]
 
             [magic-tray-bot.config :as config]
-            [magic-tray-bot.main-handler :as handler]
-            [magic-tray-bot.db :refer [xtdb-node stop-xtdb!]])
+            [magic-tray-bot.main-handler :as handler])
 
   (:gen-class))
 
@@ -64,5 +63,5 @@
   (log/set-level! :debug)
   (log/set-level! "org.apache.http" :info)
   (log/set-level! "telegrambot-lib" :info)
-  (lp-app mybot)
-  (stop-xtdb!))
+  (lp-app mybot))
+

@@ -20,9 +20,8 @@
           uinfo)
 
       :else
-      (do
-        (log/debug (str "Updating user @" uname-from))
-        (user/update-info! uname-from from)))))
+      (do (log/debug (str "Updating user @" uname-from))
+          (user/update-info! uname-from from)))))
 
 (defn handle
   "Main handling function"
@@ -44,4 +43,4 @@
 
         :else
         (let [uinfo (handle-user msg)]
-          (log/debug (str "User:\t"  (generate-string uinfo {:pretty true}))))))))
+          (log/debug (str "User:\t" uinfo {:pretty true})))))))

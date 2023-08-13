@@ -11,9 +11,7 @@
                  [telegrambot-lib "2.7.0"]
                  [cheshire "5.11.0"]
 
-                 [com.datomic/peer "1.0.6735"]
-                 [com.xtdb/xtdb-core "1.24.0"]
-                 [com.xtdb/xtdb-rocksdb "1.24.0"]]
+                 [com.datomic/peer "1.0.6735"]]
 
   :main ^:skip-aot magic-tray-bot.core
   ;:jvm-opts ["-Dclojure.tools.logging.factory=clojure.tools.logging.impl/slf4j-factory"]

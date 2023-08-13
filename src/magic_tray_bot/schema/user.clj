@@ -38,9 +38,9 @@
               :db/doc "User's current flow instance of some blueprint"}
 
              {:db/ident :user.flow/vars
-              :db/valueType :db.type/tuple
+              :db/valueType :db.type/ref
               :db/cardinality :db.cardinality/many
-              :db/doc "User's current flow variables in format [<^String name> <value>]"}
+              :db/doc "User's current flow variables in format [<name> <value>]"}
 
              {:db/ident :user/validate
               :db.entity/attrs [:user/username :user/chat-id]}])
