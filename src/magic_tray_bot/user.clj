@@ -5,7 +5,7 @@
             [nano-id.core :refer [nano-id]]))
 
 (defn get-by-username
-  "Reads user information by username"
+  "Reads user information by `uname`"
   [uname]
   (let [users (xt/q (xt/db xtdb-node) '{:find [(pull u [*])]
                                         :in [uname]

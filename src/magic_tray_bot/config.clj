@@ -1,4 +1,4 @@
-(ns magic-tray-bot.config)
+(ns me.magic-tray-bot.config)
 
 (def timeout 10)
 

@@ -1,6 +1,7 @@
 (ns magic-tray-bot.db
   (:require [clojure.java.io :as io]
-            [xtdb.api :as xt]))
+            [xtdb.api :as xt]
+            [datomic.api :as d]))
 
 (defn start-xtdb! []
   (letfn [(kv-store [dir]
@@ -18,3 +19,5 @@
 
 (defn stop-xtdb! []
   (.close xtdb-node))
+
+(def db-uri "datomic:dev://localhost:4334/magic-tray-dev")
