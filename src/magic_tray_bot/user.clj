@@ -8,10 +8,10 @@
   "Reads user information by `uname`"
   ([uname] (get-by-username uname (db/get-db)))
   ([uname db]
-   (let [user (d/q '[:find ?e
-                     :in $ ?uname
-                     :where [?e :user/username ?uname]]
-                   db uname)]
+   (let [user (ffirst (d/q '[:find (pull ?e [*])
+                             :in $ ?uname
+                             :where [?e :user/username ?uname]]
+                           db uname))]
      (log/debug "User lookup in database:" user)
      user)))
 

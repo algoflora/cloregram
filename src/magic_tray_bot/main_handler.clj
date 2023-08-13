@@ -43,4 +43,4 @@
 
         :else
         (let [uinfo (handle-user msg)]
-          (log/debug (str "User:\t" uinfo {:pretty true})))))))
+          (log/debug (str "User:\t" uinfo)))))))

@@ -61,6 +61,7 @@
   "Main function"
   [& args]
   (log/set-level! :debug)
+  (log/set-level! "datomic" :info)
   (log/set-level! "org.apache.http" :info)
   (log/set-level! "telegrambot-lib" :info)
   (lp-app mybot))
