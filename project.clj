@@ -10,11 +10,14 @@
 
                  [telegrambot-lib "2.7.0"]
                  [cheshire "5.11.0"]
+                 [clj-time "0.15.2"]
+                 [org.clojure/tools.namespace "1.4.4"]
 
                  [com.datomic/peer "1.0.6735"]]
 
   :main ^:skip-aot magic-tray-bot.core
-  ;:jvm-opts ["-Dclojure.tools.logging.factory=clojure.tools.logging.impl/slf4j-factory"]
+
+  :aliases {"reset-db" ["run" "-m" "magic-tray-bot.tasks.reset-db"]}
 
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all
