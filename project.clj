@@ -6,6 +6,7 @@
 
   :dependencies [[org.clojure/clojure "1.11.1"]
                  [com.amperity/dialog "2.0.115"]
+
                  [nano-id "1.0.0"]
 
                  [telegrambot-lib "2.7.0"]
@@ -15,10 +16,13 @@
 
                  [com.datomic/peer "1.0.6735"]]
 
+  :plugins [[lein-eftest "0.6.0"]]
+
   :main ^:skip-aot magic-tray-bot.core
 
   :aliases {"reset-db" ["run" "-m" "magic-tray-bot.tasks.reset-db"]}
 
   :target-path "target/%s"
-  :profiles {:uberjar {:aot :all
+  :profiles {:test {:dependencies [[eftest "0.6.0"]]}
+             :uberjar {:aot :all
                        :jvm-opts ["-Dclojure.compiler.direct-linking=true"]}})

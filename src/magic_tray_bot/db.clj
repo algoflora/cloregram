@@ -6,15 +6,19 @@
 
 (def ^:private connection (atom nil))
 
+(defn- init-conn
+  "Initialize new database connection"
+  []
+  (reset! connection (d/connect uri))
+  (log/debug "Database connection initialized for " uri))
+
 (defn conn
   "Database connection"
   []
-  @connection)
-
-(defn init-conn
-  "Initialize new database connection"
-  []
-  (reset! connection (d/connect uri)))
+  (if-let [c @connection]
+    c
+    (do (init-conn)
+        (conn))))
 
 (defn get-db
   "Returns current database state"
@@ -22,6 +26,4 @@
   (let [db (d/db (conn))]
     (log/debug "Received current database state:" db)
     db))
-
-(init-conn)
 

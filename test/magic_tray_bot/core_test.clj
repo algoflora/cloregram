@@ -1,7 +1,16 @@
 (ns magic-tray-bot.core-test
   (:require [clojure.test :refer :all]
-            [magic-tray-bot.core :refer :all]))
+            [datomic.api :as d]
+            [dialog.logger :as log]
+            [magic-tray-bot.core :refer :all]
+            [magic-tray-bot.db :as db]
+            [magic-tray-bot.fixtures :as fix]))
 
-(deftest a-test
-  (testing "FIXME, I fail."
-    (is (= 0 1))))
+(use-fixtures :each fix/use-in-memory-db fix/use-actual-schema-in-in-memory-db)
+
+(deftest uri-test
+  (testing "Count datoms"
+    (let [initial-datoms-number (-> (d/datoms (db/get-db) :eavt)
+                                    (seq)
+                                    (count))]
+      (is (= 312 initial-datoms-number)))))

@@ -28,19 +28,20 @@
               :db/doc "User's language code in Telegram profile"}
 
              {:db/ident :user.flow/point
-              :db/valueType :db.type/ref
+              :db/valueType :db.type/keyword
               :db/cardinality :db.cardinality/one
-              :db/doc "User's current flow point in some blueprint"}
+              :db/doc "User's current flow point"}
 
-             {:db/ident :user.flow/instance
+             {:db/ident :user.flow/project
               :db/valueType :db.type/ref
               :db/cardinality :db.cardinality/one
               :db/doc "User's current flow instance of some blueprint"}
 
              {:db/ident :user.flow/vars
-              :db/valueType :db.type/ref
+              :db/valueType :db.type/tuple
+              :db/tupleTypes [:db.type/keyword :db.type/string]
               :db/cardinality :db.cardinality/many
-              :db/doc "User's current flow variables in format [<name> <value>]"}
+              :db/doc "User's current flow `variable`s in format [:keyword JSON-:string]"}
 
              {:db/ident :user/validate
               :db.entity/attrs [:user.info/username :user.info/chat-id]}])
