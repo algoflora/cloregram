@@ -27,7 +27,7 @@
   "Completely wipes database and write new schema from magic-tray-bot.schema.*"
   []
   (let [code (nano-id 5)]
-    (println (str "All data in database will be vanished! If you are sure, then type \"" code "\" below:"))
+    (println (str "All data in database '" db/uri "' will be vanished! If you are sure, then type \"" code "\" below:"))
     (if (= code (read-line))
       (reset-db)
       (println "Database reset cancelled. Good bye!"))
