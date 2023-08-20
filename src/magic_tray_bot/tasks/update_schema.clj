@@ -16,6 +16,7 @@
   (log/info "Updating schema...")
   (let [schema (->> (find-namespaces-in-dir (clojure.java.io/file "./src/magic_tray_bot/schema"))
                     (map req&->name!)
+                    (filter #(some? (resolve (symbol % "schema"))))
                     (mapcat #(load-string (str % "/schema")))
                     (vec))]
     (log/debug "Schema:" schema)
