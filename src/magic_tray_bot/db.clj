@@ -10,7 +10,7 @@
   "Initialize new database connection"
   []
   (reset! connection (d/connect uri))
-  (log/debug "Database connection initialized for " uri))
+  (log/debug "Database connection initialized for" uri))
 
 (defn conn
   "Database connection"

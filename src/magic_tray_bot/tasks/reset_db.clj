@@ -2,16 +2,14 @@
   (:require [datomic.api :as d]
             [dialog.logger :as log]
             [magic-tray-bot.db :as db]
-
-            [magic-tray-bot.schema.product]
-            [magic-tray-bot.schema.project]
-            [magic-tray-bot.schema.user])
+            [magic-tray-bot.tasks.update-schema :refer [update-schema]]
+            [nano-id.core :refer [nano-id]])
   (:gen-class))
 
 (defn- delete-db
   []
   (d/delete-database db/uri)
-  (log/info "Database deleted"))
+  (log/info "Database deleted if it was exist"))
 
 (defn- create-db
   []
@@ -19,28 +17,18 @@
   (d/gc-storage (db/conn) (java.util.Date.))
   (log/info "Database created"))
 
-(defn pr
-  "Print + Return"
-  [x]
-  (log/info x)
-  x)
-
-(defn- fill-up-schema
+(defn- reset-db
   []
-  (let [schema (->> (all-ns)
-                    (map ns-name)
-                    (filter #(clojure.string/starts-with? % "magic-tray-bot.schema"))
-                    (pr)
-                    (mapcat #(load-string (str % "/schema")))
-                    (vec))]
-    (log/debug "Schema to load:" schema)
-    (d/transact (db/conn) schema)))
+  (delete-db)
+  (create-db)
+  (update-schema))
 
 (defn -main
   "Completely wipes database and write new schema from magic-tray-bot.schema.*"
   []
-  (delete-db)
-  (create-db)
-  (if (fill-up-schema)
-    (log/info "Schema loaded")
-    (log/error "Something goes wrong!")))
+  (let [code (nano-id 5)]
+    (println (str "All data in database will be vanished! If you are sure, then type \"" code "\" below:"))
+    (if (= code (read-line))
+      (reset-db)
+      (println "Database reset cancelled. Good bye!"))
+    (System/exit 0)))

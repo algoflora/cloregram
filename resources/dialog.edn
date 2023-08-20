@@ -10,16 +10,14 @@
 
  ;; Root logger level. Can be overridden at runtime with the JVM property
  ;; `dialog.level` or the environment variable `DIALOG_LEVEL`.
- :level :debug
+ :level :info
 
  ;; Individual logger levels. Can also be set at runtime with the JVM
  ;; properties `dialog.level.<logger>` or the environment variables
  ;; `DIALOG_LEVEL_<logger>`. Loggers use the most-specific level set in their
  ;; name hierarchy.
  :levels
- {"datomic" :info
-  "org.apache.http" :info
-  "telegrambot-lib" :info
+ {"magic-tray-bot" :debug
   ;"acme" #profile {:repl :debug
   ;                 :default :info}
   ;"vault" :info
