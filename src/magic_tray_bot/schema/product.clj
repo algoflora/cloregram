@@ -24,5 +24,4 @@
               :db/doc "Products ingridients in tuple format [:consumable/id amount-:bigint]"}
 
              {:db/ident :product/validate
-              :db.entity/attrs [:product/name :product/category :product/price]
-              :db.entity/preds ['()]}])
+              :db.entity/attrs [:product/name :product/category :product/price]}])

@@ -44,4 +44,5 @@
               :db/doc "User's current flow `variable`s in format [:keyword JSON-:string]"}
 
              {:db/ident :user/validate
-              :db.entity/attrs [:user/username :user/chat-id :user/point :user/vars]}])
+              :db.entity/attrs [:user/username :user/chat-id :user/point :user/vars]
+              :db.entity/preds 'magic-tray-bot.schema.predicats.user.point-valid?}])

@@ -7,6 +7,7 @@
 
 (defn- req&->name!
   [ns]
+  (log/info ns)
   (require ns)
   (name ns))
 
