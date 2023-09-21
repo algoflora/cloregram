@@ -14,3 +14,7 @@ pom.xml.asc
 /data
 
 /logs
+
+\#*\#
+.\#*
+*~

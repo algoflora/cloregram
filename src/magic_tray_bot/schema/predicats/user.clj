@@ -1,6 +1,5 @@
 (ns magic-tray-bot.schema.predicats.user
-  (:require [datomic.api :as d]
-            [clojure.string :as str]))
+  (:require [datomic.api :as d]))
 
 (defn user-point-valid?
   [db u-id]
