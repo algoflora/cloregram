@@ -1,0 +1,13 @@
+{:bot/webhook-key nil
+
+ :bot/handler {:webhook-key #ig/ref :bot/webhook-key}
+
+ :bot/ip "0.0.0.0"
+ 
+ :bot/server {:options {:ip #ig/ref :bot/ip}
+              :handler #ig/ref :bot/handler}
+
+ :bot/instance {:api-url nil
+                :token "6572272889:AAESffYEe8IcZUnXBizcUEM9JoI-rleTwFQ"
+                :webhook-key #ig/ref :bot/webhook-key
+                :ip #ig/ref :bot/ip}}

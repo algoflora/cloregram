@@ -7,15 +7,15 @@
   :java-cmd "/opt/homebrew/opt/openjdk/bin/java"
   
   :dependencies [[org.clojure/clojure "1.11.1"]
+                 [integrant "0.8.1"]
                  [com.amperity/dialog "2.0.115"]
 
+                 [telegrambot-lib "2.9.0"]
+                 [http-kit "2.7.0"]
                  [nano-id "1.0.0"]
-
-                 [telegrambot-lib "2.7.0"]
                  [cheshire "5.11.0"]
                  [clj-time "0.15.2"]
-                 [org.clojure/tools.namespace "1.4.4"]
-
+                                  
                  [com.datomic/peer "1.0.6735"]]
 
   :plugins [[lein-eftest "0.6.0"]]
