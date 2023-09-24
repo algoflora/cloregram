@@ -1,0 +1,8 @@
+{:bot/ip "127.0.0.1"
+
+ :bot/api-url "http://127.0.0.1:8899/test-api/"
+ 
+ :bot/instance {:test-server #ig/ref :test/server}
+
+ :test/server {:url #ig/ref :bot/api-url
+               :bot-token #ig/ref :bot/token}}

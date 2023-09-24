@@ -39,6 +39,9 @@
  ;; [acme.logging/ken-context
  ;;  acme.logging/extra-format]
 
+ :middleware
+ [magic-tray-bot.test.infrastructure.logging/add-test-prefix]
+ 
  ;; Outputs to send log messages to, specified by a keyword and a configuration
  ;; value. There are various ways to configure the outputs; see the
  ;; documentation for more information on the various options.

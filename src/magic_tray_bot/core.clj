@@ -9,6 +9,11 @@
    [telegrambot-lib.core :as tbot])
   (:gen-class))
 
+(Thread/setDefaultUncaughtExceptionHandler
+ (reify Thread$UncaughtExceptionHandler
+   (uncaughtException [_ thread ex]
+     (log/fatal ex "Uncaught exception on" (.getName thread)))))
+
 (defonce system (atom nil))
 
 (defmethod ig/init-key :bot/webhook-key
@@ -23,15 +28,24 @@
   (fn [req]
     (let [headers (:headers req)
           body (:body req)]
-      (log/debug "Request headers:" headers)
-      (when (= webhook-key (headers "X-Telegram-Bot-Api-Secret-Token"))
+      (log/debug "Incoming request:" req)
+      (if (= webhook-key (headers "X-Telegram-Bot-Api-Secret-Token"))
         {:status 200
          :headers {"Content-Type" "application/json"}
-         :body "OK"}))))
+         :body "OK"}
+        {:status 403}))))
 
 (defmethod ig/init-key :bot/ip
   [_ ip]
   ip)
+
+(defmethod ig/init-key :bot/token
+  [_ token]
+  token)
+
+(defmethod ig/init-key :bot/api-url
+  [_ url]
+  url)
 
 (defmethod ig/init-key :bot/server
   [_ {:keys [options handler]}]
@@ -44,17 +58,19 @@
   [_ {:keys [api-url token webhook-key ip]}]
   (let [_config {:bot-token token}
         config (merge _config (if (some? api-url) {:bot-api api-url} {}))
-        bot (tbot/create config)]
-    (when (and (nil? api-url)
-               (tbot/set-webhook bot {:url (str "https://" ip "/")}))
-      (log/info "Webhook is set")
-      (log/debug "Webhook info:" (tbot/get-webhook-info bot)))
-    bot))
+        bot (tbot/create config)
+        wh-resp (tbot/set-webhook bot {:url (str "https://" ip "/")})]
+       (if (true? wh-resp)
+         (do 
+           (log/info "Webhook is set")
+           (log/debug "Webhook info:" (tbot/get-webhook-info bot))
+           bot)
+         (throw (java.util.ServiceConfigurationError. (str wh-resp))))))
 
 (defmethod ig/halt-key! :bot/server
   [_ server]
   (server :timeout 3)
-  (log/debug "Server shutted down")
+  (log/info "Server shutted down")
   (log/debug "Server:" server))
 
 (defn- shut-down
@@ -67,8 +83,13 @@
   "Main function"
   [& args]
   (log/debug "Main function args:" args)
-  (let [config-path (when args (first args))
-        config-user (if config-path (-> config-path io/file slurp ig/read-string) {})
+  (let [config-arg (when args (first args))
+        config-obj (cond (nil? config-arg) nil
+                         (string? config-arg) (io/file config-arg)
+                         (instance? java.io.File config-arg) config-arg
+                         (instance? java.net.URL config-arg) config-arg
+                         :else (throw (IllegalArgumentException. (str "Wrong command line argument: " config-arg))))
+        config-user (if config-obj (-> config-obj slurp ig/read-string) {})
         config-default (-> "config.edn" io/resource slurp ig/read-string)
         config (deep-merge config-default config-user)]
     (.addShutdownHook (Runtime/getRuntime) (Thread. shut-down))

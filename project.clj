@@ -26,6 +26,10 @@
             "sch-up" ["run" "-m" "magic-tray-bot.tasks.update-schema"]}
 
   :target-path "target/%s"
-  :profiles {:test {:dependencies [[eftest "0.6.0"]]}
+  :profiles {:test {:dependencies [[eftest "0.6.0"]
+                                   [compojure "1.7.0"]
+                                   [ring/ring-core "1.10.0"]
+                                   [javax.servlet/servlet-api "2.5"]]
+                    :resource-paths ["test/resources"]}
              :uberjar {:aot :all
                        :jvm-opts ["-Dclojure.compiler.direct-linking=true"]}})

@@ -1,10 +1,10 @@
 (ns magic-tray-bot.core-test
-  (:require
-   [magic-tray-bot.core :refer [-main]]
-   [clojure.test :refer :all]))
+  (:require [clojure.test :refer :all]
+            [magic-tray-bot.fixtures :as fix]
+            [dialog.logger :as log]))
 
-;; (use-fixtures :each fix/use-in-memory-db fix/use-actual-schema)
+(use-fixtures :once fix/use-test-environment)
 
 (deftest core-test
   (testing "Initialization"
-    (-main)))
+    (Thread/sleep 10)))
