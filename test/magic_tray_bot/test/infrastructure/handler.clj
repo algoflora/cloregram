@@ -10,4 +10,13 @@
   (log/info "Webhook address saved")
   (log/debug "Webhook address:" @state/webhook-address)
   {:status 200
-   :body "true"})
+   :body {:ok true}})
+
+(defmethod handler :getWebhookInfo
+  [_]
+  (log/debug "Getting Webhook info...")
+  {:status 200
+   :body {:ok true
+          :result {:url @state/webhook-address
+                   :has_custom_certificate false
+                   :pending_update_count 0}}}) ; TODO: Maybe need to check in future

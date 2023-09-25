@@ -1,6 +1,7 @@
 (ns magic-tray-bot.core
   (:require
    [clojure.java.io :as io]
+   [clojure.string :as str]
    [dialog.logger :as log]
    [nano-id.core :refer [nano-id]]
    [integrant.core :as ig]
@@ -13,6 +14,19 @@
  (reify Thread$UncaughtExceptionHandler
    (uncaughtException [_ thread ex]
      (log/fatal ex "Uncaught exception on" (.getName thread)))))
+
+(defn wrap
+  [f & args]
+  (log/debug (format "Calling (%s %s)" f (str/join " " args)))
+  (let [resp (apply f args)
+        ok (:ok resp)
+        desc (:description resp)]
+    (when (not ok)
+      (throw (ex-info "API response error" {:call f
+                                            :description desc
+                                            :response resp})))
+    (log/debug (format "%s response is OK: %s" f desc))
+    (:result resp)))
 
 (defonce system (atom nil))
 
@@ -58,14 +72,10 @@
   [_ {:keys [api-url token webhook-key ip]}]
   (let [_config {:bot-token token}
         config (merge _config (if (some? api-url) {:bot-api api-url} {}))
-        bot (tbot/create config)
-        wh-resp (tbot/set-webhook bot {:url (str "https://" ip "/")})]
-       (if (true? wh-resp)
-         (do 
-           (log/info "Webhook is set")
-           (log/debug "Webhook info:" (tbot/get-webhook-info bot))
-           bot)
-         (throw (java.util.ServiceConfigurationError. (str wh-resp))))))
+        bot (tbot/create config)]
+    (wrap tbot/set-webhook bot {:url (str "https://" ip "/")})
+    (log/info "Webhook is set")
+    (log/debug "Webhook info:" (wrap tbot/get-webhook-info bot))))
 
 (defmethod ig/halt-key! :bot/server
   [_ server]

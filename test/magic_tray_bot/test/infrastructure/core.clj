@@ -6,7 +6,14 @@
             [compojure.core :refer [defroutes POST context]]
             [ring.middleware.multipart-params :refer [wrap-multipart-params]]
             [ring.middleware.keyword-params :refer [wrap-keyword-params]]
+            [cheshire.core :refer [generate-string]]
             [magic-tray-bot.test.infrastructure.handler :refer [handler]]))
+
+(defn- json-reponse-body-middleware
+  [handler]
+  (fn [req]
+    (let [resp (handler req)]
+      (update resp :body generate-string))))
 
 (defn- logging-middleware
   [handler]
@@ -22,7 +29,8 @@
   (-> routes
       logging-middleware
       wrap-keyword-params
-      wrap-multipart-params))
+      wrap-multipart-params
+      json-reponse-body-middleware))
 
 (defmethod ig/init-key :test/server
   [_ {:keys [url bot-token]}]
