@@ -42,3 +42,8 @@
                            {:ip host :port port})]
     (log/info "Server started")
     server))
+
+(defmethod ig/halt-key! :test/server
+  [_ server]
+  (server :timeout 3)
+  (log/info "Server shutted down"))

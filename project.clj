@@ -14,7 +14,7 @@
                  [http-kit "2.7.0"]
                  [nano-id "1.0.0"]
                  [cheshire "5.11.0"]
-                 [clj-time "0.15.2"]
+                 [tick "0.7.5"]
                                   
                  [com.datomic/peer "1.0.6735"]]
 
@@ -24,7 +24,7 @@
 
   :aliases {"db-reset" ["run" "-m" "magic-tray-bot.tasks.reset-db"]
             "sch-up" ["run" "-m" "magic-tray-bot.tasks.update-schema"]}
-
+  
   :target-path "target/%s"
   :profiles {:test {:dependencies [[eftest "0.6.0"]
                                    [compojure "1.7.0"]
