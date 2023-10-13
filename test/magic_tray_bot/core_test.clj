@@ -1,6 +1,6 @@
 (ns magic-tray-bot.core-test
   (:require [clojure.test :refer :all]
-            [magic-tray-bot.fixtures :as fix]
+            [magic-tray-bot.test.fixtures :as fix]
             [magic-tray-bot.test.infrastructure.users :as users]
             [magic-tray-bot.test.infrastructure.client :as client]
             [dialog.logger :as log]))

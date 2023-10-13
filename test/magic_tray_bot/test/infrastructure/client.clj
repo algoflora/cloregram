@@ -2,6 +2,7 @@
   (:require [dialog.logger :as log]
             [tick.core :as t]
             [org.httpkit.client :refer [post]]
+            [magic-tray-bot.app-system :as app-sys]
             [magic-tray-bot.utils :refer [keys-hyphens->underscores]]
             [magic-tray-bot.test.infrastructure.state :as state]
             [magic-tray-bot.test.infrastructure.users :as users]))
@@ -10,8 +11,9 @@
   [data]
   (let [upd-id (swap! state/update-id inc)
         upd (merge {:update_id upd-id} data)
-        _ (log/debug "Sending update:" upd)
-        resp @(post @state/webhook-address {:body upd})]
+        _ (log/debug (format "Sending update to %s: %s" @state/webhook-address upd))
+        resp @(post @state/webhook-address {:body upd
+                                            :headers {"X-Telegram-Bot-Api-Secret-Token" (:bot/webhook-key @app-sys/system)}})]
     (cond
       (some? (:error resp)) (throw (ex-info "Client error occured on sending update" {:response resp}))
       (not= 200 (:status resp)) (throw (ex-info "Error when sending update" {:response resp}))

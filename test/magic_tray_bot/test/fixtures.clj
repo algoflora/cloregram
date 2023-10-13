@@ -1,4 +1,4 @@
-(ns magic-tray-bot.fixtures
+(ns magic-tray-bot.test.fixtures
   (:require  [clojure.java.io :as io]
              [magic-tray-bot.test.infrastructure.core]
              [magic-tray-bot.core :refer [-main]]))

@@ -6,7 +6,7 @@
             [telegrambot-lib.core :as tbot]
             [magic-tray-bot.utils :refer [api-wrap]]))
 
-(defonce ^:private system (atom nil))
+(defonce system (atom nil))
 
 (defn startup
   [config]
@@ -32,7 +32,7 @@
     (let [headers (:headers req)
           body (:body req)]
       (log/debug "Incoming request:" req)
-      (if (= webhook-key (headers "X-Telegram-Bot-Api-Secret-Token"))
+      (if (= webhook-key (headers (clojure.string/lower-case "X-Telegram-Bot-Api-Secret-Token")))
         {:status 200
          :headers {"Content-Type" "application/json"}
          :body "OK"}
@@ -41,6 +41,10 @@
 (defmethod ig/init-key :bot/ip
   [_ ip]
   ip)
+
+(defmethod ig/init-key :bot/port
+  [_ port]
+  port)
 
 (defmethod ig/init-key :bot/token
   [_ token]
@@ -53,16 +57,16 @@
 (defmethod ig/init-key :bot/server
   [_ {:keys [options handler]}]
   (let [server (run-server handler options)]
-    (log/info "Server started")
+    (log/info (format "Server started with options %s" options))
     (log/debug "Server:" server)
     server))
 
 (defmethod ig/init-key :bot/instance
-  [_ {:keys [api-url token webhook-key ip]}]
+  [_ {:keys [api-url token webhook-key ip port]}]
   (let [_config {:bot-token token}
         config (merge _config (if (some? api-url) {:bot-api api-url} {}))
         bot (tbot/create config)]
-    (api-wrap tbot/set-webhook bot {:url (str "http://" ip)})
+    (api-wrap tbot/set-webhook bot {:url (format "http://%s:%d" ip port)})
     (log/info "Webhook is set")
     (log/debug "Webhook info:" (api-wrap tbot/get-webhook-info bot))))
 
