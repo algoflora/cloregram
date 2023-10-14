@@ -4,7 +4,7 @@
    [dialog.logger :as log]
    [integrant.core :as ig]
    [magic-tray-bot.utils :refer [deep-merge]]
-   [magic-tray-bot.app-system :as app-sys])
+   [magic-tray-bot.system.init :refer [startup shutdown!]])
   (:gen-class))
 
 (Thread/setDefaultUncaughtExceptionHandler
@@ -27,5 +27,5 @@
         config (deep-merge config-default config-user)]
     (log/info "Config loaded")
     (log/debug "Config:" config)
-    (.addShutdownHook (Runtime/getRuntime) (Thread. app-sys/shutdown!))
-    (app-sys/startup config)))
+    (.addShutdownHook (Runtime/getRuntime) (Thread. shutdown!))
+    (startup config)))

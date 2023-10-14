@@ -8,9 +8,7 @@
 (use-fixtures :once fix/use-test-environment)
 
 (deftest core-test
-  (testing "Initialization"
-    (log/info "Testing started")
-    (users/add :testuser-1)
+  (testing "Initialization"    (users/add :testuser-1)
     (client/send-text :testuser-1 "Hello, bot!")
-    (is true)
-    (log/info "Testing finished")))
+    (let [msg (users/wait-for-new-message :testuser-1)]
+      (is (= "Hello, bot!" (:text msg))))))

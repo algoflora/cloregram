@@ -4,7 +4,7 @@
             [clojure.java.io :as io]
             [org.httpkit.server :refer [run-server]]
             [compojure.core :refer [defroutes POST context]]
-            [ring.middleware.multipart-params :refer [wrap-multipart-params]]
+            [ring.middleware.json :refer [wrap-json-params]]
             [ring.middleware.keyword-params :refer [wrap-keyword-params]]
             [cheshire.core :refer [generate-string]]
             [magic-tray-bot.test.infrastructure.handler :refer [handler]]))
@@ -29,7 +29,7 @@
   (-> routes
       logging-middleware
       wrap-keyword-params
-      wrap-multipart-params
+      wrap-json-params
       json-reponse-body-middleware))
 
 (defmethod ig/init-key :test/server

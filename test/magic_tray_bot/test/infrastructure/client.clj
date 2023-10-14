@@ -1,8 +1,9 @@
 (ns magic-tray-bot.test.infrastructure.client
   (:require [dialog.logger :as log]
+            [cheshire.core :refer [generate-string]]
             [tick.core :as t]
             [org.httpkit.client :refer [post]]
-            [magic-tray-bot.app-system :as app-sys]
+            [magic-tray-bot.system.state :refer [system]]
             [magic-tray-bot.utils :refer [keys-hyphens->underscores]]
             [magic-tray-bot.test.infrastructure.state :as state]
             [magic-tray-bot.test.infrastructure.users :as users]))
@@ -12,12 +13,16 @@
   (let [upd-id (swap! state/update-id inc)
         upd (merge {:update_id upd-id} data)
         _ (log/debug (format "Sending update to %s: %s" @state/webhook-address upd))
-        resp @(post @state/webhook-address {:body upd
-                                            :headers {"X-Telegram-Bot-Api-Secret-Token" (:bot/webhook-key @app-sys/system)}})]
-    (cond
-      (some? (:error resp)) (throw (ex-info "Client error occured on sending update" {:response resp}))
-      (not= 200 (:status resp)) (throw (ex-info "Error when sending update" {:response resp}))
-      :else (log/debug "Update response:" resp))))
+        _ (log/debug "URI" @state/webhook-address)]
+    
+    (post @state/webhook-address {:body (generate-string upd)
+                                  :headers {"X-Telegram-Bot-Api-Secret-Token" (:bot/webhook-key @system)
+                                            "Content-Type" "application/json"}}
+          (fn async-callback [{:keys [status error] :as resp}]
+            (cond
+              (some? error) (throw (ex-info "Client error occured on sending update" resp))
+              (not= 200 status) (throw (ex-info "Error when sending update" resp))
+              :else (log/debug "<ASYNC> Update response:" resp))))))
 
 (defn- send-message
   [uid data]
