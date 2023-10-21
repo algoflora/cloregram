@@ -6,29 +6,20 @@
               [clojure.edn :as edn])
     (:gen-class))
 
-(defn- req&->name!
-  [ns]
-  (log/info ns)
-  (require ns)
-  (name ns))
-
-(defn debug-
-  [expr]
-  (log/debug expr)
-  expr)
-
 (defn update-schema
   "Updates schema with NEW data. Not removing unactual." ; TODO: Develop full update
-  []
-  (log/info "Updating schema...")
-  (let [transf #(->> % (io/reader) (java.io.PushbackReader.) (edn/read))
-        schema (->> (file-seq (io/file "./src/magic_tray_bot/schema"))
-                    (filter #(= (re-find #"\.[a-zA-Z0-9]+$" (.getName %)) ".edn"))
-                    (mapcat transf)
-                    (vec))]
-    (log/debug "Schema:" schema)
-    (let [f (d/transact (db/conn) schema)]
-      (log/info "Schema successfully updated with" (count (:tx-data @f)) "Datoms"))))
+  ([] (update-schema []))
+  ([entities]
+   (log/info "Updating schema...")
+   (let [transf #(->> % (io/reader) (java.io.PushbackReader.) (edn/read))
+         schema (->> (file-seq (io/file "./src/magic_tray_bot/schema"))
+                     (filter #(= (re-find #"\.[a-zA-Z0-9]+$" (.getName %)) ".edn"))
+                     (filter (if (empty? entities) true #(some #{(second (re-find #"^([a-zA-Z0-9\-]+)\.edn" (.getName %)))} entities)))
+                     (mapcat transf)
+                     (vec))]
+     (log/debug "Schema:" schema)
+     (let [f (d/transact (db/conn) schema)]
+       (log/info "Schema successfully updated with" (count (:tx-data @f)) "Datoms")))))
 
 (defn -main
   []

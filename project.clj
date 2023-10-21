@@ -10,7 +10,7 @@
                  [integrant "0.8.1"]
                  [com.amperity/dialog "2.0.115"]
 
-                 [telegrambot-lib "2.9.0"]
+                 [telegrambot-lib "2.10.0"]
                  [http-kit "2.7.0"]
                  [nano-id "1.0.0"]
                  [cheshire "5.11.0"]

@@ -38,9 +38,6 @@
  ;; :middleware
  ;; [acme.logging/ken-context
  ;;  acme.logging/extra-format]
-
- :middleware
- [magic-tray-bot.test.infrastructure.logging/add-test-prefix]
  
  ;; Outputs to send log messages to, specified by a keyword and a configuration
  ;; value. There are various ways to configure the outputs; see the
@@ -61,7 +58,11 @@
  :outputs
  {:console {:type :print
             :format :pretty
-            :timestamp :short}
+            :timestamp :short
+            :middleware
+            [magic-tray-bot.test.infrastructure.logging/add-test-prefix]}
   :json-file {:type :file
               :path "./logs/logs.json"
-              :format :json}}}
+              :format :json
+              :middleware
+              [magic-tray-bot.logging/transform-json]}}}

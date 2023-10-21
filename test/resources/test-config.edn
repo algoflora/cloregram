@@ -4,5 +4,8 @@
  
  :bot/instance {:test-server #ig/ref :test/server}
 
+ :db/connection {:uri "datomic:mem://test"
+                 :create? true}
+ 
  :test/server {:url #ig/ref :bot/api-url
                :bot-token #ig/ref :bot/token}}

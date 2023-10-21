@@ -1,5 +1,6 @@
 (ns magic-tray-bot.test.infrastructure.client
   (:require [dialog.logger :as log]
+            [clojure.test :refer [is]]
             [cheshire.core :refer [generate-string]]
             [tick.core :as t]
             [org.httpkit.client :refer [post]]
@@ -11,10 +12,8 @@
 (defn- send-update
   [data]
   (let [upd-id (swap! state/update-id inc)
-        upd (merge {:update_id upd-id} data)
-        _ (log/debug (format "Sending update to %s: %s" @state/webhook-address upd))
-        _ (log/debug "URI" @state/webhook-address)]
-    
+        upd (merge {:update_id upd-id} data)]
+    (log/debug (format "Sending update to %s: %s" @state/webhook-address upd))
     (post @state/webhook-address {:body (generate-string upd)
                                   :headers {"X-Telegram-Bot-Api-Secret-Token" (:bot/webhook-key @system)
                                             "Content-Type" "application/json"}}
@@ -40,3 +39,8 @@
   ([uid text] (send-text uid text []))
   ([uid text entities]
    (send-message uid {:text text :entities entities})))
+
+(defn check-text
+  [text msg]
+  (is (= text (:text msg)))
+  msg)

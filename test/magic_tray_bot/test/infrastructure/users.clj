@@ -7,13 +7,14 @@
   (swap! state/users #(update-in % [uid :msg-id] inc))
   (uid @state/users))
 
-(defn add ; NOT completely thread safe!
+(defn add ; TODO: NOT completely thread safe!
   [uid]
-  (let [user {:id (+ 10000000 (count @state/users))
+  (let [user {:id (inc (count @state/users))
               :msg-id 1
               :first-name (name uid)
               :last-name nil
               :username (name uid)
+              :language-code "en"
               :messages (sorted-map)}]
     (swap! state/users #(assoc % uid user))
     (log/info (format "Added user @%s. Total users count: %d" (name uid) (count @state/users)))

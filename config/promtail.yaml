@@ -1,0 +1,49 @@
+# https://grafana.com/docs/loki/latest/clients/promtail/configuration/
+# https://docs.docker.com/engine/api/v1.41/#operation/ContainerList
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: loki_scrape
+    pipeline_stages:
+      - json:
+          expressions:
+            message: message
+            time: time
+            level: level
+            host: host
+            project: project
+            thread: thread
+            logger: logger
+            version: version
+      - labels:
+          level:
+          host:
+          line:
+          project:
+          thread:
+          logger:
+          version:
+      - timestamp:
+          source: time
+          format: RFC3339Nano
+      - output:
+          source: message
+    static_configs:
+      - targets:
+        - localhost
+        labels:
+          job: varlogs
+          __path__: /var/log/*.json
+
+
+          # file_sd_configs:
+    #   - files:
+    #       - /tmp/logs/logs.json

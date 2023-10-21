@@ -4,11 +4,11 @@
   :db/unique :db.unique/identity
   :db/doc "User's Telegram username"}
 
- {:db/ident :user/chat-id
+ {:db/ident :user/id
   :db/valueType :db.type/long
   :db/cardinality :db.cardinality/one
   :db/unique :db.unique/identity
-  :db/doc "User's chat ID"}
+  :db/doc "User's ID (and chat_id in private chats)"}
 
  {:db/ident :user/first-name
   :db/valueType :db.type/string
@@ -25,22 +25,11 @@
   :db/cardinality :db.cardinality/one
   :db/doc "User's language code in Telegram profile"}
 
- {:db/ident :user/point
-  :db/valueType :db.type/keyword
-  :db/cardinality :db.cardinality/one
-  :db/doc "User's current flow point"}
-
- {:db/ident :user/place
-  :db/valueType :db.type/ref
-  :db/cardinality :db.cardinality/one
-  :db/doc "User's current flow instance of some blueprint"}
-
- {:db/ident :user/vars
+ {:db/ident :user/handler
   :db/valueType :db.type/tuple
-  :db/tupleTypes [:db.type/keyword :db.type/string]
-  :db/cardinality :db.cardinality/many
-  :db/doc "User's current flow `variable`s in format [:keyword JSON-:string]"}
+  :db/tupleTypes [:db.type/symbol :db.type/string]
+  :db/cardinality :db.cardinality/one
+  :db/doc "Default handler and args if not a callback query in incoming update"}
 
  {:db/ident :user/validate
-  :db.entity/attrs [:user/username :user/chat-id :user/point :user/vars]
-  :db.entity/preds 'magic-tray-bot.schema.predicats.user/point-valid?}]
+  :db.entity/attrs [:user/id :user/handler]}]
