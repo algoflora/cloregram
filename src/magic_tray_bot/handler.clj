@@ -14,7 +14,6 @@
   (let [msg (:message upd)
         user (u/get-or-create (:from msg))
         hdata (:user/handler user)
-        _ (log/debug "HANDLER TYPE:" (type hdata))
         handler (-> hdata first resolve)
         args (-> hdata second edn/read-string (assoc :user user :message msg))]
     (log/info "Handling message" msg "from User" user) ; TODO: info?

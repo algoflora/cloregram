@@ -8,7 +8,6 @@
         p-name (nth p 1)
         p-version (nth p 2)]
     (-> event
-                                        ; (update :level #(str/upper-case (name (:level))))
         (dissoc :line)
         (assoc :project p-name)
         (assoc :version p-version))))

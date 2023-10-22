@@ -13,7 +13,7 @@
                                      :user/first-name (:first_name udata)
                                      :user/last-name (:last_name udata)
                                      :user/language-code (:language_code udata)
-                                     :user/handler ['magic-tray-bot.handler/common "{:num 123}"]}
+                                     :user/handler ['magic-tray-bot.handler/common ""]}
                                     (filter second) ; 'false' values will be removed!
                                     (into {}))])
         (log/info "Created User by data:" udata)

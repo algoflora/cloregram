@@ -26,7 +26,6 @@ scrape_configs:
       - labels:
           level:
           host:
-          line:
           project:
           thread:
           logger:
@@ -43,7 +42,3 @@ scrape_configs:
           job: varlogs
           __path__: /var/log/*.json
 
-
-          # file_sd_configs:
-    #   - files:
-    #       - /tmp/logs/logs.json
