@@ -32,3 +32,18 @@
 (defn keys-hyphens->underscores ; NOT recursive!
   [m]
   (into {} (map (fn [[k v]] [(-> k name (.replace \- \_) keyword) v]) m)))
+
+(defn simplify-reply-markup
+  [reply-markup]
+  (map #(map :text %) reply-markup))
+
+(defn msg->str
+  [msg]
+  (let [msg (-> msg
+                (select-keys [:text :reply_markup])
+                (update :reply_markup simplify-reply-markup))]
+    (format "%s\t%s" (:text msg) (:reply_markup msg))))
+
+(defn username
+  [user]
+  (or (:user/username user) (str "id" (:user/id user))))

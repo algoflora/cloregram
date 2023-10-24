@@ -1,7 +1,7 @@
 (ns cloregram.handler
   (:require [cloregram.system.state :refer [bot]]
             [cloregram.users :as u]
-            [cloregram.utils :refer [api-wrap]]
+            [cloregram.utils :refer [api-wrap msg->str username]]
             [cloregram.callbacks :as clb]
             [dialog.logger :as log]
             [clojure.string :as str]
@@ -17,7 +17,7 @@
         hdata (:user/handler user)
         handler (-> hdata first resolve)
         args (-> hdata second edn/read-string (assoc :user user :message msg))]
-    (log/infof "Handling message %s from User %s" msg user) ; TODO: info?
+    (log/infof "Handling message %s from User %s" (msg->str msg) (username user)) ; TODO: info?
     (log/debugf "Calling %s with args %s" handler args)
     (handler args)))
 
@@ -25,7 +25,7 @@
   [upd]
   (let [cbq (:callback_query upd)
         user (u/get-or-create (:from cbq))]
-    (log/infof "Handling callbak query %s for User %s" cbq user)
+    (log/infof "Handling callbak query for User %s" (username user))
     (clb/call user (-> cbq :data java.util.UUID/fromString))))
 
 (defn common

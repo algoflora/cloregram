@@ -5,5 +5,4 @@
   [_ event]
   (if (or (= "cloregram.core-test" (:logger event))
           (str/starts-with? (:logger event) "cloregram.test"))
-    (update event :message #(str "[TEST INFRA] " %))
-    event))
+    (update event :message #(str "[TEST INFRA] " %))))

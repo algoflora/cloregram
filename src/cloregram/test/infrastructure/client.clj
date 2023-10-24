@@ -1,6 +1,5 @@
 (ns cloregram.test.infrastructure.client
   (:require [dialog.logger :as log]
-            [clojure.test :refer [is]]
             [cheshire.core :refer [generate-string]]
             [tick.core :as t]
             [org.httpkit.client :refer [post]]
@@ -50,25 +49,17 @@
   ([uid text entities]
    (send-message uid {:text text :entities entities})))
 
-(defn check-text
-  [msg text]
-  (is (= text (:text msg)))
-  msg)
-
-(defn check-btns
-  [msg & btns]
-  (let [bs (->> (:reply_markup msg)
-                (flatten)
-                (map :text)
-                (sort))]
-    (is (= (sort btns)))
-    msg))
-
 (defn press-btn
-  [msg uid btn]
-  (let [cbq (->> (:reply_markup msg)
-                 (flatten)
-                 (filter #(= btn (:text %)))
-                 (first)
+  ([msg uid row col]
+   (let [cbq (-> (:reply_markup msg)
+                 (nth (dec row))
+                 (nth (dec col))
                  (:callback_query))]
-    (send-callback-query uid cbq)))
+     (send-callback-query uid cbq)))
+  ([msg uid btn]
+   (let [cbq (->> (:reply_markup msg)
+                  (flatten)
+                  (filter #(= btn (:text %)))
+                  (first)
+                  (:callback_query))]
+     (send-callback-query uid cbq))))

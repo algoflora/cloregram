@@ -1,6 +1,4 @@
-(ns cloregram.logging
-  (:require [clojure.string :as str]
-            [nano-id.core :refer [nano-id]]))
+(ns cloregram.logging)
 
 (defn transform-json
   [_ event]
