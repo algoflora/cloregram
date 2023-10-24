@@ -1,4 +1,4 @@
-(defproject magic-tray-bot "0.1.0-SNAPSHOT"
+(defproject cloregram "0.2.0"
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
   :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"
@@ -15,21 +15,20 @@
                  [nano-id "1.0.0"]
                  [cheshire "5.11.0"]
                  [tick "0.7.5"]
-                                  
-                 [com.datomic/peer "1.0.6735"]]
+                 
+                 [com.datomic/peer "1.0.6735"]
 
+                 [compojure "1.7.0"]
+                 [ring/ring-json "0.5.1"]]
+  
   :plugins [[lein-eftest "0.6.0"]]
 
-  :main ^:skip-aot magic-tray-bot.core
+  :main ^:skip-aot cloregram.core
 
-  :aliases {"db-reset" ["run" "-m" "magic-tray-bot.tasks.reset-db"]
-            "sch-up" ["run" "-m" "magic-tray-bot.tasks.update-schema"]}
+  :aliases {"db-reset" ["run" "-m" "cloregram.tasks.reset-db"]
+            "sch-up" ["run" "-m" "cloregram.tasks.update-schema"]}
   
   :target-path "target/%s"
-  :profiles {:test {:dependencies [[eftest "0.6.0"]
-                                   [compojure "1.7.0"]
-                                   [ring/ring-json "0.5.1"]
-                                   [javax.servlet/servlet-api "2.5"]]
-                    :resource-paths ["test/resources"]}
+  :profiles {:test {:dependencies [[eftest "0.6.0"]]}
              :uberjar {:aot :all
                        :jvm-opts ["-Dclojure.compiler.direct-linking=true"]}})
