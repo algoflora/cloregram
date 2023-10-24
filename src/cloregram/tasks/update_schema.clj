@@ -12,9 +12,12 @@
   ([entities]
    (log/info "Updating schema...")
    (let [transf #(->> % (io/reader) (java.io.PushbackReader.) (edn/read))
-         schema (->> (file-seq (io/file "./src/cloregram/schema"))
+         schema (->> (io/resource "schema/")
+                     (.getFile)
+                     (io/file)
+                     (file-seq)
                      (filter #(= (re-find #"\.[a-zA-Z0-9]+$" (.getName %)) ".edn"))
-                     (filter (if (empty? entities) true #(some #{(second (re-find #"^([a-zA-Z0-9\-]+)\.edn" (.getName %)))} entities)))
+                     (filter (if (empty? entities) (fn [_] true) #(some #{(second (re-find #"^([a-zA-Z0-9\-]+)\.edn" (.getName %)))} entities)))
                      (mapcat transf)
                      (vec))]
      (log/debug "Schema:" schema)

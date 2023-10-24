@@ -24,9 +24,6 @@
   :plugins [[lein-eftest "0.6.0"]]
 
   :main ^:skip-aot cloregram.core
-
-  :aliases {"db-reset" ["run" "-m" "cloregram.tasks.reset-db"]
-            "sch-up" ["run" "-m" "cloregram.tasks.update-schema"]}
   
   :target-path "target/%s"
   :profiles {:test {:dependencies [[eftest "0.6.0"]]}
