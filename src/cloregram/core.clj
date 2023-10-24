@@ -30,4 +30,5 @@
     (log/info "Config loaded")
     (log/debug "Config:" config)
     (.addShutdownHook (Runtime/getRuntime) (Thread. shutdown!))
-    (startup config)))
+    (startup config)
+    (log/warn @cloregram.system.state/system)))

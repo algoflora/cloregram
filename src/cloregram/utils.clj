@@ -35,7 +35,7 @@
 
 (defn simplify-reply-markup
   [reply-markup]
-  (map #(map :text %) reply-markup))
+  (vec (map #(vec (map :text %)) reply-markup)))
 
 (defn msg->str
   [msg]
@@ -47,3 +47,18 @@
 (defn username
   [user]
   (or (:user/username user) (str "id" (:user/id user))))
+
+(defn get-project-info
+  []
+  (let [[_ ga version] (read-string (slurp "project.clj"))
+        [ns name version] [(namespace ga) (name ga) version]]
+    {:group ns
+     :name name
+     :version version}))
+
+(defn resolver
+  [sym]
+  (let [ns (-> sym namespace symbol)
+        nm (-> sym name symbol)]
+    (require ns)
+    (ns-resolve ns nm)))

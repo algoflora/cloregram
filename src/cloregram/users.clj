@@ -1,7 +1,10 @@
 (ns cloregram.users
   (:require [dialog.logger :as log]
             [cloregram.db :as db]
-            [datomic.api :as d]))
+            [datomic.api :as d]
+            [cloregram.utils :as utl]))
+
+
 
 (defn get-or-create
   [udata]
@@ -13,7 +16,7 @@
                                      :user/first-name (:first_name udata)
                                      :user/last-name (:last_name udata)
                                      :user/language-code (:language_code udata)
-                                     :user/handler ['cloregram.handler/common ""]}
+                                     :user/handler [(symbol (str (:name (utl/get-project-info)) ".handler/common")) nil]}
                                     (filter second) ; 'false' values will be removed!
                                     (into {}))])
         (log/info "Created User by data:" udata)

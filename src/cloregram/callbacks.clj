@@ -1,6 +1,7 @@
 (ns cloregram.callbacks
   (:require [dialog.logger :as log]
             [cloregram.db :as db]
+            [cloregram.utils :as utl]
             [datomic.api :as d]
             [clojure.edn :as edn]))
 
@@ -33,4 +34,4 @@
                (vector? args) (conj user)
                (map? args) (-> (merge {:user user}) vector))]
     (log/debugf "Calling %s with args %s" func args)
-    (apply (resolve func) args)))
+    (apply (utl/resolver func) args)))

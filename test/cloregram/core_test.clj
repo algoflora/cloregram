@@ -36,5 +36,4 @@
         (c/press-btn :testuser-1 1 1))
     (-> (u/wait-for-new-message :testuser-1)
         (i/check-text "Incremented: 3")
-        (i/check-btns [["+" "-"]])
-        (c/press-btn :testuser-1 "+"))))
+        (i/check-btns [["+" "-"]]))))
