@@ -6,20 +6,25 @@
               [clojure.edn :as edn])
     (:gen-class))
 
+(defn- read-schema-folder
+  [path]
+  (when-let [resource (io/resource path)]
+    (->> resource
+         (.getFile)
+         (io/file)
+         (file-seq)
+         (filter #(= (re-find #"\.[a-zA-Z0-9]+$" (.getName %)) ".edn"))
+         (mapcat #(->> % io/reader java.io.PushbackReader. edn/read))
+         (vec))))
+
 (defn update-schema
   "Updates schema with NEW data. Not removing unactual." ; TODO: Develop full update
   ([] (update-schema []))
   ([entities]
    (log/info "Updating schema...")
-   (let [transf #(->> % (io/reader) (java.io.PushbackReader.) (edn/read))
-         schema (->> (io/resource "schema/")
-                     (.getFile)
-                     (io/file)
-                     (file-seq)
-                     (filter #(= (re-find #"\.[a-zA-Z0-9]+$" (.getName %)) ".edn"))
-                     (filter (if (empty? entities) (fn [_] true) #(some #{(second (re-find #"^([a-zA-Z0-9\-]+)\.edn" (.getName %)))} entities)))
-                     (mapcat transf)
-                     (vec))]
+   (let [cloregram-schema (read-schema-folder "cloregram-schema/")
+         user-schema (read-schema-folder "schema/")
+         schema (concat cloregram-schema user-schema)]
      (log/debug "Schema:" schema)
      (let [f (d/transact (db/conn) schema)]
        (log/info "Schema successfully updated with" (count (:tx-data @f)) "Datoms")))))
