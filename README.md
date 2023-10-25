@@ -1,6 +1,8 @@
-# salver-bot
+# cloregram
 
-FIXME: description
+Clojure/Datomic framework for making complex Telegram Bots/Applications
+
+README.md is under development
 
 ## Installation
 
@@ -30,7 +32,7 @@ FIXME: listing of options this app accepts.
 
 ## License
 
-Copyright © 2023 FIXME
+Copyright © 2023
 
 This program and the accompanying materials are made available under the
 terms of the Eclipse Public License 2.0 which is available at
