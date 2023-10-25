@@ -1,7 +1,7 @@
 (ns cloregram.handler
   (:require [cloregram.system.state :refer [bot system]]
             [cloregram.users :as u]
-            [cloregram.helpers :as h]
+            [cloregram.api :as api]
             [cloregram.utils :as utl]
             [cloregram.callbacks :as clb]
             [dialog.logger :as log]
@@ -31,33 +31,18 @@
 
 (defn common
   [{:keys [user message]}]
-  (utl/api-wrap tbot/send-message (bot)
-            {:chat_id (:user/id user)
-             :text (str (:user/username user) " " (str/upper-case (:text message)))
-             :reply_markup [[{:text "+"
-                              :callback_query (str (clb/create user 'cloregram.handler/increment [0]))}
-                             {:text "-"
-                              :callback_query (str (clb/create user 'cloregram.handler/decrement [0]))}]]}))
+  (api/send-message user
+                    (str (:user/username user) " " (str/upper-case (:text message)))
+                    [[["+" 'cloregram.handler/increment [0]]["-" 'cloregram.handler/decrement [0]]]]))
 
 (defn increment
   [n user]
   (let [n (inc n)]
-    (utl/api-wrap tbot/send-message (bot)
-              {:chat_id (:user/id user)
-               :text (format "Incremented: %d" n)
-               :reply_markup [[{:text "+"
-                                :callback_query (str (clb/create user 'cloregram.handler/increment [n]))}
-                               {:text "-"
-                                :callback_query (str (clb/create user 'cloregram.handler/decrement [n]))}]]})))
+    (api/send-message user (format "Incremented: %d" n)
+                      [[["+" 'cloregram.handler/increment [n]]["-" 'cloregram.handler/decrement [n]]]])))
 
 (defn decrement
   [n user]
   (let [n (dec n)]
-    (utl/api-wrap tbot/send-message (bot)
-              {:chat_id (:user/id user)
-               :text (format "Decremented: %d" n)
-               :reply_markup [[{:text "+"
-                                :callback_query (str (clb/create user 'cloregram.handler/increment [n]))}
-                               {:text "-"
-                                :callback_query (str (clb/create user 'cloregram.handler/decrement [n]))}]]})))
-
+    (api/send-message user (format "Decremented: %d" n)
+                    [[["+" 'cloregram.handler/increment [n]]["-" 'cloregram.handler/decrement [n]]]])))

@@ -12,6 +12,7 @@
   [uid]
   (let [user {:id (inc (count @state/users))
               :msg-id 1
+              :main-msg-id nil
               :first-name (name uid)
               :last-name nil
               :username (name uid)
@@ -21,12 +22,12 @@
     (log/infof "Added user @%s. Total users count: %d" (name uid) (count @state/users))
     (log/debug "Users:" @state/users)))
 
-(defn get-uid-by-id
+(defn get-user-by-id
   [id]
   (->> @state/users
        (filter (fn [[k v]] (= id (:id v))))
        (first)
-       (key)))
+       (val)))
 
 (defn wait-for-new-message
   ([uid] (wait-for-new-message uid 1000))

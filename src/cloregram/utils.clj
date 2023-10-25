@@ -17,7 +17,7 @@
       (throw (ex-info "API response error" {:call api-f
                                             :description desc
                                             :response resp})))
-    (log/debug (format "%s response is OK: %s" api-f desc))
+    (log/debug (format "%s response is OK: %s" api-f resp))
     (:result resp)))
 
 (defn deep-merge

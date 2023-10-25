@@ -47,16 +47,19 @@
 (defn send-text
   ([uid text] (send-text uid text []))
   ([uid text entities]
+   (log/infof "User %s sent message \"%s\"" uid text)
    (send-message uid {:text text :entities entities})))
 
 (defn press-btn
   ([msg uid row col]
+   (log/infof "User %s pressed button %d/%d" uid row col)
    (let [cbq (-> (:reply_markup msg)
                  (nth (dec row))
                  (nth (dec col))
                  (:callback_query))]
      (send-callback-query uid cbq)))
   ([msg uid btn]
+   (log/infof "User %s pressed button \"%s\"" uid btn)
    (let [cbq (->> (:reply_markup msg)
                   (flatten)
                   (filter #(= btn (:text %)))

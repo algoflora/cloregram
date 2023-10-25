@@ -4,11 +4,15 @@
             [datomic.api :as d]
             [cloregram.utils :as utl]))
 
-
-
 (defn get-or-create
   [udata]
-  (if-let [user (d/pull (db/db) '[:user/id :user/username :user/first-name :user/last-name :user/language-code :user/handler] [:user/id (:id udata)])]
+  (if-let [user (d/pull (db/db) '[:user/id
+                                  :user/username
+                                  :user/first-name
+                                  :user/last-name
+                                  :user/language-code
+                                  :user/msg-id
+                                  :user/handler] [:user/id (:id udata)])]
     (do (log/debug "Loaded User:" user)
         user) ; TODO: Check info and update if needed
     (do (d/transact (db/conn) [(->> {:user/id (:id udata)
@@ -24,5 +28,6 @@
 
 (defn set-msg-id
   [user msg-id]
+  (log/debugf "Setting msg-id=%d for User %s" msg-id (utl/username user))
   (d/transact (db/conn) [{:user/id (:user/id user)
                           :user/msg-id msg-id}]))

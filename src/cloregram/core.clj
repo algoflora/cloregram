@@ -10,7 +10,7 @@
 (Thread/setDefaultUncaughtExceptionHandler
  (reify Thread$UncaughtExceptionHandler
    (uncaughtException [_ thread ex]
-     (log/fatal ex "Uncaught exception on" (.getName thread))
+     (log/error ex "Uncaught exception on" (.getName thread))
      (throw ex))))
 
 (defn- get-conf
@@ -31,4 +31,4 @@
     (log/debug "Config:" config)
     (.addShutdownHook (Runtime/getRuntime) (Thread. shutdown!))
     (startup config)
-    (log/warn @cloregram.system.state/system)))
+    (log/debug "System initialized:" @cloregram.system.state/system)))
