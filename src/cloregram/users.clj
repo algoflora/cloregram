@@ -21,3 +21,8 @@
                                     (into {}))])
         (log/info "Created User by data:" udata)
         (get-or-create udata))))
+
+(defn set-msg-id
+  [user msg-id]
+  (d/transact (db/conn) [{:user/id (:user/id user)
+                          :user/msg-id msg-id}]))

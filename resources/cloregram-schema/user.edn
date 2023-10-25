@@ -25,6 +25,11 @@
   :db/cardinality :db.cardinality/one
   :db/doc "User's language code in Telegram profile"}
 
+ {:db/ident :user/msg-id
+  :db/valueType :db.type/long
+  :db/cardinality :db.cardinality/one
+  :db/doc "ID of 'main' chat message for this User"}
+ 
  {:db/ident :user/handler
   :db/valueType :db.type/tuple
   :db/tupleTypes [:db.type/symbol :db.type/string]

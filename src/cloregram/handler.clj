@@ -1,6 +1,7 @@
 (ns cloregram.handler
   (:require [cloregram.system.state :refer [bot system]]
             [cloregram.users :as u]
+            [cloregram.helpers :as h]
             [cloregram.utils :as utl]
             [cloregram.callbacks :as clb]
             [dialog.logger :as log]

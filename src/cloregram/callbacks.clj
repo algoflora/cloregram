@@ -8,8 +8,9 @@
 (defn ^java.util.UUID create
   ([user ^clojure.lang.Symbol f] (create user f nil))
   ([user ^clojure.lang.Symbol f args]
-   (let [uuid (java.util.UUID/randomUUID)
-         args (pr-str args)]
+   (create (java.util.UUID/randomUUID) user f args))
+  ([uuid user ^clojure.lang.Symbol f args]
+   (let [args (pr-str args)]
      (d/transact (db/conn) [{:callback/uuid uuid
                              :callback/function f
                              :callback/args args
