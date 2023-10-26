@@ -22,27 +22,43 @@
     (log/infof "Added user @%s. Total users count: %d" (name uid) (count @state/users))
     (log/debug "Users:" @state/users)))
 
+(defn- get-user-by-
+  [key value]
+  (log/debugf "Getting User by %s -> %s" key value)
+  (let [user (->> @state/users
+                  (filter (fn [[k v]] (= value (key v))))
+                  (first)
+                  (val))]
+    (log/debug "Got User" user)
+    user))
+
 (defn get-user-by-id
-  [id]
-  (->> @state/users
-       (filter (fn [[k v]] (= id (:id v))))
-       (first)
-       (val)))
+  [id] (get-user-by- :id id))
 
-(defn wait-for-new-message
-  ([uid] (wait-for-new-message uid 1000))
+(defn get-user-by-uid
+  [uid] (get-user-by- :username (name uid)))
+
+(defn- get-current-main-message
+  [uid]
+  (let [user (uid @state/users)
+        msgs (:messages user)
+        msg-id (:msg-id user)]
+    (msgs msg-id)))
+
+(defn wait-main-message
+  ([uid] (wait-main-message uid 1000))
   ([uid timeout]
-   (log/infof "Waiting message for User %s (timeout: %d)" uid timeout)
+   (log/infof "Waiting main message for User %s (timeout: %d)" uid timeout)
    (let [interval 100
-         current-messages-count (-> @state/users uid :messages count)]
-     (log/debug "Current messages count:" current-messages-count)
+         current-main-message (get-current-main-message uid)]
+     (log/debug "Current main message:" current-main-message)
      (loop [t (- timeout interval)]
-       (cond (< current-messages-count (-> @state/users uid :messages count))
-             (let [new-message (-> @state/users uid :messages last val)]
-               (log/infof "User %s got new Message: %s" uid (utl/msg->str new-message))
-               new-message)
-
-             (= 0 t) (throw (ex-info "No new messages!" {:timeout timeout}))
-
-             :else (do (Thread/sleep interval)
-                       (recur (- t interval))))))))
+       (let [new-main-message (get-current-main-message uid)]
+         (cond (not= current-main-message new-main-message)
+               (do (log/infof "User %s got new main Message: %s" uid (utl/msg->str new-main-message))
+                   new-main-message)
+               
+               (= 0 t) (throw (ex-info "No new main Message!" {:timeout timeout}))
+               
+               :else (do (Thread/sleep interval)
+                         (recur (- t interval)))))))))

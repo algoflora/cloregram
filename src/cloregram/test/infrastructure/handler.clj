@@ -7,15 +7,15 @@
 
 (defmethod handler :setWebhook
   [{:keys [url]}]
+  (log/debug "Incoming :setWebhook" url)
   (reset! state/webhook-address url)
   (log/info "Webhook address saved")
-  (log/debug "Webhook address:" @state/webhook-address)
   {:status 200
    :body {:ok true}})
 
 (defmethod handler :getWebhookInfo
   [_]
-  (log/debug "Getting Webhook info...")
+  (log/debug "Incoming :getWebhookInfo")
   {:status 200
    :body {:ok true
           :result {:url @state/webhook-address
@@ -24,7 +24,7 @@
 
 (defmethod handler :sendMessage
   [msg]
-  (log/debug "Got message" msg)
+  (log/debug "Incoming :sendMessage" msg)
   (let [user (get-user-by-id (:chat_id msg))
         uid (-> user :username keyword)
         mid (:msg-id (inc-msg-id uid))]
@@ -34,3 +34,24 @@
     {:status 200
      :body {:ok true
             :result (assoc msg :message_id mid)}}))
+
+(defn- update-text
+  [uid msg]
+  (swap! state/users
+         (fn [users]
+           (update-in users
+                      [uid :messages]
+                      #(-> %
+                           (assoc-in [(:message_id msg) :text] (:text msg))
+                           (assoc-in [(:message_id msg) :reply_markup] (:reply_markup msg)))))))
+
+(defmethod handler :editMessageText
+  [msg]
+  (log/debug "Incoming :editMessageText" msg)
+  (let [user (get-user-by-id (:chat_id msg))
+        uid (-> user :username keyword)]
+    (if (contains? (:messages user) (:message_id msg))
+      (update-text uid msg)
+      (throw (ex-info "No message to edit for user" {:user user
+                                                     :message-id (:message_id msg)
+                                                     :message msg})))))

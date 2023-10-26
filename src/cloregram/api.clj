@@ -49,14 +49,13 @@
   (cond-> argm
     true (assoc :chat_id (:user/id user))
     (:markdown optm) (assoc :parse_mode "Markdown")
-    (to-edit? optm user) (assoc :message_id (:msg-id user))))
+    (to-edit? optm user) (assoc :message_id (:user/msg-id user))))
 
 (defmulti ^:private send-to-chat (fn [& args] (identity (first args))))
 
 (defmethod send-to-chat :message
   [_ user text kbd optm]
   (let [argm (prepare-arguments-map {:text text :reply_markup kbd} optm user)
-        _ (log/warn optm user)
         func (if (to-edit? optm user)
                tbot/edit-message-text tbot/send-message)
         new-msg (utl/api-wrap func (bot) argm)
