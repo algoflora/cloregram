@@ -1,4 +1,4 @@
-(defproject cloregram "0.2.3"
+(defproject cloregram "0.2.4"
   :description "Clojure/Datomic framework for making complex Telegram Bots/Applications"
   :url "http://cloregram.io"
   :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"
