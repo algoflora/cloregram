@@ -1,7 +1,7 @@
 (ns cloregram.handler
   (:require [cloregram.system.state :refer [bot system]]
-            [cloregram.users :as u]
             [cloregram.api :as api]
+            [cloregram.users :as u]
             [cloregram.utils :as utl]
             [cloregram.callbacks :as clb]
             [dialog.logger :as log]
@@ -30,27 +30,8 @@
     (clb/call user (-> cbq :data java.util.UUID/fromString))))
 
 (defn common
-  [{:keys [user message]}]
-  (api/send-message user
-                    (str (:user/username user) " " (str/upper-case (:text message)))
-                    [[["+" 'cloregram.handler/increment [0]]["-" 'cloregram.handler/decrement [0]]]]))
-
-(defn increment
-  [n user]
-  (let [n (inc n)]
-    (api/send-message user (format "Incremented: %d" n)
-                      [[["+" 'cloregram.handler/increment [n]]["-" 'cloregram.handler/decrement [n]]]
-                       [["Temp" 'cloregram.handler/temp []]]])))
-
-(defn decrement
-  [n user]
-  (let [n (dec n)]
-    (api/send-message user (format "Decremented: %d" n)
-                    [[["+" 'cloregram.handler/increment [n]]["-" 'cloregram.handler/decrement [n]]]])))
-
-(defn temp
-  [user]
-  (api/send-message user "Temp message" [] :temp))
+  [{:keys [user]}]
+  (api/send-message user "Hello from Cloregram Framework!" []))
 
 (defn delete-message
   [mid user]

@@ -1,12 +1,16 @@
 (ns cloregram.core-test
   (:require [clojure.test :refer [is use-fixtures deftest testing]]
             [cloregram.test.fixtures :as fix]
+            [cloregram.fixtures]
             [cloregram.test.infrastructure.users :as u]
             [cloregram.test.infrastructure.client :as c]
             [cloregram.test.infrastructure.inspector :as i]
             [dialog.logger :as log]))
 
-(use-fixtures :once fix/use-test-environment fix/setup-schema)
+(use-fixtures :once
+  fix/use-test-environment
+  fix/setup-schema
+  cloregram.fixtures/set-test-common-handler)
 
 (deftest core-test
   (testing "Initialization"
