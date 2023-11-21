@@ -39,10 +39,20 @@
   [n user]
   (let [n (inc n)]
     (api/send-message user (format "Incremented: %d" n)
-                      [[["+" 'cloregram.handler/increment [n]]["-" 'cloregram.handler/decrement [n]]]])))
+                      [[["+" 'cloregram.handler/increment [n]]["-" 'cloregram.handler/decrement [n]]]
+                       [["Temp" 'cloregram.handler/temp []]]])))
 
 (defn decrement
   [n user]
   (let [n (dec n)]
     (api/send-message user (format "Decremented: %d" n)
                     [[["+" 'cloregram.handler/increment [n]]["-" 'cloregram.handler/decrement [n]]]])))
+
+(defn temp
+  [user]
+  (api/send-message user "Temp message" [] :temp))
+
+(defn delete-message
+  [mid user]
+  (utl/api-wrap tbot/delete-message (bot) {:chat_id (:user/id user)
+                                           :message_id mid}))

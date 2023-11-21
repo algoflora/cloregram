@@ -10,5 +10,5 @@
 (defn check-btns
   [msg btns]
   (let [bs (-> msg :reply_markup utl/simplify-reply-markup)]
-    (is (= bs btns))
+    (is (= btns bs))
     msg))

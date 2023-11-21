@@ -6,7 +6,7 @@
             [cloregram.system.state :refer [system]]
             [cloregram.utils :refer [keys-hyphens->underscores]]
             [cloregram.test.infrastructure.state :as state]
-            [cloregram.test.infrastructure.users :as users]))
+            [cloregram.test.infrastructure.users :as u]))
 
 (defn- send-update
   [data]
@@ -24,7 +24,7 @@
 
 (defn- send-message
   [uid data]
-  (let [user (users/inc-msg-id uid)]
+  (let [user (u/inc-msg-id uid)]
     (send-update {:message (merge {:message_id (:msg-id user)
                                    :from (-> user
                                              (dissoc :msg-id :messages)
@@ -50,8 +50,14 @@
    (log/infof "User %s sent message \"%s\"" uid text)
    (send-message uid {:text text :entities entities})))
 
+(defn- assert-uid 
+  [msg uid]
+  (let [user (u/get-user-by-uid uid)]
+    (assert (= (:chat_id msg) (:id user)) (format "User %s tried to push button in message %s" user msg))))
+
 (defn press-btn
   ([msg uid row col]
+   (assert-uid msg uid)
    (log/infof "User %s pressed button %d/%d" uid row col)
    (let [cbq (-> (:reply_markup msg)
                  (nth (dec row))
@@ -59,6 +65,7 @@
                  (:callback_query))]
      (send-callback-query uid cbq)))
   ([msg uid btn]
+   (assert-uid msg uid)
    (log/infof "User %s pressed button \"%s\"" uid btn)
    (let [cbq (->> (:reply_markup msg)
                   (flatten)

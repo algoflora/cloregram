@@ -8,7 +8,7 @@
   (swap! state/users #(update-in % [uid :msg-id] inc))
   (uid @state/users))
 
-(defn add ; TODO: NOT completely thread safe!
+(defn add ; TODO: NOT completely threadsafe!
   [uid]
   (let [user {:id (inc (count @state/users))
               :msg-id 1
@@ -46,7 +46,7 @@
     (msgs msg-id)))
 
 (defn wait-main-message
-  ([uid] (wait-main-message uid 1000))
+  ([uid] (wait-main-message uid 2000))
   ([uid timeout]
    (log/infof "Waiting main message for User %s (timeout: %d)" uid timeout)
    (let [interval 100
@@ -62,3 +62,47 @@
                
                :else (do (Thread/sleep interval)
                          (recur (- t interval)))))))))
+
+(defn- get-current-messages-count
+  [uid]
+  (-> uid
+      (@state/users)
+      :messages
+      count))
+
+(defn count-temp-messages
+  [uid]
+  (let [user (uid @state/users)
+        msg-id (:main-msg-id user)
+        msgs (-> user :messages (dissoc msg-id))]
+    (count msgs)))
+
+(defn get-last-temp-message
+  [uid]
+  (let [user (uid @state/users)
+        msg-id (:main-msg-id user)
+        msgs (-> user :messages (dissoc msg-id))]
+    (-> msgs last val)))
+
+(defn wait-temp-message
+  "Use only when Main Message already is in conversation!"
+  ([uid] (wait-temp-message uid 2000))
+  ([uid timeout]
+   (log/infof "Waiting temp message for User %s (timeout: %d)" uid timeout)
+   (let [interval 100
+         current-tmp-msg-count (count-temp-messages uid)]
+     (log/debug "Current temp messages count:" current-tmp-msg-count)
+     (loop [t (- timeout interval)]
+       (let [new-tmp-msg-count (count-temp-messages uid)]
+         (cond (< current-tmp-msg-count new-tmp-msg-count)
+               (let [new-tmp-msg (get-last-temp-message uid)]
+                 (log/infof "User %s got new temp Message: %s" uid (utl/msg->str new-tmp-msg))
+                 new-tmp-msg)
+               
+               (= 0 t) (throw (ex-info "No new temp Message!" {:timeout timeout}))
+               
+               :else (do (Thread/sleep interval)
+                         (recur (- t interval)))))))))
+
+
+

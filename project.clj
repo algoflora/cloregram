@@ -29,3 +29,5 @@
   :profiles {:test {:dependencies [[eftest "0.6.0"]]}
              :uberjar {:aot :all
                        :jvm-opts ["-Dclojure.compiler.direct-linking=true"]}})
+
+

@@ -38,8 +38,8 @@
   (let [mapf #(create-key % user)]
     (cond->> kbd
       true (map #(map mapf %))
-      (:temp optm) (conj [{:text "✖️"
-                           :callback_query (str (java.util.UUID/randomUUID))}]))))
+      (:temp optm) (#(conj % [{:text "✖️"
+                               :callback_query (str (java.util.UUID/randomUUID))}])))))
 
 (defn- to-edit?
   [optm user] (and (not (:temp optm)) (some? (:user/msg-id user))))
@@ -77,4 +77,3 @@
 (defn send-message
   [user text kbd & opts]
   (apply prepare-and-send :message user text kbd opts))
-
