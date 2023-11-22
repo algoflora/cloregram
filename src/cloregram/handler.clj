@@ -13,14 +13,16 @@
 
 (defmethod main-handler :message
   [upd]
-  (let [msg (:message upd)
-        user (u/get-or-create (:from msg))
-        hdata (:user/handler user)
-        handler (-> hdata first utl/resolver)
-        args (-> hdata second edn/read-string (assoc :user user :message msg))]
-    (log/infof "Handling message %s from User %s" (utl/msg->str msg) (utl/username user)) ; TODO: info?
-    (log/debugf "Calling %s with args %s" handler args)
-    (handler args)))
+  (if (= "private" (get-in upd [:message :chat :type]))
+    (let [msg (:message upd)
+          user (u/get-or-create (:from msg))
+          hdata (:user/handler user)
+          handler (-> hdata first utl/resolver)
+          args (-> hdata second edn/read-string (assoc :user user :message msg))]
+      (log/infof "Handling message %s from User %s" (utl/msg->str msg) (utl/username user)) ; TODO: info?
+      (log/debugf "Calling %s with args %s" handler args)
+      (handler args))
+    (log/warn "Message from non-private chat!" upd)))
 
 (defmethod main-handler :callback_query
   [upd]
