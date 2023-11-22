@@ -75,5 +75,14 @@
 ;;; Public API
 
 (defn send-message
+  
+  "Sends text message with content `text` and inline keyboard `kbd`  to `user`.
+  Possible `opts`:
+
+  | key     | description |
+  |---------|-------------|
+  | `:temp` | Sends 'temporal' message that appears with notification under 'main' one. This message will have button to delete it
+  | `:markdown` | Messsage will use Markdown parse_mode"
+  
   [user text kbd & opts]
   (apply prepare-and-send :message user text kbd opts))
