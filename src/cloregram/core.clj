@@ -20,7 +20,15 @@
     {}))
 
 (defn run
-  "Main function"
+
+  "Main function. Configs used overriding each other:
+
+  - default config of cloregram framework
+  - config from config.edn resource of project
+  - config from .edn file provided as argument
+
+  Detailed config reference will be provided later."
+  
   [& args]
   (log/debug "run function args:" args)
   (let [config-arg (-> args first get-conf)
