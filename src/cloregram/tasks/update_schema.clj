@@ -1,14 +1,15 @@
 (ns cloregram.tasks.update-schema
-    (:require [datomic.api :as d]
-              [dialog.logger :as log]
-              [cloregram.db :as db]
-              [clojure.java.io :as io]
-              [clojure.edn :as edn])
-    (:gen-class))
+  (:require [datomic.api :as d]
+            [dialog.logger :as log]
+            [cloregram.db :as db]
+            [clojure.java.io :as io]
+            [clojure.edn :as edn]
+            [cloregram.schema :refer [schema]])
+  (:gen-class))
 
-(defn- read-schema-folder
-  [path]
-  (when-let [resource (io/resource path)]
+(defn- read-user-schema
+  []
+  (when-let [resource (io/resource "schema/")]
     (->> resource
          (.getFile)
          (io/file)
@@ -19,15 +20,13 @@
 
 (defn update-schema
   "Updates schema with NEW data. Not removing unactual." ; TODO: Develop full update
-  ([] (update-schema []))
-  ([entities]
-   (log/info "Updating schema...")
-   (let [cloregram-schema (read-schema-folder "cloregram-schema/")
-         user-schema (read-schema-folder "schema/")
-         schema (concat cloregram-schema user-schema)]
-     (log/debug "Schema:" schema)
-     (let [f (d/transact (db/conn) schema)]
-       (log/info "Schema successfully updated with" (count (:tx-data @f)) "Datoms")))))
+  []
+  (log/info "Updating schema...")
+  (let [user-schema (read-user-schema)
+        full-schema (concat schema user-schema)]
+    (log/debug "Schema:" full-schema)
+    (let [f (d/transact (db/conn) full-schema)]
+      (log/info "Schema successfully updated with" (count (:tx-data @f)) "Datoms"))))
 
 (defn -main
   []
