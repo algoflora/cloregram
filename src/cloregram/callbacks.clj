@@ -30,9 +30,6 @@
   [user ^java.util.UUID uuid]
   (let [callback (load-callback user uuid)
         func (:callback/function callback)
-        args (-> callback :callback/args edn/read-string)
-        args (cond-> args
-               (vector? args) (conj user)
-               (map? args) (-> (merge {:user user}) vector))]
+        args (-> callback :callback/args edn/read-string (assoc :user user))]
     (log/debugf "Calling %s with args %s" func args)
-    (apply (utl/resolver func) args)))
+    ((utl/resolver func) args)))

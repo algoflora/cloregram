@@ -7,21 +7,21 @@
   [{:keys [user message]}]
   (api/send-message user
                     (str (:user/username user) " " (str/upper-case (:text message)))
-                    [[["+" 'cloregram.test-handlers/increment [0]]["-" 'cloregram.test-handlers/decrement [0]]]]))
+                    [[["+" 'cloregram.test-handlers/increment {:n 0}]["-" 'cloregram.test-handlers/decrement {:n 0}]]]))
 
 (defn increment
-  [n user]
+  [{:keys [n user]}]
   (let [n (inc n)]
     (api/send-message user (format "Incremented: %d" n)
-                      [[["+" 'cloregram.test-handlers/increment [n]]["-" 'cloregram.test-handlers/decrement [n]]]
-                       [["Temp" 'cloregram.test-handlers/temp []]]])))
+                      [[["+" 'cloregram.test-handlers/increment {:n n}]["-" 'cloregram.test-handlers/decrement {:n n}]]
+                       [["Temp" 'cloregram.test-handlers/temp nil]]])))
 
 (defn decrement
-  [n user]
+  [{:keys [n user]}]
   (let [n (dec n)]
     (api/send-message user (format "Decremented: %d" n)
-                    [[["+" 'cloregram.test-handlers/increment [n]]["-" 'cloregram.test-handlers/decrement [n]]]])))
+                    [[["+" 'cloregram.test-handlers/increment {:n n}]["-" 'cloregram.test-handlers/decrement {:n n}]]])))
 
 (defn temp
-  [user]
+  [{:keys [user]}]
   (api/send-message user "Temp message" [] :temp))

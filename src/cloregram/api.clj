@@ -62,7 +62,7 @@
         new-msg-id (:message_id new-msg)]
     (when (:temp optm)
       (clb/create (-> new-msg :reply_markup last first :callback_query java.util.UUID/fromString)
-                  user 'cloregram.handler/delete-message [new-msg-id]))
+                  user 'cloregram.handler/delete-message {:mid new-msg-id}))
     (when (and (not (:temp optm)) (not= new-msg-id (:msg-id user)))
       (u/set-msg-id user new-msg-id))))
 

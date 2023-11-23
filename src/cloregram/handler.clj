@@ -36,6 +36,6 @@
   (api/send-message user "Hello from Cloregram Framework!" []))
 
 (defn delete-message
-  [mid user]
+  [{:keys [mid user]}]
   (utl/api-wrap tbot/delete-message (bot) {:chat_id (:user/id user)
                                            :message_id mid}))
