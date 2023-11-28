@@ -31,3 +31,9 @@
   (log/debugf "Setting msg-id=%d for User %s" msg-id (utl/username user))
   (d/transact (db/conn) [{:user/id (:user/id user)
                           :user/msg-id msg-id}]))
+
+(defn set-handler
+  [user handler args]
+  (log/debugf "Setting handler %s with arguments %s for User %s" handler args user)
+  (d/transact (db/conn) [{:user/id (:user/id user)
+                          :user/handler [handler args]}]))

@@ -18,7 +18,10 @@
           user (u/get-or-create (:from msg))
           hdata (:user/handler user)
           handler (-> hdata first utl/resolver)
+          common-handler (symbol (str (:name (utl/get-project-info)) ".handler/common"))
           args (-> hdata second edn/read-string (assoc :user user :message msg))]
+      (when (not= handler common-handler)
+        (u/set-handler user common-handler nil))
       (log/infof "Handling message %s from User %s" (utl/msg->str msg) (utl/username user)) ; TODO: info?
       (log/debugf "Calling %s with args %s" handler args)
       (handler args))
