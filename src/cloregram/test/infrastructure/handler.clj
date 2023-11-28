@@ -56,6 +56,7 @@
   (let [[user uid] (get-user-info msg)]
     (if (contains? (:messages user) (:message_id msg))
       (update-text uid msg)
+      ;; TODO: Handle situation when User deleted message manually
       (throw (ex-info "No message to edit for user!" {:user user
                                                      :message-id (:message_id msg)
                                                      :message msg})))))

@@ -42,7 +42,7 @@
   [uid]
   (let [user (uid @state/users)
         msgs (:messages user)
-        msg-id (:msg-id user)]
+        msg-id (:main-msg-id user)]
     (msgs msg-id)))
 
 (defn wait-main-message
