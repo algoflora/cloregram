@@ -61,4 +61,6 @@
   (let [ns (-> sym namespace symbol)
         nm (-> sym name symbol)]
     (require ns)
-    (ns-resolve ns nm)))
+    (if-let [resolved (ns-resolve ns nm)]
+      resolved
+      (log/error "Callback not resolved:" sym))))
