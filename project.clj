@@ -4,7 +4,7 @@
   :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"
             :url "https://www.eclipse.org/legal/epl-2.0/"}
 
-  :java-cmd "/opt/homebrew/opt/openjdk/bin/java"
+  ;:java-cmd "/opt/homebrew/opt/openjdk/bin/java"
   
   :dependencies [[org.clojure/clojure "1.11.1"]
                  [integrant "0.8.1"]

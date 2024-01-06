@@ -7,7 +7,7 @@
 
 (defmethod handler :setWebhook
   [{:keys [url secret_token]}]
-  (log/debug "Incoming :setWebhook" url secret_!token)
+  (log/debug "Incoming :setWebhook" url secret_token)
   (reset! state/webhook-address url)
   (reset! state/webhook-token secret_token)
   (log/info "Webhook address and token saved")
