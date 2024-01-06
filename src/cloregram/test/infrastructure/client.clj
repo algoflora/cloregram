@@ -14,7 +14,7 @@
         upd (merge {:update_id upd-id} data)]
     (log/debug (format "Sending update to %s: %s" @state/webhook-address upd))
     (post @state/webhook-address {:body (generate-string upd)
-                                  :headers {"X-Telegram-Bot-Api-Secret-Token" (:bot/webhook-key @system)
+                                  :headers {"X-Telegram-Bot-Api-Secret-Token" @state/webhook-token
                                             "Content-Type" "application/json"}}
           (fn async-callback [{:keys [status error] :as resp}]
             (cond

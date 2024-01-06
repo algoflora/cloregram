@@ -2,6 +2,8 @@
 
 (defonce webhook-address (atom nil))
 
+(defonce webhook-token (atom ""))
+
 (defonce update-id (atom 0))
 
 (defonce users (atom {}))

@@ -1,4 +1,4 @@
-(defproject cloregram "0.2.16.5"
+(defproject cloregram "0.3.3.3"
   :description "Clojure/Datomic framework for making complex Telegram Bots/Applications"
   :url "https://cloregram.io"
   :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"
@@ -11,22 +11,24 @@
                  [com.amperity/dialog "2.0.115"]
 
                  [telegrambot-lib "2.10.0"]
-                 [http-kit "2.7.0"]
+
+                 [ring/ring-jetty-adapter "1.9.2"]
+
                  [nano-id "1.0.0"]
                  [cheshire "5.11.0"]
                  [tick "0.7.5"]
                  
-                 [com.datomic/peer "1.0.6735"]
-
-                 [compojure "1.7.0"]
-                 [ring/ring-json "0.5.1"]]
+                 [com.datomic/peer "1.0.7075"]]
   
   :plugins [[lein-eftest "0.6.0"]]
 
   :main ^:skip-aot cloregram.core
   
   :target-path "target/%s"
-  :profiles {:test {:dependencies [[eftest "0.6.0"]]}
+  :profiles {:test {:dependencies [[eftest "0.6.0"]
+                                   [http-kit "2.7.0"]
+                                   [compojure "1.7.0"]
+                                   [ring/ring-json "0.5.1"]]}
              :uberjar {:aot :all
                        :jvm-opts ["-Dclojure.compiler.direct-linking=true"]}})
 

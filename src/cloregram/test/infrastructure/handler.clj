@@ -6,10 +6,11 @@
 (defmulti handler #(keyword (:endpoint %)))
 
 (defmethod handler :setWebhook
-  [{:keys [url]}]
-  (log/debug "Incoming :setWebhook" url)
+  [{:keys [url secret_token]}]
+  (log/debug "Incoming :setWebhook" url secret_!token)
   (reset! state/webhook-address url)
-  (log/info "Webhook address saved")
+  (reset! state/webhook-token secret_token)
+  (log/info "Webhook address and token saved")
   {:status 200
    :body {:ok true}})
 

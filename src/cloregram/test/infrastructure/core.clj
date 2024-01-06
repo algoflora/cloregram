@@ -6,6 +6,7 @@
             [compojure.core :refer [defroutes POST context]]
             [ring.middleware.json :refer [wrap-json-params]]
             [ring.middleware.keyword-params :refer [wrap-keyword-params]]
+            [ring.middleware.multipart-params :refer [wrap-multipart-params]]
             [cheshire.core :refer [generate-string]]
             [cloregram.test.infrastructure.handler :refer [handler]]))
 
@@ -30,6 +31,7 @@
       logging-middleware
       wrap-keyword-params
       wrap-json-params
+      wrap-multipart-params
       json-reponse-body-middleware))
 
 (defmethod ig/init-key :test/server

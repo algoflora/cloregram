@@ -3,7 +3,7 @@
             [cheshire.core :refer [parse-string]]
             [dialog.logger :as log]
             [nano-id.core :refer [nano-id]]
-            [org.httpkit.server :refer [run-server]]
+            [ring.adapter.jetty :refer [run-jetty]]
             [datomic.api :as d]
             [telegrambot-lib.core :as tbot]
             [cloregram.system.state :refer [system]]
@@ -34,12 +34,19 @@
     (log/debug "Incoming request:" req)
     (let [headers (:headers req)
           upd (-> req :body slurp (parse-string true))]
-      (if (= webhook-key (headers (clojure.string/lower-case "X-Telegram-Bot-Api-Secret-Token")))
-        (do (main-handler upd)
+      (if (or (= webhook-key (headers "X-Telegram-Bot-Api-Secret-Token"))
+              (= webhook-key (headers (clojure.string/lower-case "X-Telegram-Bot-Api-Secret-Token"))))
+        (do (log/debug "DOING MAIN-HANDLER")
+            (main-handler upd)
+            (log/debug "RETURNING 200")
             {:status 200
              :headers {"Content-Type" "application/json"}
              :body "OK"})
         {:status 403}))))
+
+(defmethod ig/init-key :bot/https?
+  [_ https?]
+  https?)
 
 (defmethod ig/init-key :bot/ip
   [_ ip]
@@ -57,24 +64,43 @@
   [_ url]
   url)
 
+(defn- adjust-opts
+  [opts]
+  (let [options {:host  (:ip opts)
+                 :http? (not (:https? opts))
+                 :ssl?  (:https? opts)
+                 :join? false}]
+    (cond-> options
+      (not (:https? opts)) (assoc :port (:port opts))
+      (:https? opts)       (assoc :port (inc (:port opts))
+                                  :ssl-port (:port opts)
+                                  :sni-host-check? false
+                                  :keystore (or (:keystore opts) "ssl/keystore.jks")
+                                  :key-password (or (:key-password opts) "ss-bot.keystorepass")))))
+
 (defmethod ig/init-key :bot/server
   [_ {:keys [options handler]}]
-  (when-let [server (run-server handler options)]
+  (when-let [server (run-jetty handler (adjust-opts options))]
     (log/info (format "Server started with options %s" options))
     (log/debug "Server:" server)
     server))
 
 (defmethod ig/halt-key! :bot/server
   [_ server]
-  (server :timeout 3)
+  (.stop server)
   (log/info "Server shutted down"))
 
 (defmethod ig/init-key :bot/instance
-  [_ {:keys [api-url token webhook-key ip port]}]
+  [_ {:keys [api-url token webhook-key https? ip port public-key]}]
   (let [_config {:bot-token token}
         config (merge _config (if (some? api-url) {:bot-api api-url} {}))
-        bot (tbot/create config)]
-    (api-wrap tbot/set-webhook bot {:url (format "http://%s:%d" ip port)})
+        bot (tbot/create config)
+        schema (if https? "https" "http")]
+    (api-wrap tbot/set-webhook bot
+              (cond-> {:content-type :multipart
+                       :url (format "%s://%s:%d" schema ip port)
+                       :secret_token webhook-key}
+                https? (assoc :certificate (clojure.java.io/file (or public-key "ssl/cert.pem")))))
     (log/info "Webhook is set")
     (log/debug "Webhook info:" (api-wrap tbot/get-webhook-info bot))
     bot))
