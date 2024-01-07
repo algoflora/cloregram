@@ -4,7 +4,8 @@
    [dialog.logger :as log]
    [integrant.core :as ig]
    [cloregram.utils :refer [deep-merge]]
-   [cloregram.system.init :refer [startup shutdown!]])
+   [cloregram.system.init :refer [startup shutdown!]]
+   [cloregram.tasks.update-schema :refer [update-schema]])
   (:gen-class))
 
 (Thread/setDefaultUncaughtExceptionHandler
@@ -39,4 +40,5 @@
     (log/debug "Config:" config)
     (.addShutdownHook (Runtime/getRuntime) (Thread. shutdown!))
     (startup config)
+    (update-schema)
     (log/debug "System initialized:" @cloregram.system.state/system)))

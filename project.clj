@@ -1,10 +1,8 @@
-(defproject cloregram "0.3.3.3"
+(defproject cloregram "0.3.4"
   :description "Clojure/Datomic framework for making complex Telegram Bots/Applications"
   :url "https://cloregram.io"
   :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"
             :url "https://www.eclipse.org/legal/epl-2.0/"}
-
-  ;:java-cmd "/opt/homebrew/opt/openjdk/bin/java"
   
   :dependencies [[org.clojure/clojure "1.11.1"]
                  [integrant "0.8.1"]
@@ -23,9 +21,6 @@
   :plugins [[lein-eftest "0.6.0"]]
 
   :main ^:skip-aot cloregram.core
-
-  :aliases {"db-reset" ["run" "-m" "magic-tray-bot.tasks.reset-db"]
-            "sch-up" ["run" "-m" "magic-tray-bot.tasks.update-schema"]}
   
   :target-path "target/%s"
   :profiles {:test {:dependencies [[eftest "0.6.0"]

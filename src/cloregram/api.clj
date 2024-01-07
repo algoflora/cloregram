@@ -42,20 +42,21 @@
                                :callback_query (str (java.util.UUID/randomUUID))}])))))
 
 (defn- to-edit?
-  [optm user] (and (not (:temp optm)) (some? (:user/msg-id user))))
+  [optm user] (and (not (:temp optm)) (some? (:user/msg-id user)) (not= 0 (:user/msg-id user))))
 
 (defn- prepare-arguments-map
-  [argm optm user]
+  [argm kbd optm user]
   (cond-> argm
-    true (assoc :chat_id (:user/id user))
-    (:markdown optm) (assoc :parse_mode "Markdown")
+    true                 (assoc :chat_id (:user/id user))
+    (not-empty kbd)      (assoc :reply_markup kbd)
+    (:markdown optm)     (assoc :parse_mode "Markdown")
     (to-edit? optm user) (assoc :message_id (:user/msg-id user))))
 
 (defmulti ^:private send-to-chat (fn [& args] (identity (first args))))
 
 (defmethod send-to-chat :message
   [_ user text kbd optm]
-  (let [argm (prepare-arguments-map {:text text :reply_markup kbd} optm user)
+  (let [argm (prepare-arguments-map {:text text} kbd optm user)
         func (if (to-edit? optm user)
                tbot/edit-message-text tbot/send-message)
         new-msg (utl/api-wrap func (bot) argm)

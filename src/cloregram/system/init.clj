@@ -36,9 +36,7 @@
           upd (-> req :body slurp (parse-string true))]
       (if (or (= webhook-key (headers "X-Telegram-Bot-Api-Secret-Token"))
               (= webhook-key (headers (clojure.string/lower-case "X-Telegram-Bot-Api-Secret-Token"))))
-        (do (log/debug "DOING MAIN-HANDLER")
-            (main-handler upd)
-            (log/debug "RETURNING 200")
+        (do (main-handler upd)
             {:status 200
              :headers {"Content-Type" "application/json"}
              :body "OK"})

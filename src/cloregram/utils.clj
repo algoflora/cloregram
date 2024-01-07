@@ -48,7 +48,7 @@
   [user]
   (or (:user/username user) (str "id" (:user/id user))))
 
-(defn get-project-info
+(defmacro get-project-info
   []
   (let [[_ ga version] (read-string (slurp "project.clj"))
         [ns name version] [(namespace ga) (name ga) version]]
