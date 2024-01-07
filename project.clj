@@ -1,4 +1,4 @@
-(defproject cloregram "0.3.4"
+(defproject cloregram "0.3.5"
   :description "Clojure/Datomic framework for making complex Telegram Bots/Applications"
   :url "https://cloregram.io"
   :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"
@@ -14,7 +14,6 @@
 
                  [nano-id "1.0.0"]
                  [cheshire "5.11.0"]
-                 [tick "0.7.5"]
                  
                  [com.datomic/peer "1.0.7075"]]
   

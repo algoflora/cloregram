@@ -1,7 +1,6 @@
 (ns cloregram.test.infrastructure.client
   (:require [dialog.logger :as log]
             [cheshire.core :refer [generate-string]]
-            [tick.core :as t]
             [org.httpkit.client :refer [post]]
             [cloregram.system.state :refer [system]]
             [cloregram.utils :refer [keys-hyphens->underscores]]
@@ -30,7 +29,6 @@
                                              (dissoc :msg-id :messages)
                                              (assoc :is-bot true)
                                              (keys-hyphens->underscores))
-                                   :date (t/millis (t/between (t/epoch) (t/inst)))
                                    :chat {:id (:id user)
                                           :type "private"}} data)})))
 
