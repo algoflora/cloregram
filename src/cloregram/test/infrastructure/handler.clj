@@ -49,18 +49,22 @@
                       [uid :messages]
                       #(-> %
                            (assoc-in [(:message_id msg) :text] (:text msg))
-                           (assoc-in [(:message_id msg) :reply_markup] (:reply_markup msg)))))))
+                           (assoc-in [(:message_id msg) :reply_markup] (:reply_markup msg))))))
+  (get-in @state/users [uid :messages (:message_id msg)]))
 
 (defmethod handler :editMessageText
   [msg]
   (log/debug "Incoming :editMessageText" msg)
   (let [[user uid] (get-user-info msg)]
-    (if (contains? (:messages user) (:message_id msg))
-      (update-text uid msg)
-      ;; TODO: Handle situation when User deleted message manually
+    (when (not (contains? (:messages user) (:message_id msg)))
       (throw (ex-info "No message to edit for user!" {:user user
                                                      :message-id (:message_id msg)
-                                                     :message msg})))))
+                                                     :message msg})))
+    (let [new-msg (update-text uid msg)]
+      {:status 200
+       :body {:ok true
+              :result new-msg}})))
+    ;; TODO: Handle situation when User deleted message manually
 
 (defn- delete-msg
   [uid msg]
@@ -72,8 +76,10 @@
   [msg]
   (log/debug "Incoming :deleteMessage" msg)
   (let [[user uid] (get-user-info msg)]
-    (if (contains? (:messages user) (:message_id msg))
-      (delete-msg uid msg)
+    (when (not (contains? (:messages user) (:message_id msg)))
       (throw (ex-info "No message to delete for user!" {:user user
                                                         :message-id (:message_id msg)
-                                                        :message msg})))))
+                                                        :message msg})))
+    (delete-msg uid msg)
+    {:status 200
+     :body {:ok true}}))
