@@ -2,7 +2,6 @@
   (:require [dialog.logger :as log]
             [cheshire.core :refer [generate-string]]
             [org.httpkit.client :refer [post]]
-            [cloregram.system.state :refer [system]]
             [cloregram.utils :refer [keys-hyphens->underscores]]
             [cloregram.test.infrastructure.state :as state]
             [cloregram.test.infrastructure.users :as u]))
@@ -23,14 +22,17 @@
 
 (defn- send-message
   [uid data]
-  (let [user (u/inc-msg-id uid)]
-    (send-update {:message (merge {:message_id (:msg-id user)
-                                   :from (-> user
-                                             (dissoc :msg-id :messages)
-                                             (assoc :is-bot true)
-                                             (keys-hyphens->underscores))
-                                   :chat {:id (:id user)
-                                          :type "private"}} data)})))
+  (let [user (u/inc-msg-id uid)
+        msg {:message (merge {:message_id (:msg-id user)
+                              :from (-> user
+                                        (dissoc :msg-id :messages)
+                                        (assoc :is-bot true)
+                                        (keys-hyphens->underscores))
+                              :chat {:id (:id user)
+                                     :type "private"}} data)}]
+    (swap! state/users (fn [users]
+                         (update-in users [uid :messages] #(assoc % (get-in msg [:message :message_id]) {:text (get-in msg [:message :text])}))))
+    (send-update msg)))
 
 (defn- send-callback-query
   [uid cbq]
