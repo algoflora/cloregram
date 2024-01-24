@@ -25,4 +25,6 @@
                 :ip #ig/ref :bot/ip
                 :port #ig/ref :bot/port
                 ;; :public-key PUBLIC_KEY
-                }}
+                }
+
+ :project/config {}}

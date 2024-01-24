@@ -46,6 +46,10 @@
   [_ https?]
   https?)
 
+(defmethod ig/init-key :bot/admins
+  [_ admins]
+  admins)
+
 (defmethod ig/init-key :bot/ip
   [_ ip]
   ip)
@@ -114,3 +118,8 @@
   [_ conn]
   (log/info "Releasing database connection...")
   (d/release conn))
+
+(defmethod ig/init-key :project/config
+  [_ config]
+  (log/info "Using project config:" config)
+  config)

@@ -4,6 +4,10 @@
             [datomic.api :as d]
             [cloregram.utils :as utl]))
 
+(defn get-by-username
+  [uname]
+  (d/pull (db/db) '[*] [:user/username uname]))
+
 (defn get-or-create
   [udata]
   (let [user (d/pull (db/db) '[*] [:user/id (:id udata)])]

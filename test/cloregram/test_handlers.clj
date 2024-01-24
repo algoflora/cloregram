@@ -13,8 +13,8 @@
   [{:keys [n user]}]
   (let [n (inc n)]
     (api/send-message user (format "Incremented: %d" n)
-                      [[["+" 'cloregram.test-handlers/increment {:n n}]["-" 'cloregram.test-handlers/decrement {:n n}]]
-                       [["Temp" 'cloregram.test-handlers/temp nil]]])))
+                      [[{:text "+" :func 'cloregram.test-handlers/increment :args {:n n}}["-" 'cloregram.test-handlers/decrement {:n n}]]
+                       [["Temp" 'cloregram.test-handlers/temp {}]]])))
 
 (defn decrement
   [{:keys [n user]}]

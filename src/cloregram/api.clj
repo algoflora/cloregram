@@ -35,7 +35,7 @@
 
 (defn- prepare-keyboard
   [kbd user optm]
-  (let [mapf #(create-key % user)]
+  (let [mapf #(cond-> % (and (vector? %) (= 2 (count %))) (conj {}) true (create-key user))]
     (cond->> kbd
       true (map #(map mapf %))
       (:temp optm) (#(conj % [{:text "✖️"

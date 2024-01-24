@@ -38,7 +38,7 @@
 (defn get-user-by-uid
   [uid] (get-user-by- :username (name uid)))
 
-(defn- get-current-main-message
+(defn get-current-main-message
   [uid]
   (let [user (uid @state/users)
         msgs (:messages user)
