@@ -7,9 +7,9 @@
             [cloregram.schema :refer [schema]])
   (:gen-class))
 
-(defn- read-user-schema
-  []
-  (when-let [resource (io/resource "schema/")]
+(defn- read-dir
+  [dir]
+  (when-let [resource (io/resource dir)]
     (->> resource
          (.getFile)
          (io/file)
@@ -18,15 +18,27 @@
          (mapcat #(->> % io/reader java.io.PushbackReader. edn/read))
          (vec))))
 
+(defn- read-user-schema
+  []
+  (read-dir "schema/"))
+
+(defn- read-user-data
+  []
+  (read-dir "data/"))
+
 (defn update-schema
   "Updates schema with NEW data. Not removing unactual." ; TODO: Develop full update
   []
   (log/info "Updating schema...")
   (let [user-schema (read-user-schema)
-        full-schema (concat schema user-schema)]
+        full-schema (concat schema user-schema)
+        user-data   (read-user-data)]
     (log/debug "Schema:" full-schema)
     (let [f (d/transact (db/conn) full-schema)]
-      (log/info "Schema successfully updated with" (count (:tx-data @f)) "Datoms"))))
+      (log/info "Schema successfully updated with" (count (:tx-data @f)) "Datoms"))
+    (log/debug "Data:" user-data)
+    (let [f (d/transact (db/conn) user-data)]
+      (log/info "Data successfully updated with" (count (:tx-data @f)) "Datoms"))))
 
 (defn -main
   []
