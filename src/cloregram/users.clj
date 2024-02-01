@@ -4,6 +4,11 @@
             [datomic.api :as d]
             [cloregram.utils :as utl]))
 
+(defn get-list
+  []
+  (d/q '[:find (pull ?u [*])
+         :where [?u :user/username]] (db/db)))
+
 (defn get-by-username
   [uname]
   (d/pull (db/db) '[*] [:user/username uname]))
