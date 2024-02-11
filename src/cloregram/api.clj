@@ -3,6 +3,7 @@
             [cloregram.utils :as utl]
             [cloregram.callbacks :as clb]
             [cloregram.users :as u]
+            [cheshire.core :refer [generate-string]]
             [telegrambot-lib.core :as tbot]
             [dialog.logger :as log]))
 
@@ -41,6 +42,11 @@
       (:temp optm) (#(conj % [{:text "✖️"
                                :callback_query (str (java.util.UUID/randomUUID))}])))))
 
+(defn- create-temp-delete-callback
+  [user new-msg]
+  (clb/create (-> new-msg :reply_markup last first :callback_query java.util.UUID/fromString)
+              user 'cloregram.handler/delete-message {:mid (:message_id new-msg)}))
+
 (defn- to-edit?
   [optm user] (and (not (:temp optm)) (some? (:user/msg-id user)) (not= 0 (:user/msg-id user))))
 
@@ -62,10 +68,19 @@
         new-msg (utl/api-wrap func (bot) argm)
         new-msg-id (:message_id new-msg)]
     (when (:temp optm)
-      (clb/create (-> new-msg :reply_markup last first :callback_query java.util.UUID/fromString)
-                  user 'cloregram.handler/delete-message {:mid new-msg-id}))
+      (create-temp-delete-callback user new-msg))
     (when (and (not (:temp optm)) (not= new-msg-id (:msg-id user)))
       (u/set-msg-id user new-msg-id))))
+
+(defmethod send-to-chat :file
+  [_ user data kbd optm]
+  (let [user-mp (update user :user/id str)
+        argm (update (prepare-arguments-map {:content-type :multipart
+                                             :caption (:caption data)
+                                             :document (-> data :path slurp)} kbd optm user-mp)
+                     :reply_markup generate-string)
+        new-msg (utl/api-wrap tbot/send-document (bot) argm)]
+    (create-temp-delete-callback user new-msg)))
 
 (defn- prepare-and-send
   [type user data kbd & opts]
@@ -77,7 +92,7 @@
 
 (defn send-message
   
-  "Sends text message with content `text` and inline keyboard `kbd`  to `user`.
+  "Sends text message with content `text` and inline keyboard `kbd` to `user`.
   Possible `opts`:
 
   | key     | description |
@@ -87,3 +102,18 @@
   
   [user text kbd & opts]
   (apply prepare-and-send :message user text kbd opts))
+
+
+(defn send-document
+
+  "Sends file in `path` as a temporary messaage with caption `caption` and inline keyboard `kbd` to `user`.
+  Possible `opts`:
+
+  | key         | description |
+  |-------------|-------------|
+  | `:markdown` | Messsage will use Markdown parse_mode"
+
+  {:added "0.4"}
+
+  [user path caption kbd & opts]
+  (apply prepare-and-send :file user {:path path :caption caption} kbd :temp opts))

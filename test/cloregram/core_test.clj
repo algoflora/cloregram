@@ -2,10 +2,13 @@
   (:require [clojure.test :refer [is use-fixtures deftest testing]]
             [cloregram.test.fixtures :as fix]
             [cloregram.fixtures]
+            [cloregram.api :as api]
+            [cloregram.users :as users]
             [cloregram.test.infrastructure.users :as u]
             [cloregram.test.infrastructure.client :as c]
             [cloregram.test.infrastructure.inspector :as i]
-            [dialog.logger :as log]))
+            [dialog.logger :as log]
+            [nano-id.core :refer [nano-id]]))
 
 (use-fixtures :once
   fix/use-test-environment
@@ -49,4 +52,18 @@
     (-> (u/get-last-temp-message :testuser-1)
         (c/press-btn :testuser-1 1 1))
     (Thread/sleep 100)
-    (is (= 0 (u/count-temp-messages :testuser-1)))))
+    (is (= 0 (u/count-temp-messages :testuser-1)))
+
+    (let [path    "/tmp/ss-bot-test-file.txt"
+          content (nano-id 512)
+          user (u/get-user-by-uid :testuser-1)]
+      (spit path content)
+      (api/send-document (users/get-by-username (name :testuser-1)) path "Test Caption" [])
+
+      (is (= 1 (u/count-temp-messages :testuser-1)))
+      (-> (u/get-last-temp-message :testuser-1)
+          (i/check-document "Test Caption" content)
+          (i/check-btns [["✖️"]])
+          (c/press-btn :testuser-1 "✖️"))
+      (Thread/sleep 100)
+      (is (= 0 (u/count-temp-messages :testuser-1))))))

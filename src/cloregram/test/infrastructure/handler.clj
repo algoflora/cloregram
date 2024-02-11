@@ -1,6 +1,7 @@
 (ns cloregram.test.infrastructure.handler
   (:require [cloregram.test.infrastructure.state :as state]
             [cloregram.test.infrastructure.users :refer [get-user-by-id inc-msg-id]]
+            [cheshire.core :refer [parse-string]]
             [dialog.logger :as log]))
 
 (defmulti handler #(keyword (:endpoint %)))
@@ -83,3 +84,14 @@
     (delete-msg uid msg)
     {:status 200
      :body {:ok true}}))
+
+(defmethod handler :sendDocument
+  [msg]
+  (log/debug "Incoming :sendDocument" msg)
+  (let [msg (-> msg (update :reply_markup #(parse-string % true)) (update :chat_id #(Integer/parseInt %)))
+        [user uid] (get-user-info msg)
+        mid (:msg-id (inc-msg-id uid))]
+    (swap! state/users (fn [users] (update-in users [uid :messages] #(assoc % mid msg))))
+    {:status 200
+     :body {:ok true
+            :result (assoc msg :message_id mid)}}))
