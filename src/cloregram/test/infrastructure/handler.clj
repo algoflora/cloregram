@@ -94,4 +94,4 @@
     (swap! state/users (fn [users] (update-in users [uid :messages] #(assoc % mid msg))))
     {:status 200
      :body {:ok true
-            :result (assoc msg :message_id mid)}}))
+            :result (-> msg (assoc :message_id mid) (dissoc :document))}}))

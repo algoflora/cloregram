@@ -77,7 +77,8 @@
   (let [user-mp (update user :user/id str)
         argm (update (prepare-arguments-map {:content-type :multipart
                                              :caption (:caption data)
-                                             :document (-> data :path slurp)} kbd optm user-mp)
+                                             :document (-> data :path (java.io.File.))}
+                                            kbd optm user-mp)
                      :reply_markup generate-string)
         new-msg (utl/api-wrap tbot/send-document (bot) argm)]
     (create-temp-delete-callback user new-msg)))

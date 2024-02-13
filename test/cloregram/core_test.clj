@@ -62,7 +62,7 @@
 
       (is (= 1 (u/count-temp-messages :testuser-1)))
       (-> (u/get-last-temp-message :testuser-1)
-          (i/check-document "Test Caption" content)
+          (i/check-document "Test Caption" (.getBytes content))
           (i/check-btns [["✖️"]])
           (c/press-btn :testuser-1 "✖️"))
       (Thread/sleep 100)

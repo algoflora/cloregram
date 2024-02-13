@@ -1,7 +1,6 @@
 (ns cloregram.test.infrastructure.inspector
   (:require [clojure.test :refer [is]]
-            [cloregram.utils :as utl]
-            [dialog.logger :as log]))
+            [cloregram.utils :as utl]))
 
 (defn check-text
   [msg text]
@@ -11,7 +10,12 @@
 (defn check-document
   [msg caption content]
   (is (= caption (:caption msg)))
-  (is (= content (:document msg)))
+  (let [f  (-> msg :document :tempfile)
+        ba (-> f (.length) byte-array)
+        in (java.io.FileInputStream. f)]
+    (.read in ba)
+    (.close in)
+    (is (= (seq content) (seq ba))))
   msg)
 
 (defn check-btns
