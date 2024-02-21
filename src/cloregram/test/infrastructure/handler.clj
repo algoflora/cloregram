@@ -100,15 +100,19 @@
   [msg]
   (log/debug "Incoming :sendInvoice")
   (let [[user uid] (get-user-info msg)
-        mid (:msg-id (inc-msg-id uid))]
-    (swap! state/users (fn [users] (update-in users [uid :messages] #(assoc % mid msg))))
-    (log/debug "USERS" @state/users)
+        mid (:msg-id (inc-msg-id uid))
+        invoice (select-keys msg [:title :description :payload :provider_token :currency :prices])
+        message (-> msg
+                    (dissoc :title :description :payload :provider_token :currency :prices)
+                    (assoc :invoice invoice))]
+    (swap! state/users (fn [users] (update-in users [uid :messages] #(assoc % mid message))))
     {:status 200
      :body {:ok true
-            :result (assoc msg :message_id mid)}}))
+            :result (assoc message :message_id mid)}}))
 
 (defmethod handler :answerPreCheckoutQuery
   [msg]
   (log/debug "Incoming :answerPreCheckoutQuery" msg)
+  (log/debug "PRE CHECKOUT QUOTE" msg)
   {:status 200
    :body true})

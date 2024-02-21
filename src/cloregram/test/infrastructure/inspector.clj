@@ -20,7 +20,7 @@
 
 (defn check-invoice
   [msg expected]
-  (is (= (select-keys msg [:title :description :payload :provider_token :currency :prices]) expected))
+  (is (= (:invoice msg) expected))
   msg)
 
 (defn check-btns
