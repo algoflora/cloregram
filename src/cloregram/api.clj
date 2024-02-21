@@ -39,7 +39,7 @@
   (let [mapf #(cond-> % (and (vector? %) (= 2 (count %))) (conj {}) true (create-key user))]
     (cond->> kbd
       true (map #(map mapf %))
-      (:temp optm) (#(conj % [{:text "✖️"
+      (:temp optm) (#(conj (vec %) [{:text "✖️"
                                :callback_query (str (java.util.UUID/randomUUID))}])))))
 
 (defn- create-temp-delete-callback
@@ -83,6 +83,12 @@
         new-msg (utl/api-wrap tbot/send-document (bot) argm)]
     (create-temp-delete-callback user new-msg)))
 
+(defmethod send-to-chat :invoice
+  [_ user data kbd optm]
+  (let [argm (prepare-arguments-map data kbd optm user)
+        new-msg (utl/api-wrap tbot/send-invoice (bot) argm)]
+    (create-temp-delete-callback user new-msg)))
+
 (defn- prepare-and-send
   [type user data kbd & opts]
   (let [optm (prepare-options-map opts)
@@ -98,7 +104,7 @@
 
   | key     | description |
   |---------|-------------|
-  | `:temp` | Sends 'temporal' message that appears with notification under 'main' one. This message will have button to delete it
+  | `:temp` | Sends 'temporal' message that appears with notification under 'main' one. This message will have button to delete it in the end
   | `:markdown` | Messsage will use Markdown parse_mode"
   
   [user text kbd & opts]
@@ -118,3 +124,22 @@
 
   [user path caption kbd & opts]
   (apply prepare-and-send :file user {:path path :caption caption} kbd :temp opts))
+
+
+(defn send-invoice
+
+  "Sends invoice as 'temporal' message with inline keyboard `kbd` to `user`. Keyboard will have payment button with `pay-text` in the beginning and button to delete it in the end.  
+  Description of `data` map (all keys required):
+  | key               | description |
+  |-------------------|-------------|
+  | `:title`          | Product name, 1-32 characters
+  | `:description`    | Product description, 1-255 characters
+  | `:payload`        | Bot-defined invoice payload, 1-128 bytes. This will not be displayed to the user, use for your internal processes.
+  | `:provider_token` | Payment provider token
+  | `:currency`       | Three-letter ISO 4217 currency code
+  | `:prices`         | Price breakdown, a JSON-serialized list of components (e.g. product price, tax, discount, delivery cost, delivery tax, bonus, etc.). Each component have to be map with keys `:label` (string) and `:amount` (integer price of the product in the smallest units of the currency)"
+
+  {:added "0.5"}
+
+  [user data pay-text kbd]
+  (prepare-and-send :invoice user data (vec (cons [{:text pay-text :pay true}] kbd)) :temp))

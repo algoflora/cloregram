@@ -95,3 +95,20 @@
     {:status 200
      :body {:ok true
             :result (-> msg (assoc :message_id mid) (dissoc :document))}}))
+
+(defmethod handler :sendInvoice
+  [msg]
+  (log/debug "Incoming :sendInvoice")
+  (let [[user uid] (get-user-info msg)
+        mid (:msg-id (inc-msg-id uid))]
+    (swap! state/users (fn [users] (update-in users [uid :messages] #(assoc % mid msg))))
+    (log/debug "USERS" @state/users)
+    {:status 200
+     :body {:ok true
+            :result (assoc msg :message_id mid)}}))
+
+(defmethod handler :answerPreCheckoutQuery
+  [msg]
+  (log/debug "Incoming :answerPreCheckoutQuery" msg)
+  {:status 200
+   :body true})

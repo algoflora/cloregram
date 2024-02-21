@@ -14,7 +14,7 @@
   (utl/api-wrap tbot/delete-message (bot) {:chat_id (:user/id user)
                                            :message_id mid}))
 
-(defmulti main-handler #(some #{:message :callback_query} (keys %)))
+(defmulti main-handler #(some #{:message :callback_query :pre_checkout_query} (keys %)))
 
 (defn reset
   [user upd]
@@ -48,6 +48,12 @@
         user (u/get-or-create (:from cbq))]
     (log/infof "Handling callbak query for User %s" (utl/username user))
     (clb/call user (-> cbq :data java.util.UUID/fromString))))
+
+(defmethod main-handler :pre_checkout_query
+  [upd]
+  (let [pcqid (get-in upd [:pre_checkout_query :id])]
+    (log/infof "Handling pre-checkout query with id  %d" pcqid)
+    (utl/api-wrap tbot/answer-precheckout-query-ok (bot) pcqid)))
 
 (defn common
   [{:keys [user]}]

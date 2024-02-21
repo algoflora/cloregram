@@ -18,6 +18,11 @@
     (is (= (seq content) (seq ba))))
   msg)
 
+(defn check-invoice
+  [msg expected]
+  (is (= (select-keys msg [:title :description :payload :provider_token :currency :prices]) expected))
+  msg)
+
 (defn check-btns
   [msg btns]
   (let [bs (-> msg :reply_markup utl/simplify-reply-markup)]
