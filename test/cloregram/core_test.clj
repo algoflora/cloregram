@@ -72,11 +72,11 @@
 
     (let [invoice-data {:title "TITLE"
                         :description "DESCRIPTION"
-                        :payload "PAYLOAD"
+                        :payload {:a 1 :b {:c 2}}
                         :provider_token "PROVIDER_TOKEN"
                         :currency "CUR"
                         :prices [{:label "PRICE-1" :amount 1000}
-                                 {:label "PRICE-2" :anount 4200}]}]
+                                 {:label "PRICE-2" :amount 4200}]}]
       (api/send-invoice (users/get-by-username (name :testuser-1))
                         invoice-data
                         "PAY TEST"
@@ -86,6 +86,25 @@
       (-> (u/get-last-temp-message :testuser-1)
           (i/check-invoice invoice-data)
           (i/check-btns [["PAY TEST"]["BUTTON"]["✖️"]])
+          (c/press-btn :testuser-1 "✖️"))
+      (Thread/sleep 100)
+      (is (= 0 (u/count-temp-messages :testuser-1)))
+
+      (api/send-invoice (users/get-by-username (name :testuser-1))
+                        invoice-data
+                        "PAY TEST"
+                        [[["BUTTON" 'cloregram.handler/common]]])
+
+      (Thread/sleep 100)
+      (-> (u/get-last-temp-message :testuser-1)
+          (i/check-invoice invoice-data)
+          (i/check-btns [["PAY TEST"]["BUTTON"]["✖️"]])
+          (c/pay-invoice :testuser-1)
+          (c/press-btn :testuser-1 "✖️"))
+
+      (Thread/sleep 100)
+      (-> (u/get-last-temp-message :testuser-1)
+          (i/check-text "Successful payment with payload {:a 1, :b {:c 2}}")
           (c/press-btn :testuser-1 "✖️"))
       (Thread/sleep 100)
       (is (= 0 (u/count-temp-messages :testuser-1))))))

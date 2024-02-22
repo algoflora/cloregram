@@ -11,7 +11,7 @@
   [api-f & args]
   (log/debug (format "Calling (%s %s)" api-f (str/join " " args)))
   (let [resp (apply api-f args)
-        ok (:ok resp)
+        ok (or (true? resp) (= (:ok resp)))
         desc (:description resp)]
     (when (not ok)
       (throw (ex-info "API response error" {:call api-f

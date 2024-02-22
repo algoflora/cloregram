@@ -8,7 +8,7 @@
   (swap! state/users #(update-in % [uid :msg-id] inc))
   (uid @state/users))
 
-(defn add ; TODO: NOT completely threadsafe!
+(defn add
   [uid]
   (let [user {:id (inc (count @state/users))
               :msg-id 1

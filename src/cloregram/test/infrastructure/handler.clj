@@ -1,5 +1,6 @@
 (ns cloregram.test.infrastructure.handler
   (:require [cloregram.test.infrastructure.state :as state]
+            [cloregram.test.infrastructure.client :as c]
             [cloregram.test.infrastructure.users :refer [get-user-by-id inc-msg-id]]
             [cheshire.core :refer [parse-string]]
             [dialog.logger :as log]))
@@ -113,6 +114,15 @@
 (defmethod handler :answerPreCheckoutQuery
   [msg]
   (log/debug "Incoming :answerPreCheckoutQuery" msg)
-  (log/debug "PRE CHECKOUT QUOTE" msg)
-  {:status 200
-   :body true})
+  (when (not= true (:ok msg))
+    (throw (ex-info "Precheckout query with error!" {:error (:error_message msg)})))
+  (let [pcq-data (@state/checkout-queries (:pre_checkout_query_id msg))
+        invoice (:invoice pcq-data)
+        uid (:uid pcq-data)]
+    (c/send-message uid {:successful_payment {:currency (:currency invoice)
+                                              :total_amount (->> (:prices invoice)
+                                                                 (map :amount)
+                                                                 (apply +))
+                                              :invoice_payload (:payload invoice)}} :silent)
+    {:status 200
+     :body true}))

@@ -7,3 +7,5 @@
 (defonce update-id (atom 0))
 
 (defonce users (atom {}))
+
+(defonce checkout-queries (atom {}))
