@@ -1,4 +1,4 @@
-(defproject cloregram "0.5.2"
+(defproject cloregram "0.5.3"
   :description "Clojure/Datomic framework for making complex Telegram Bots/Applications"
   :url "https://cloregram.io"
   :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"
@@ -8,7 +8,7 @@
                  [integrant "0.8.1"]
                  [com.amperity/dialog "2.0.115"]
 
-                 [telegrambot-lib "2.10.0"]
+                 [telegrambot-lib "2.12.0"]
 
                  [ring/ring-jetty-adapter "1.9.2"]
 

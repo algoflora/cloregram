@@ -54,6 +54,8 @@
     (Thread/sleep 100)
     (is (= 0 (u/count-temp-messages :testuser-1)))
 
+    ;; Documents
+
     (let [path    "/tmp/ss-bot-test-file.txt"
           content (nano-id 512)
           user (u/get-user-by-uid :testuser-1)]
