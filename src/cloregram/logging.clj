@@ -11,4 +11,4 @@
       (contains? event :error) (update :message
                                        #(str %
                                              "\n\n"
-                                             (with-out-str (print-stack-trace (:error event) 20)))))))
+                                             (with-out-str (print-stack-trace (:error event))))))))
