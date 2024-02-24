@@ -26,16 +26,17 @@
 
   - default config of cloregram framework
   - config from config.edn resource of project
-  - config from .edn file provided as argument
+  - config from .edn files or resources provided as arguments
 
   Detailed config reference will be provided later."
   
   [& args]
   (log/debug "run function args:" args)
-  (let [config-arg (-> args first get-conf)
-        config-user (-> "config.edn" io/resource get-conf)
-        config-default (-> "default-config.edn" io/resource slurp ig/read-string)
-        config (deep-merge config-default config-user config-arg)]
+  (let [config-default    (-> "default-config.edn" io/resource get-conf)
+        project-conf-path (System/getProperty "config.path" "config.edn")
+        config-project    (-> project-conf-path io/resource get-conf)
+        config-args       (map get-conf args)
+        config            (apply deep-merge config-default config-project config-args)]
     (log/info "Config loaded")
     (log/debug "Config:" config)
     (.addShutdownHook (Runtime/getRuntime) (Thread. shutdown!))
