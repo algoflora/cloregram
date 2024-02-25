@@ -82,10 +82,14 @@
 
 (defmethod ig/init-key :bot/server
   [_ {:keys [options handler]}]
-  (when-let [server (run-jetty handler (adjust-opts options))]
-    (log/info (format "Server started with options %s" options))
-    (log/debug "Server:" server)
-    server))
+  (try
+    (when-let [server (run-jetty handler (adjust-opts options))]
+      (log/info (format "Server started with options %s" options))
+      (log/debug "Server:" server)
+      server)
+    (catch Exception e
+      (log/error e)
+      (throw e))))
 
 (defmethod ig/halt-key! :bot/server
   [_ server]

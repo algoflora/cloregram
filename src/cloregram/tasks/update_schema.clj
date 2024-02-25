@@ -7,13 +7,27 @@
             [cloregram.schema :refer [schema]])
   (:gen-class))
 
+(defn- get-entities-seq
+  [dir resource-url]
+  (let [resource-file (io/file (.toURI resource-url))]
+    (if (.exists resource-file)
+      (file-seq resource-file)
+      (let [jar-path (str (.getPath resource-url) "!/" dir)
+            jar-url (java.net.URL. (str "jar:file:" jar-path))
+            jar-conn (.openConnection jar-url)
+            jar-stream (.getInputStream jar-conn)
+            zip-stream (java.util.zip.ZipInputStream. jar-stream)]
+        (loop [entries []]
+          (let [entry (.getNextEntry zip-stream)]
+            (if entry
+              (recur (conj entries entry))
+              entries)))))))
+
 (defn- read-dir
   [dir]
-  (when-let [resource (io/resource dir)]
-    (->> resource
-         (.getFile)
-         (io/file)
-         (file-seq)
+  (when-let [resource-url (io/resource dir)]
+    (->> resource-url
+         (get-entities-seq dir)
          (filter #(= (re-find #"\.[a-zA-Z0-9]+$" (.getName %)) ".edn"))
          (mapcat #(->> % io/reader java.io.PushbackReader. edn/read))
          (vec))))

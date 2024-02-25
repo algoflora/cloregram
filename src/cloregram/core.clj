@@ -33,7 +33,7 @@
   [& args]
   (log/debug "run function args:" args)
   (let [config-default    (-> "default-config.edn" io/resource get-conf)
-        project-conf-path (System/getProperty "config.path" "config.edn")
+        project-conf-path (System/getProperty "config.path" "config.prod.edn")
         config-project    (-> project-conf-path io/resource get-conf)
         config-args       (map get-conf args)
         config            (apply deep-merge config-default config-project config-args)]
