@@ -97,7 +97,7 @@
   (log/info "Server shutted down"))
 
 (defmethod ig/init-key :bot/instance
-  [_ {:keys [api-url token webhook-key https? ip port public-key]}]
+  [_ {:keys [api-url token webhook-key https? ip port certificate]}]
   (let [_config {:bot-token token}
         config (merge _config (if (some? api-url) {:bot-api api-url} {}))
         bot (tbot/create config)
@@ -106,7 +106,7 @@
               (cond-> {:content-type :multipart
                        :url (format "%s://%s:%d" schema ip port)
                        :secret_token webhook-key}
-                https? (assoc :certificate (clojure.java.io/file (or public-key "ssl/cert.pem")))))
+                https? (assoc :certificate (clojure.java.io/file (or certificate "ssl/cert.pem")))))
     (log/info "Webhook is set")
     (log/debug "Webhook info:" (api-wrap tbot/get-webhook-info bot))
     bot))

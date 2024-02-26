@@ -24,7 +24,7 @@
                 :https? #ig/ref :bot/https?
                 :ip #ig/ref :bot/ip
                 :port #ig/ref :bot/port
-                ;; :public-key PUBLIC_KEY
+                ;; :certificate PUBLIC_KEY
                 }
 
  :project/config {}}
