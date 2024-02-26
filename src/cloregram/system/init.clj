@@ -78,7 +78,7 @@
                                   :ssl-port (:port opts)
                                   :sni-host-check? false
                                   :keystore (or (:keystore opts) "ssl/keystore.jks")
-                                  :key-password (or (:key-password opts) "ss-bot.keystorepass")))))
+                                  :key-password (or (:key-password opts) "cloregram.keystorepass")))))
 
 (defmethod ig/init-key :bot/server
   [_ {:keys [options handler]}]
