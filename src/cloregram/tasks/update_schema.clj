@@ -4,41 +4,53 @@
             [cloregram.db :as db]
             [clojure.java.io :as io]
             [clojure.edn :as edn]
-            [cloregram.schema :refer [schema]])
+            [clojure.string :as str]
+            [cloregram.schema :refer [schema]]
+            [cloregram.utils :as utl])
+  (:import [java.nio.file Files FileSystems FileVisitOption LinkOption OpenOption]
+           [java.lang String])
   (:gen-class))
 
-(defn- get-entities-seq
-  [dir resource-url]
-  (let [resource-file (io/file (.toURI resource-url))]
-    (if (.exists resource-file)
-      (file-seq resource-file)
-      (let [jar-path (str (.getPath resource-url) "!/" dir)
-            jar-url (java.net.URL. (str "jar:file:" jar-path))
-            jar-conn (.openConnection jar-url)
-            jar-stream (.getInputStream jar-conn)
-            zip-stream (java.util.zip.ZipInputStream. jar-stream)]
-        (loop [entries []]
-          (let [entry (.getNextEntry zip-stream)]
-            (if entry
-              (recur (conj entries entry))
-              entries)))))))
+(defn- empty-arr
+  [class]
+  (make-array class 0))
+
+(defn- reduce-fn-jar
+  [acc ^java.nio.file.Path p]
+  (if (and (Files/isRegularFile p (empty-arr LinkOption)) (str/ends-with? (str p) ".edn"))
+    (with-open [inputStream (Files/newInputStream p (empty-arr OpenOption))]
+      (apply conj acc (-> inputStream io/reader java.io.PushbackReader. edn/read)))
+    acc))
+
+(defn- reduce-fn-fs
+  [acc ^java.io.File f]
+  (if (and (.isFile f) (str/ends-with? (.getName f) ".edn"))
+    (apply conj acc (-> f slurp edn/read-string))
+    acc))
 
 (defn- read-dir
   [dir]
-  (when-let [resource-url (io/resource dir)]
-    (->> resource-url
-         (get-entities-seq dir)
-         (filter #(= (re-find #"\.[a-zA-Z0-9]+$" (.getName %)) ".edn"))
-         (mapcat #(->> % io/reader java.io.PushbackReader. edn/read))
-         (vec))))
+  (when-let [resource-uri (some-> dir io/resource .toURI)]
+    (if (= (.getScheme resource-uri) "jar")
+      (let [env (doto (java.util.HashMap.) (.put "create" "false"))
+            fs (FileSystems/newFileSystem resource-uri env)]
+        (try
+          (let [root (.getPath fs dir (empty-arr String))
+                paths (-> root (Files/walk (empty-arr FileVisitOption)) .iterator iterator-seq)]
+            (reduce reduce-fn-jar [] paths))
+          (finally
+            (.close fs))))
+      (->> (io/file (utl/dbg resource-uri))
+           (file-seq)
+           (reduce reduce-fn-fs [])))))
 
 (defn- read-user-schema
   []
-  (read-dir "schema/"))
+  (read-dir "schema"))
 
 (defn- read-user-data
   []
-  (read-dir "data/"))
+  (read-dir "data"))
 
 (defn update-schema
   "Updates schema with NEW data. Not removing unactual." ; TODO: Develop full update

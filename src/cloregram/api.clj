@@ -29,7 +29,7 @@
   [kmap user]
   (cond-> kmap
     (every? #(contains? kmap %) [:func :args])
-    (assoc :callback_query (str (clb/create user (:func kmap) (:args kmap))))
+    (assoc :callback_data (str (clb/create user (:func kmap) (:args kmap))))
 
     true (dissoc :func)
     true (dissoc :args)))
@@ -37,14 +37,15 @@
 (defn- prepare-keyboard
   [kbd user optm]
   (let [mapf #(cond-> % (and (vector? %) (= 2 (count %))) (conj {}) true (create-key user))]
-    (cond->> kbd
-      true (map #(map mapf %))
-      (:temp optm) (#(conj (vec %) [{:text "✖️"
-                               :callback_query (str (java.util.UUID/randomUUID))}])))))
+    {:inline_keyboard
+     (cond->> kbd
+       true (mapv #(mapv mapf %))
+       (:temp optm) (#(conj % [{:text "✖️"
+                                :callback_data (str (java.util.UUID/randomUUID))}])))}))
 
 (defn- create-temp-delete-callback
   [user new-msg]
-  (clb/create (-> new-msg :reply_markup last first :callback_query java.util.UUID/fromString)
+  (clb/create (-> new-msg :reply_markup :inline_keyboard last first :callback_data java.util.UUID/fromString)
               user 'cloregram.handler/delete-message {:mid (:message_id new-msg)}))
 
 (defn- to-edit?

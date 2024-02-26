@@ -38,14 +38,14 @@
     (send-update msg)))
 
 (defn- send-callback-query
-  [uid cbq]
+  [uid cbd]
   (let [user (uid @state/users)]
     (send-update {:callback_query {:id (java.util.UUID/randomUUID)
                                    :from (-> user
                                              (dissoc :msg-id :messages)
                                              (assoc :is-bot true)
                                              (keys-hyphens->underscores))
-                                   :data cbq}})))
+                                   :data cbd}})))
 
 (defn send-text
   "Simulate sending `text` by user with username `uid`. Optionaly `entities` array can be provided for formatting message."
@@ -64,21 +64,25 @@
   ([msg uid row col]
    (assert-uid msg uid)
    (log/infof "User %s pressed button %d/%d" uid row col)
-   (let [cbq (-> (:reply_markup msg)
+   (let [cbd (-> msg
+                 :reply_markup
+                 :inline_keyboard
                  (nth (dec row))
                  (nth (dec col))
-                 (:callback_query))]
-     (send-callback-query uid cbq)
+                 (:callback_data))]
+     (send-callback-query uid cbd)
      msg))
   ([msg uid btn]
    (assert-uid msg uid)
    (log/infof "User %s pressed button \"%s\"" uid btn)
-   (let [cbq (->> (:reply_markup msg)
+   (let [cbd (->> msg
+                  :reply_markup
+                  :inline_keyboard
                   (flatten)
                   (filter #(= btn (:text %)))
                   (first)
-                  (:callback_query))]
-     (send-callback-query uid cbq)
+                  (:callback_data))]
+     (send-callback-query uid cbd)
      msg)))
 
 (defn pay-invoice
