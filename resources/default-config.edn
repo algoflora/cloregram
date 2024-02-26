@@ -14,7 +14,7 @@
                         :port #ig/ref :bot/port
                         :https? #ig/ref :bot/https?
                         ;; :keystore KEYSTORE_PATH
-                        ;; :key-password KEY_PASSWORD
+                        ;; :keystore-password KEY_PASSWORD
                         }
               :handler #ig/ref :bot/handler}
 
