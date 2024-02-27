@@ -40,7 +40,7 @@
             (reduce reduce-fn-jar [] paths))
           (finally
             (.close fs))))
-      (->> (io/file (utl/dbg resource-uri))
+      (->> (io/file resource-uri)
            (file-seq)
            (reduce reduce-fn-fs [])))))
 
@@ -48,23 +48,15 @@
   []
   (read-dir "schema"))
 
-#_(defn- read-user-dataz
-  []
-  (read-dir "data"))
-
 (defn update-schema
   "Updates schema with NEW data. Not removing unactual." ; TODO: Develop full update
   []
   (log/info "Updating schema...")
   (let [user-schema (read-user-schema)
-        full-schema (concat schema user-schema)
-        #_user-data   #_(read-user-data)]
+        full-schema (concat schema user-schema)]
     (log/debug "Schema:" full-schema)
     (let [f (d/transact (db/conn) full-schema)]
-      (log/info "Schema successfully updated with" (count (:tx-data @f)) "Datoms"))
-    #_(log/debug "Data:" user-data)
-    #_(let [f (d/transact (db/conn) user-data)]
-      (log/info "Data successfully updated with" (count (:tx-data @f)) "Datoms"))))
+      (log/info "Schema successfully updated with" (count (:tx-data @f)) "Datoms"))))
 
 (defn -main
   []
