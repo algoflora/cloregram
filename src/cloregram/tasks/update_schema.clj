@@ -48,7 +48,7 @@
   []
   (read-dir "schema"))
 
-(defn- read-user-data
+#_(defn- read-user-dataz
   []
   (read-dir "data"))
 
@@ -58,12 +58,12 @@
   (log/info "Updating schema...")
   (let [user-schema (read-user-schema)
         full-schema (concat schema user-schema)
-        user-data   (read-user-data)]
+        #_user-data   #_(read-user-data)]
     (log/debug "Schema:" full-schema)
     (let [f (d/transact (db/conn) full-schema)]
       (log/info "Schema successfully updated with" (count (:tx-data @f)) "Datoms"))
-    (log/debug "Data:" user-data)
-    (let [f (d/transact (db/conn) user-data)]
+    #_(log/debug "Data:" user-data)
+    #_(let [f (d/transact (db/conn) user-data)]
       (log/info "Data successfully updated with" (count (:tx-data @f)) "Datoms"))))
 
 (defn -main
