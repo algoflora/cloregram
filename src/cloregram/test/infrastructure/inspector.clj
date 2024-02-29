@@ -20,7 +20,7 @@
 
 (defn check-invoice
   [msg expected]
-  (is (= (:invoice msg) expected))
+  (is (= expected (:invoice msg)))
   msg)
 
 (defn check-btns

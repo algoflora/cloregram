@@ -8,44 +8,56 @@
             [cloregram.test.infrastructure.users :as u]))
 
 (defn- send-update
-  [data]
+  [uid data]
+  (when (-> @state/users uid :waiting-for-response?)
+    (throw (ex-info "Already waiting response! Unpredictable behaviour possible!"
+                    {:user (uid @state/users)
+                     :data data})))
   (let [upd-id (swap! state/update-id inc)
         upd (merge {:update_id upd-id} data)]
     (log/debug (format "Sending update to %s: %s" @state/webhook-address upd))
+    (swap! state/users #(assoc-in % [uid :waiting-for-response?] true))
     (post @state/webhook-address {:body (generate-string upd)
                                   :headers {"X-Telegram-Bot-Api-Secret-Token" @state/webhook-token
                                             "Content-Type" "application/json"}}
           (fn async-callback [{:keys [status error] :as resp}]
             (cond
-              (some? error) (throw (ex-info "Client error occured on sending update" resp))
-              (not= 200 status) (throw (ex-info "Error when sending update" resp))
+              (some? error) (throw (ex-info "<ASYNC> Client error occured on sending update" resp))
+              (not= 200 status) (throw (ex-info "<ASYNC> Error when sending update" resp))
               :else (log/debug "<ASYNC> Update response:" resp))))))
 
 (defn send-message
   "Simulate sending raw message represented in `data` to user with username `uid`. In most cases you don't need this function. Use it only if you definitely know what you are doing. Optionaly use `:silent` option to not save message in test user's state"
   {:changed "0.5.2"}
   [uid data & opts]
-  (let [user (u/inc-msg-id uid)
-        msg {:message (merge {:message_id (:msg-id user)
-                              :from (-> user
-                                        (dissoc :msg-id :messages)
-                                        (assoc :is-bot true)
-                                        (keys-hyphens->underscores))
-                              :chat {:id (:id user)
-                                     :type "private"}} data)}]
-    (when (nil? (some #{:silent} opts)) (swap! state/users (fn [users]
-                        (update-in users [uid :messages] #(assoc % (get-in msg [:message :message_id]) {:text (get-in msg [:message :text])})))))
-    (send-update msg)))
+  (swap! state/users (fn [users]
+                      (let [user (uid users)
+                            mid (inc (:msg-id user))
+                            msg (merge {:message_id mid
+                                        :from (-> user
+                                                  (dissoc :msg-id :messages)
+                                                  (assoc :is-bot true)
+                                                  (keys-hyphens->underscores))
+                                        :chat {:id (:id user)
+                                               :type "private"}} data)]
+                        (-> users
+                            (assoc-in [uid :msg-id] mid)
+                            (assoc-in [uid :messages mid]
+                                      (cond-> msg
+                                        (some #{:silent} opts) (assoc :silent true)))))))
+  (send-update uid {:message (let [user (uid @state/users)
+                                   mid (:msg-id user)]
+                               (-> user :messages (get mid)))}))
 
 (defn- send-callback-query
   [uid cbd]
   (let [user (uid @state/users)]
-    (send-update {:callback_query {:id (java.util.UUID/randomUUID)
-                                   :from (-> user
-                                             (dissoc :msg-id :messages)
-                                             (assoc :is-bot true)
-                                             (keys-hyphens->underscores))
-                                   :data cbd}})))
+    (send-update uid {:callback_query {:id (java.util.UUID/randomUUID)
+                                       :from (-> user
+                                                 (dissoc :msg-id :messages)
+                                                 (assoc :is-bot true)
+                                                 (keys-hyphens->underscores))
+                                       :data cbd}})))
 
 (defn send-text
   "Simulate sending `text` by user with username `uid`. Optionaly `entities` array can be provided for formatting message."
@@ -96,15 +108,14 @@
         pcqid (nano-id)]
     (log/infof "User %s paying invoice %s" uid invoice)
     (swap! state/checkout-queries #(assoc % pcqid {:uid uid :invoice invoice}))
-    (send-update {:pre_checkout_query {:id pcqid
-                                       :from (-> user
-                                                 (dissoc :msg-id :messages)
-                                                 (assoc :is-bot true)
-                                                 (keys-hyphens->underscores))
-                                       :currency (:currency invoice)
-                                       :total_amount (->> (:prices invoice)
-                                                          (map :amount)
-                                                          (apply +))
-                                       :invoice_payload (:payload invoice)}})
+    (send-update uid {:pre_checkout_query {:id pcqid
+                                           :from (-> user
+                                                     (dissoc :msg-id :messages)
+                                                     (assoc :is-bot true)
+                                                     (keys-hyphens->underscores))
+                                           :currency (:currency invoice)
+                                           :total_amount (->> (:prices invoice)
+                                                              (map :amount)
+                                                              (apply +))
+                                           :invoice_payload (:payload invoice)}})
     msg))
-
