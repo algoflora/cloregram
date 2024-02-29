@@ -8,6 +8,7 @@
     (cond-> event
       true (dissoc :line)
       true (merge (utl/get-project-info))
+      (> (count (:message event)) 20000) (update event :message #(subs % 0 20000))
       (contains? event :error) (update :message
                                        #(str %
                                              "\n\n"

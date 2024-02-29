@@ -12,7 +12,6 @@
 
 (use-fixtures :once
   fix/use-test-environment
-  fix/setup-schema
   cloregram.fixtures/set-test-common-handler)
 
 (deftest core-test
@@ -21,37 +20,37 @@
     (u/add :testuser-2) 
     
     (c/send-text :testuser-1 "Hello, bot!")
-    (-> (u/wait-main-message :testuser-1)
+    (-> (u/main-message :testuser-1)
         (i/check-text "testuser-1 HELLO, BOT!")
         (i/check-btns [["+" "-"]])
         (c/press-btn :testuser-1 "+"))
-    (-> (u/wait-main-message :testuser-1)
+    (-> (u/main-message :testuser-1)
         (i/check-text "Incremented: 1")
         (i/check-btns [["+" "-"]["Temp"]])
         (c/press-btn :testuser-1 "+"))
-    (-> (u/wait-main-message :testuser-1)
+    (-> (u/main-message :testuser-1)
         (i/check-text "Incremented: 2")
         (i/check-btns [["+" "-"]["Temp"]])
         (c/press-btn :testuser-1 "+"))
-    (-> (u/wait-main-message :testuser-1)
+    (-> (u/main-message :testuser-1)
         (i/check-text "Incremented: 3")
         (i/check-btns [["+" "-"]["Temp"]])
         (c/press-btn :testuser-1 1 2))
-    (-> (u/wait-main-message :testuser-1)
+    (-> (u/main-message :testuser-1)
         (i/check-text "Decremented: 2")
         (i/check-btns [["+" "-"]])
         (c/press-btn :testuser-1 1 1))
-    (-> (u/wait-main-message :testuser-1)
+    (-> (u/main-message :testuser-1)
         (i/check-text "Incremented: 3")
         (i/check-btns [["+" "-"]["Temp"]])
         (c/press-btn :testuser-1 2 1))
-    (-> (u/wait-temp-message :testuser-1)
+    (-> (u/last-temp-message :testuser-1)
         (i/check-text "Temp message")
         (i/check-btns [["✖️"]]))
     (is (= 1 (u/count-temp-messages :testuser-1)))
-    (-> (u/get-last-temp-message :testuser-1)
+    (-> (u/last-temp-message :testuser-1)
         (c/press-btn :testuser-1 1 1))
-    (Thread/sleep 100)
+
     (is (= 0 (u/count-temp-messages :testuser-1)))
 
     ;; Documents
@@ -63,11 +62,11 @@
       (api/send-document (users/get-by-username (name :testuser-1)) path "Test Caption" [])
 
       (is (= 1 (u/count-temp-messages :testuser-1)))
-      (-> (u/get-last-temp-message :testuser-1)
+      (-> (u/last-temp-message :testuser-1)
           (i/check-document "Test Caption" (.getBytes content))
           (i/check-btns [["✖️"]])
           (c/press-btn :testuser-1 "✖️"))
-      (Thread/sleep 100)
+
       (is (= 0 (u/count-temp-messages :testuser-1))))
 
     ;; Invoice
@@ -84,12 +83,11 @@
                         "PAY TEST"
                         [[["BUTTON" 'cloregram.handler/common]]])
 
-      (Thread/sleep 100)
-      (-> (u/get-last-temp-message :testuser-1)
+      (-> (u/last-temp-message :testuser-1)
           (i/check-invoice invoice-data)
           (i/check-btns [["PAY TEST"]["BUTTON"]["✖️"]])
           (c/press-btn :testuser-1 "✖️"))
-      (Thread/sleep 100)
+
       (is (= 0 (u/count-temp-messages :testuser-1)))
 
       (api/send-invoice (users/get-by-username (name :testuser-1))
@@ -97,16 +95,17 @@
                         "PAY TEST"
                         [[["BUTTON" 'cloregram.handler/common]]])
 
-      (Thread/sleep 100)
-      (-> (u/get-last-temp-message :testuser-1)
+      (-> (u/last-temp-message :testuser-1)
           (i/check-invoice invoice-data)
           (i/check-btns [["PAY TEST"]["BUTTON"]["✖️"]])
-          (c/pay-invoice :testuser-1)
-          (c/press-btn :testuser-1 "✖️"))
+          (c/pay-invoice :testuser-1))
 
-      (Thread/sleep 100)
-      (-> (u/get-last-temp-message :testuser-1)
+      (-> (u/last-temp-message :testuser-1)
           (i/check-text "Successful payment with payload {:a 1, :b {:c 2}}")
           (c/press-btn :testuser-1 "✖️"))
-      (Thread/sleep 100)
+
+      (-> (u/last-temp-message :testuser-1)
+          (i/check-invoice invoice-data)
+          (c/press-btn :testuser-1 "✖️"))
+ 
       (is (= 0 (u/count-temp-messages :testuser-1))))))
