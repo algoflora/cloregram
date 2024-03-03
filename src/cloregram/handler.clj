@@ -81,10 +81,14 @@
     (log/infof "Handling pre-checkout query with id  %s. Simply answering OK..." pcqid)
     (utl/api-wrap tbot/answer-precheckout-query-ok (bot) pcqid)))
 
+(defmethod main-handler nil
+  [upd]
+  (log/warn "main-handler dispatch function returned nil!" upd))
+
 (defn common
   [{:keys [user]}]
   (api/send-message user "Hello from Cloregram Framework!" []))
 
 (defn payment
   [{:keys [user payment]}]
-  (api/send-message user (str "Successful payment with payload " (:invoice_payload payment)) [] :temp))
+  (api/send-message user (str "Successful payment with payload " (:invoice_payload payment)) [] :tem))

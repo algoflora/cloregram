@@ -1,5 +1,8 @@
 (ns cloregram.utils
-  (:require [clojure.string :as str]
+  (:require [clojure.java.io :as io]
+            [clojure.edn :as edn]
+            [clojure.string :as str]
+            [resauce.core :as res]
             [dialog.logger :as log]))
 
 (defn dbg
@@ -64,3 +67,16 @@
     (if-let [resolved (ns-resolve ns nm)]
       resolved
       (log/error "Callback not resolved:" sym))))
+
+(defn- read-resource [resource-url]
+  (with-open [stream (io/input-stream resource-url)]
+    (-> stream
+        io/reader
+        java.io.PushbackReader. edn/read)))
+
+(defn read-resource-dir
+  [dir]
+  (when-let [resources (some-> dir io/resource res/url-dir)]
+    (->> resources
+         (filter #(str/ends-with? % ".edn"))
+         (mapcat read-resource))))
