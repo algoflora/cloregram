@@ -2,8 +2,7 @@
   (:require  [clojure.java.io :as io]
              [cloregram.test.infrastructure.core]
              [cloregram.core :refer [run]]
-             [cloregram.tasks.update-schema :refer [update-schema]]
-             [cloregram.tasks.load-data :refer [load-data]]))
+             [cloregram.db :as db]))
 
 (defn use-test-environment
   [body]
@@ -12,5 +11,5 @@
 
 (defn load-initial-data
   [body]
-  (load-data)
+  (db/load-data)
   (body))

@@ -1,11 +1,11 @@
 (ns cloregram.core
-  (:require
-   [clojure.java.io :as io]
-   [dialog.logger :as log]
-   [integrant.core :as ig]
-   [cloregram.utils :refer [deep-merge]]
-   [cloregram.system.init :refer [startup shutdown!]]
-   [cloregram.tasks.update-schema :refer [update-schema]])
+  (:require [clojure.java.io :as io]
+            [dialog.logger :as log]
+            [integrant.core :as ig]
+            [cloregram.utils :as utl]
+            [cloregram.utils :refer [deep-merge]]
+            [cloregram.system.init :refer [startup shutdown!]]
+            [cloregram.db :as db])
   (:gen-class))
 
 (Thread/setDefaultUncaughtExceptionHandler
@@ -41,5 +41,5 @@
     (log/debug "Config:" config)
     (.addShutdownHook (Runtime/getRuntime) (Thread. shutdown!))
     (startup config)
-    (update-schema)
+    (db/update-schema)
     (log/debug "System initialized:" @cloregram.system.state/system)))
