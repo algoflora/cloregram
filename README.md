@@ -140,7 +140,7 @@ Look on extended example that will increment or decrement number value depending
                     [[["+" 'my-cloregram-bot.handler/increment {:n n}]["-" 'my-cloregram-bot.handler/decrement {:n n}]]])))
 ```
 
-Note that any text input (or, to be honest, any input except buttons) will call `common` handler and reset number value to null! 
+Note that in this example any text input (or, to be honest, any input except buttons) will call `common` handler and reset number value to null! 
 
 ### Payments
 
