@@ -4,6 +4,27 @@
 
 This README.md is under development
 
+## Table of Contants
+
+- [algoflora/cloregram](#algofloracloregram)
+  - [Idea](#idea)
+  - [Installation](#installation)
+  - [Usage](#usage)
+    - [User](#user)
+    - [API](#api)
+    - [Keyboard](#keyboard)
+    - [Handlers](#handlers)
+    - [Payments](#payments)
+  - [Testing](#testing)
+  - [Logging](#logging)
+  - [Configuration](#configuration)
+  - [Deploy](#deploy)
+    - [Preparing system](#preparing-system)
+    - [Starting your bot](#starting-your-bot)
+    - [Obtaining certificates](#obtaining-certificates)
+  - [Further development and bugfixing](#further-development-and-bugfixing)
+  - [License](#license)
+
 ## Idea
  
 Cloregram have several main ideas:
