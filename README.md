@@ -124,8 +124,7 @@ Look on extended example that will increment or decrement number value depending
 
 (defn common
   [{:keys [user]}]
-  (api/send-message user
-                    (format Hello, %s! Initial number is 0." (:user/first-name user))
+  (api/send-message user (format "Hello, %s! Initial number is 0." (:user/first-name user))
                     [[["+" 'my-cloregram-bot.handler/increment {:n 0}]["-" 'my-cloregram-bot.handler/decrement {:n 0}]]]))
 
 (defn increment
