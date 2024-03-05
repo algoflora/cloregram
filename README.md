@@ -6,24 +6,23 @@ This README.md is under development
 
 ## Table of Contants
 
-- [algoflora/cloregram](#algofloracloregram)
-  - [Idea](#idea)
-  - [Installation](#installation)
-  - [Usage](#usage)
-    - [User](#user)
-    - [API](#api)
-    - [Keyboard](#keyboard)
-    - [Handlers](#handlers)
-    - [Payments](#payments)
-  - [Testing](#testing)
-  - [Logging](#logging)
-  - [Configuration](#configuration)
-  - [Deploy](#deploy)
-    - [Preparing system](#preparing-system)
-    - [Starting your bot](#starting-your-bot)
-    - [Obtaining certificates](#obtaining-certificates)
-  - [Further development and bugfixing](#further-development-and-bugfixing)
-  - [License](#license)
+- [Idea](#idea)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [User](#user)
+  - [API](#api)
+  - [Keyboard](#keyboard)
+  - [Handlers](#handlers)
+  - [Payments](#payments)
+- [Testing](#testing)
+- [Logging](#logging)
+- [Configuration](#configuration)
+- [Deploy](#deploy)
+  - [Preparing system](#preparing-system)
+  - [Starting your bot](#starting-your-bot)
+  - [Obtaining certificates](#obtaining-certificates)
+- [Further development and bugfixing](#further-development-and-bugfixing)
+- [License](#license)
 
 ## Idea
  
@@ -144,7 +143,7 @@ Look on extended example that will increment or decrement number value depending
 
 Note that any text input (or, to be honest, any input except buttons) will call `common` handler and reset number value to null! 
 
-### Paymants
+### Payments
 
 TODO: Describe payment handler usage
 
