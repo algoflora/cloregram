@@ -4,7 +4,7 @@
 
 This README.md is under development
 
-## Table of Contants
+## Table of Contents
 
 - [Idea](#idea)
 - [Installation](#installation)
@@ -26,14 +26,14 @@ This README.md is under development
 
 ## Idea
  
-Cloregram have several main ideas:
-1. **Main and temporal messages** - there is one main actual message that mostlty reacts and interacting with user. For certain cases can be used such a "temporal" messages with button to delete them. Temporal messages appear with notification, when main one is changing smoothly.
-2. **Stateless approach** - actually not completelly stateless, but Cloregram is not saving exact user state. Instead of it, each button points to unique Callback entity with user ref, function symbol and arguments in [EDN](https://github.com/edn-format/edn) notation saved in [Datomic](https://www.datomic.com). Only interaction with user input (text/media etc) needs to change user state. This approach allows to describe more robust and predictible bot behaviour.
+Cloregram has several main ideas:
+1. **Main and temporal messages** - there is one main actual message that mostly reacts and interacting with user. For certain cases can be used such a "temporal" messages with button to delete them. Temporal messages appear with notification, when main one is changing smoothly.
+2. **Stateless approach** - actually not completely stateless, but Cloregram does not save exact user state. Instead, each button points to unique Callback entity with user ref, function symbol and arguments in [EDN](https://github.com/edn-format/edn) notation saved in [Datomic](https://www.datomic.com). Only interaction with user input (text/media etc) needs to change user state. This approach allows to describe more robust and predictible bot behaviour.
 3. **Virtual users testing** - Cloregram comes with ready-made integration testing framework. It mocks Telegram API server to allow developer describe users behaviour and test bot outcome in very convenient and flexible way.
 
 ## Installation
 
-Simpliest way to start project on Cloregram framework is to use Leiningen template:
+The simplest way to start project on Cloregram framework is to use Leiningen template:
 ```
 lein new algoflora/cloregram my-cloregram-bot
 ```
@@ -43,30 +43,30 @@ To check it use following commands:
 cd my-cloregram-bot
 lein eftest
 ```
-*I am sincerelly trying to support actual template when new versions of framework are released.*
+*I am trying to support actual template version.*
 
 ## Usage
 
 ### User
 
-Every user intracted with bot is written in database. User entity have following fields:
+Every user interacting with the bot is recorded in the database. User entity has following fields:
 | Key | Description | Required? | Unique? |
 |-------|-------|-------|------|
-| `:user/username` | username of user in Telegram | | ☑️ (if exist) |
+| `:user/username` | username of user in Telegram | | ☑️ (if exists) |
 | `:user/id` | ID of user similar to chat_id | ☑️ | ☑️ |
 | `:user/first-name` | first name of user in Telegram | ☑️ | |
 | `:user/last-name` | last name of user in Telegram | | |
-| `:user/language-code` | code of users's languare in Telegram | ☑️ | |
+| `:user/language-code` | code of user's language in Telegram | ☑️ | |
 | `:user/msg-id` | Id of **main** message. *Mostly for internal usage!* | ☑️ | |
 | `:user/handler` | Current [handler](https://github.com/algoflora/cloregram/edit/main/README.md#handlers) for [Message](https://core.telegram.org/bots/api#message) with args. *Mostly for internal usage!* | ☑️ | |
 
 ### API
 
-Public API functions to interact with user are locatied in `cloregram.api` namespace. For now there suport of media, locations and much another features is missing. Framework is still in active development.
+Public API functions to interact with user are located in `cloregram.api` namespace. For now, support for media, locations, and many other features is missing. Framework is still in active development.
 
 Example usage:
 ```clojure
-(cloregram.api/send-message user (format "*Hello!* Number is %d.\n\nWhat we will do? n)
+(cloregram.api/send-message user (format "*Hello!* Number is %d.\n\nWhat we will do?" n)
                                  [[["+" 'my-cloregram-bot.handlers/increment {:n n}]["-" 'my-cloregram-bot.handlers/decrement {:n n}]]]
                                  :markdown)
 ```
@@ -84,7 +84,7 @@ Inline keyboard for mesage is presented as vector of button rows. Each row is a 
 
 Each button can be presented as [map](https://core.telegram.org/bots/api#inlinekeyboardbutton). This is good for WebApp buttons, or buttons pointing on URLs.
 
-In most cases we need button that performing certain action when clicked. For such buttons is convient to use vector notation:
+In most cases we need button that performing certain action when clicked. For such buttons is convenient to use vector notation:
 - first element is button text string
 - second element is symbol of [handler function](https://github.com/algoflora/cloregram/edit/main/README.md#handlers) which will be called on click
 - optional third element is arguments map for handler function
@@ -96,7 +96,7 @@ Handler function takes a map of parameters. Always there will be key `:user` con
 
 If handler function is supposed to handle [Message](https://core.telegram.org/bots/api#message), then it will have [Message](https://core.telegram.org/bots/api#message) map in parameters map on key `:message'.
 
-Main entrance point will be `my-cloregram-bot.handler/common`. It will be called on start or on any [Message](https://core.telegram.org/bots/api#message) input from user if this behaviour wasn't changed with calling `cloregram.users/set-handler`.
+The main entry point is `my-cloregram-bot.handler/common`. It will be called on start or on any [Message](https://core.telegram.org/bots/api#message) input from user if this behaviour wasn't changed with calling `cloregram.users/set-handler`.
 
 Following example of common handler will greet user by first name and repeat his text message:
 ```clojure
@@ -114,7 +114,7 @@ Following example of common handler will greet user by first name and repeat his
 
 If handler function is suposed to handle [Callback Query](https://core.telegram.org/bots/api#callbackquery) (inline keyboard buttons clicks), then in parameter map will be `:user` key and other keys if any passed from button.
 
-Look on extended example that will increment or decrement number value depending of button clicked:
+Look at extended example that will increment or decrement number value depending of button clicked:
 
 ```clojure
 (ns my-cloregram-bot.handler
@@ -140,7 +140,7 @@ Look on extended example that will increment or decrement number value depending
                     [[["+" 'my-cloregram-bot.handler/increment {:n n}]["-" 'my-cloregram-bot.handler/decrement {:n n}]]])))
 ```
 
-Note that in this example any text input (or, to be honest, any input except buttons) will call `common` handler and reset number value to null! 
+Note that in this example any input except for button clicks will call `common` handler and reset number value to null! 
 
 ### Payments
 
@@ -160,7 +160,7 @@ TODO: document configuration options
 
 ## Deploy
 
-Imagine you (`my-username`) want to deploy bot in home directory on Ubuntu server on address `127.1.2.3`.
+If you (`my-username`) want to deploy the bot in home directory on Ubuntu server on address `127.1.2.3`, use following instructions.
 
 ### Preparing system
 
@@ -182,7 +182,7 @@ Run transactor:
 ```
 bin/transactor -Ddatomic.printConnectionInfo=true config/dev-transactor-template.properties
 ```
-Actually in production sooner or later you will need more complicated setup. Plesae look on [Datomic documentation](https://docs.datomic.com/pro/).
+In production, a more complicated setup will eventually be necessary. Please look on [Datomic documentation](https://docs.datomic.com/pro/).
 
 **Or you can start Datomic transactor as systemd service**
 
@@ -204,11 +204,11 @@ WantedBy=multi-user.target
 Then start service, enable it on startup and check health:
 ```
 sudo systemctl start datomic-transactor.service
-sudo sysyemctl enable datomic-transactor.service
+sudo systemctl enable datomic-transactor.service
 sudo systemctl status datomic-transactor.service
 ```
 
-In cause of updated config in .properties file, restart service:
+If the config .properties file is updated, restart the service::
 ```
 sudo systemctl restart datomic-transactor.service
 ```
@@ -241,7 +241,7 @@ On server in project folder run the bot:
 ```
 java -jar my-cloregram-bot-standalone.jar
 ```
-You can use cli option `-XX:-OmitStackTraceInFastThrow` for better errors display, but this option can (unlikely) negatively affect perfomance.
+You can use cli option `-XX:-OmitStackTraceInFastThrow` for better errors display, but this option may slightly reduce performance.
 
 **Or you can start the bot as systemd service**
 
@@ -264,7 +264,7 @@ WantedBy=multi-user.target
 Then start service, enable it on startup and check health:
 ```
 sudo systemctl start my-cloregram-bot.service
-sudo sysyemctl enable my-cloregram-bot.service
+sudo systemctl enable my-cloregram-bot.service
 sudo systemctl status my-cloregram-bot.service
 ```
 
@@ -275,16 +275,16 @@ sudo systemctl restart my-cloregram-bot.service
 
 ### Obtaining certificates
 
-For correct work of bot webhooks you are require to prepare your SSL certificates:
+To ensure the correct operation of bot webhooks, you must prepare your SSL certificates::
 
 - In deploy folder create **ssl** folder: `mkdir ssl`
 - Jump inside it: `cd ssl`
 - Create certificate and private key. Fill in Country, State/Province, Locality and Organisation as you see fit. **CN** field is for IP-address or domain where bot is deploying. `openssl req -newkey rsa:2048 -sha256 -nodes -keyout private.key -x509 -days 365 -out cert.pem -subj "/C=LK/ST=Southern Province/L=Kathaluwa/O=Weedbreed/CN=127.1.2.3"`
-- Obtain PKCS12 certificate from our keys: `openssl pkcs12 -export -in cert.pem -inkey private.key -out certificate.p12 -name "certificate"` It will ask you to come up with a password. It will be needed in next step.
-- Create JKS keystore: `keytool -importkeystore -srckeystore certificate.p12 -srcstoretype pkcs12 -destkeystore keystore.jks` At first you will be asked about new keystore password. By default Cloregram using **cloregram.keystorepass**. Next step you have to enter password from previous step.
+- Obtain PKCS12 certificate from our keys: `openssl pkcs12 -export -in cert.pem -inkey private.key -out certificate.p12 -name "certificate"` It will ask you to come up with a password. It will be needed in next step
+- Create JKS keystore: `keytool -importkeystore -srckeystore certificate.p12 -srcstoretype pkcs12 -destkeystore keystore.jks` At first you will be asked about new keystore password. By default Cloregram using **cloregram.keystorepass**. Next step you have to enter password from previous step
 - Now you can delete **certificate.p12** and **private.key**: `rm certificate.p12 private.key`
 
-Files **cert.pem** and **keystore.jks** as well as **ssl** folder can be diferent. Just then you need to specify in the config fields **:bot/server :options :keystore** (default to **ssl/keystore.jks**) and **:bot/instance :certificate** (default to **ssl/cert.pem**). As well you can set keystore password different from **cloregram.keystorepass** by specifying field **:bot/server :options :keystore-password**.
+Files **cert.pem** and **keystore.jks** as well as **ssl** folder can be different. Just then you need to specify in the config fields **:bot/server :options :keystore** (default to **ssl/keystore.jks**) and **:bot/instance :certificate** (default to **ssl/cert.pem**). As well you can set keystore password different from **cloregram.keystorepass** by specifying field **:bot/server :options :keystore-password**.
 
 ## Further development and bugfixing
 
