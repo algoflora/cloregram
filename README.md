@@ -275,6 +275,8 @@ sudo systemctl restart my-cloregram-bot.service
 
 ### Obtaining certificates
 
+For correct work of bot webhooks you are require to prepare your SSL certificates:
+
 - In deploy folder create **ssl** folder: `mkdir ssl`
 - Jump inside it: `cd ssl`
 - Create certificate and private key. Fill in Country, State/Province, Locality and Organisation as you see fit. **CN** field is for IP-address or domain where bot is deploying. `openssl req -newkey rsa:2048 -sha256 -nodes -keyout private.key -x509 -days 365 -out cert.pem -subj "/C=LK/ST=Southern Province/L=Kathaluwa/O=Weedbreed/CN=127.1.2.3"`
