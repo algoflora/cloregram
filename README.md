@@ -19,6 +19,7 @@ This README.md is under development
 - [Configuration](#configuration)
 - [Deploy](#deploy)
   - [Preparing system](#preparing-system)
+  - [Schema and initial data](#schema-and-initial-data)
   - [Starting your bot](#starting-your-bot)
   - [Obtaining certificates](#obtaining-certificates)
 - [Further development and bugfixing](#further-development-and-bugfixing)
@@ -58,7 +59,7 @@ Every user interacting with the bot is recorded in the database. User entity has
 | `:user/last-name` | last name of user in Telegram | | |
 | `:user/language-code` | code of user's language in Telegram | ☑️ | |
 | `:user/msg-id` | Id of **main** message. *Mostly for internal usage!* | ☑️ | |
-| `:user/handler` | Current [handler](https://github.com/algoflora/cloregram/edit/main/README.md#handlers) for [Message](https://core.telegram.org/bots/api#message) with args. *Mostly for internal usage!* | ☑️ | |
+| `:user/handler` | Current [handler](#handlers) for [Message](https://core.telegram.org/bots/api#message) with args. *Mostly for internal usage!* | ☑️ | |
 
 ### API
 
@@ -71,9 +72,9 @@ Example usage:
                                  :markdown)
 ```
 
-- `user` - the [user](https://github.com/algoflora/cloregram/edit/main/README.md#user) who will receive the message
+- `user` - the [user](#user) who will receive the message
 - `(format <...>)` - text of the message
-- vector of vectors of buttons - [keyboard](https://github.com/algoflora/cloregram/edit/main/README.md#keyboard) as collection of rows of buttons
+- vector of vectors of buttons - [keyboard](#keyboard) as collection of rows of buttons
 - `:markdown` - option to use [MarkdownV2](https://core.telegram.org/bots/api#formatting-options) in message. 
 
 All available functions and options look in API documentation. 
@@ -86,13 +87,13 @@ Each button can be presented as [map](https://core.telegram.org/bots/api#inlinek
 
 In most cases we need button that performing certain action when clicked. For such buttons is convenient to use vector notation:
 - first element is button text string
-- second element is symbol of [handler function](https://github.com/algoflora/cloregram/edit/main/README.md#handlers) which will be called on click
+- second element is symbol of [handler function](#handlers) which will be called on click
 - optional third element is arguments map for handler function
 
 ### Handlers
 
 One of key points in Cloregram are handler functions.
-Handler function takes a map of parameters. Always there will be key `:user` containing [User](https://github.com/algoflora/cloregram/edit/main/README.md#user) map.
+Handler function takes a map of parameters. Always there will be key `:user` containing [User](#user) map.
 
 If handler function is supposed to handle [Message](https://core.telegram.org/bots/api#message), then it will have [Message](https://core.telegram.org/bots/api#message) map in parameters map on key `:message'.
 
@@ -144,11 +145,87 @@ Note that in this example any input except for button clicks will call `common` 
 
 ### Payments
 
-TODO: Describe payment handler usage
+To make user pay for something use API function `cloregram.api/send-invoice`. When user succesfully paid, payment handler is called. Payment handler have to be located in `my-cloregram-bot.handler/payment` function. This function take parameters map with keys [:user](#user) and [:payment](https://core.telegram.org/bots/api#successfulpayment). Use user data and `:invoice_payload` field in payment map to determine further behaviour. 
 
 ## Testing
 
-TODO: describe testing process
+Cloregram has powerful integration testing suite. Main idea is to simulate behaviour of users with virtual ones and check bot output. This approach in the ideal case allows to test all scenarios, involving any number of virtual users.
+
+Framework has useful fixtures to prepare testing environment and load [initial data](#schema-and-initial-data):
+```clojure
+(ns my-cloregram-bot.core-test
+  (:require [clojure.test :refer :all]
+            [cloregram.test.fixtures :as fix]))
+
+(use-fixtures :once fix/use-test-environment fix/load-initial-data)
+```
+
+The `cloregram.test.infrastructure.users` namespace is responsible for working with virtual users:
+```clojure
+(require '[cloregram.test.infrastructure.users :as u])
+
+(u/add :user-1) ; creates virtual user with username "user-1"
+(u/add :user-2) ; creates virtual user with username "user-2"
+
+(u/main-message :user-1) ; => nil
+(u/last-temp-mesage :user-2) ; => nil
+(u/count-temp-messages :user-2) ; => 0
+```
+
+The `cloregram.test.infrastructure.client` namespace contains functions for interaction with bot by virtual users:
+```clojure
+(require '[cloregram.test.infrastructure.client :as c])
+
+(c/send-text :user-1 "Hello, bot!") ; sends to bot the text message "Hello, bot!" by virtual user "user-1"
+```
+Also in this namespace are functions: 
+- `press-btn` to simulate clicking button in incoming message
+- `pay-invoice` to simulate clicking Pay button in incoming invoice
+- `send-message` to send more generic messages, not for common use cases
+
+The `cloregram.test.infrastructure.inspector` namespace contains functions to check contents of incoming messages:
+```clojure
+(require '[cloregram.test.infrastructure.inspector :as i])
+
+(def msg ....) ; message structure
+
+(i/check-text msg "Hello from bot!") ; asserts message's text
+(i/check-btns msg [["To Main Menu"]] ; asserts keyboard layout
+(i/check-document "Caption" contents) ; asserts incoming document caption and contents
+(i/check-invoice msg expected-invoice-data) ; asserts incoming invoice
+```
+
+Common test workflow can be like following:
+```clojure
+(ns my-cloregram-bot.core-test
+  (:require [clojure.test :refer :all]
+            [cloregram.test.fixtures :as fix]
+            [cloregram.test.infrastructure.users :as u]
+            [cloregram.test.infrastructure.client :as c]
+            [cloregram.test.infrastructure.inspector :as i]))
+
+(use-fixtures :once fix/use-test-environment)
+
+(deftest core-test
+  (testing "Core Test"
+    (u/add :testuser-1)
+    
+    (c/send-text :testuser-1 "/start")
+    (-> (u/main-message :testuser-1)
+        (i/check-text "Hello, testuser-1! Initial number is 0.")
+        (i/check-btns [["+" "-"]])
+        (c/press-btn :testuser-1 "+"))
+    (-> (u/main-message :testuser-1)
+        (i/check-text "Number was incremented: 1")
+        (i/check-btns [["+" "-"]])
+        (c/press-btn :testuser-1 "+"))
+    (-> (u/main-message :testuser-1)
+        (i/check-text "Number was incremented: 2")
+        (i/check-btns [["+" "-"]])
+        (c/press-btn :testuser-1 "-"))
+    (-> (u/main-message :testuser-1)
+        (i/check-text "Number was decremented: 1"))))
+```
 
 ## Logging
 
@@ -160,7 +237,7 @@ TODO: document configuration options
 
 ## Deploy
 
-If you (`my-username`) want to deploy the bot in home directory on Ubuntu server on address `127.1.2.3`, use following instructions.
+If you (`my-username`) want to deploy the bot (`my-cloregram-bot`) in home directory on Ubuntu server on address `127.1.2.3`, use following instructions.
 
 ### Preparing system
 
@@ -213,11 +290,11 @@ If the config .properties file is updated, restart the service::
 sudo systemctl restart datomic-transactor.service
 ```
 
-**Now you nave to create database**
+**Now you have to create database**
 
 Folow instructions [here](https://docs.datomic.com/pro/getting-started/connect-to-a-database.html).
 
-**Loading initial data**
+### Schema and initial data
 
 TODO: explain how to load initial data
 
