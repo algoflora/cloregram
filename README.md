@@ -34,7 +34,7 @@ Cloregram has several main ideas:
 
 ## Installation
 
-The simplest way to start project on Cloregram framework is to use Leiningen template:
+The simplest way to start project on Cloregram framework is to use [Leiningen](https://leiningen.org) template:
 ```
 lein new algoflora/cloregram my-cloregram-bot
 ```
@@ -227,9 +227,15 @@ Common test workflow can be like following:
         (i/check-text "Number was decremented: 1"))))
 ```
 
+Cloregram is already configurated to use for testing purposes [weavejester/eftest](https://github.com/weavejester/eftest) [Leiningen](https://leiningen.org) plugin.
+
 ## Logging
 
-TODO: describe logging process
+For logging Cloregram using `com.amperity/dialog` library. Config is in file **resources/dialog.edn**.
+
+Out of the box it displays logs in console and record them to **logs/logs.json** file. This configuration works well with such [logs monitoring suite](https://github.com/algoflora/logging-system-docker).
+
+Currently there are little problems ([Issue #8](https://github.com/algoflora/cloregram/issues/8)) with logs consistency in console and in JSON in some cases like tests crash with uncaught exception. But mostly such logging configuration presents convienent tool for monitoring and debugging. 
 
 ## Configuration
 
