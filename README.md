@@ -239,11 +239,26 @@ Currently there are little problems ([Issue #8](https://github.com/algoflora/clo
 
 ## Configuration
 
-TODO: document configuration options
+You have to create in `resources` folder file `config.prod.edn` for production deploy as well as `confid.dev.edn` and `config.test.edn` if needed. These files will be used with corresponding [Leiningen](https://leiningen.org) profiles. More configs and profiles can be added manually. To reference use file `resouces/config.example.edn` and following table:
+
+| Key          | Description | Default | Comment | 
+|--------------|-------------|---------|---------|
+| `:bot/token` | Bot's token obtained from BotFather | "0000000000:XXX..." | Default value works in tests |
+| `:bot/ip` | Ip address of Bot application | "0.0.0.0" | |
+| `:bot/port` | Port Bot application to listen | 8443 | |
+| `:bot/https?` | Will bot use HTTPS? | `false` | In production this value must be `true` |
+| `:bot/admins` | List of administrators usernames | | Legacy option. Will be revised as part of [Issue #5](https://github.com/algoflora/cloregram/issues/5) |
+| `:bot/api-url` | Telegram API URL if not default is used | `nil` | `nil` means common Telegram Bot API. Different value is used in tests and can be useful if you are deployed [local bot API server](https://core.telegram.org/bots/api#using-a-local-bot-api-server) |
+| `:bot/server -> :options -> :keystore` | Keystore path for SSL | "./ssl/keystore.jks" | Look [Obtaining certificates](#obtaining-certificates) for details |
+| `:bot/server -> :options -> :keystore-password` | Password for SSL keystore | "cloregram.keystorepass" | Look [Obtaining certificates](#obtaining-certificates) for details |
+| `:bot/instance -> :certificate` | Path to PEM certificate | "./ssl/cert.pem" | Look [Obtaining certificates](#obtaining-certificates) for details |
+| `:db/connection -> :uri` | Datomic database URI | | In tests `datomic:mem://test` is used. In production something like `datomic:sql://127.0.0.1:4334/my-cloregram-bot` |
+| `:db/connection -> :create?` | Indicates if need to create new database | false | Mostly for testing purposes |
+| `:project/config` | Map of project specific config | `{}` | Values from this map could be accessed with hekp of function `(cloregram.system.state/config :key :nested-key ...)` |
 
 ## Deploy
 
-If you (`my-username`) want to deploy the bot (`my-cloregram-bot`) in home directory on Ubuntu server on address `127.1.2.3`, use following instructions.
+If you (`my-username`) want to deploy the bot (`my-cloregram-bot`) in home directory on Ubuntu server on address `127.1.2.3`, use following instructions:
 
 ### Preparing system
 
