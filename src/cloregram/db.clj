@@ -22,7 +22,7 @@
   (utl/read-resource-dir "schema"))
 
 (defn update-schema
-  "Updates schema with NEW data. Not removing unactual." ; TODO: Develop full update
+  "Updates schema with new entities data. Not removing unactual."
   []
   (log/info "Updating schema...")
   (let [user-schema (read-user-schema)

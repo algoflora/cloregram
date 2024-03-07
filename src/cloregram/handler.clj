@@ -91,4 +91,4 @@
 
 (defn payment
   [{:keys [user payment]}]
-  (api/send-message user (str "Successful payment with payload " (:invoice_payload payment)) [] :tem))
+  (api/send-message user (str "Successful payment with payload " (:invoice_payload payment)) [] :temp))

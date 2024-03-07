@@ -77,7 +77,7 @@
       (:https? opts)       (assoc :port (inc (:port opts))
                                   :ssl-port (:port opts)
                                   :sni-host-check? false
-                                  :keystore (or (:keystore opts) "ssl/keystore.jks")
+                                  :keystore (or (:keystore opts) "./ssl/keystore.jks")
                                   :key-password (or (:keystore-password opts) "cloregram.keystorepass")))))
 
 (defmethod ig/init-key :bot/server
@@ -106,7 +106,7 @@
               (cond-> {:content-type :multipart
                        :url (format "%s://%s:%d" schema ip port)
                        :secret_token webhook-key}
-                https? (assoc :certificate (clojure.java.io/file (or certificate "ssl/cert.pem")))))
+                https? (assoc :certificate (clojure.java.io/file (or certificate "./ssl/cert.pem")))))
     (log/info "Webhook is set")
     (log/debug "Webhook info:" (api-wrap tbot/get-webhook-info bot))
     bot))

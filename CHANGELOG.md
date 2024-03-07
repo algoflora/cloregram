@@ -1,12 +1,13 @@
-# Change Log
-All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
+## 0.8.0 - 2024-03-07
+	- Added full `README.md` [<Issue #2>]((https://github.com/algoflora/cloregram/issues/2)
+	- Added documentation for public main API functions
+	- Added documentation for public test infrastructure API functions
+	- Removed `get-user-info` from public test infrastructure API
+	- Fixed crash of `last-temp-message` if no temp messages
 
 ## 0.7.1 - 2024-03-04
-### Changed
-	- Schema updating and initial data loading functions moved to ss-bot.db namespace and implemented using weavejester/resauce library
-### Fixed
-	- Added method to handle unexpected updates without exception
+	- Moved `update-schema` and `load-data` to `ss-bot.db`
+	- Changed `update-schema` and `load-data` to use `weavejester/resauce` library [<Issue #12>](https://github.com/algoflora/cloregram/issues/12)
 
 ## 0.7.0 - 2024-02-29
-### Changed
-	- Testing infrastructure refactored (Issue #3)
+	- Refactored testing infrastructure [<Issue #3>]((https://github.com/algoflora/cloregram/issues/3)

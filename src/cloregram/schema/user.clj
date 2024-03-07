@@ -40,4 +40,4 @@
     :db/doc "Default handler and EDN-serialized args if not a callback query in incoming update"}
 
    {:db/ident :user/validate
-    :db.entity/attrs [:user/id :user/handler]}])
+    :db.entity/attrs [:user/id :user/first-name :user/language-code :user/msg-id :user/handler]}])

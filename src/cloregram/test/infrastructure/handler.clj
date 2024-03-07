@@ -1,9 +1,19 @@
 (ns cloregram.test.infrastructure.handler
   (:require [cloregram.test.infrastructure.state :as state]
             [cloregram.test.infrastructure.client :as c]
-            [cloregram.test.infrastructure.users :as u]
             [cheshire.core :refer [parse-string]]
             [dialog.logger :as log]))
+
+
+(defn- get-user-info
+  ([msg] (get-user-info @state/users msg))
+  ([users msg]
+   (let [user (->> users
+                   (filter (fn [[k v]] (= (:chat_id msg) (:id v))))
+                   (first)
+                   (val))
+         uid (-> user :username keyword)]
+     [user uid])))
 
 (defmulti handler #(keyword (:endpoint %)))
 
@@ -29,7 +39,7 @@
   [msg]
   (log/debug "Incoming :sendMessage" msg)
   (swap! state/users (fn [users]
-                      (let [[user uid] (u/get-user-info users msg)
+                      (let [[user uid] (get-user-info users msg)
                             mid (inc (:msg-id user))]
                         (cond-> users
                           (nil? (:main-msg-id user)) (assoc-in [uid :main-msg-id] mid)
@@ -38,7 +48,7 @@
                           true (assoc-in [uid :waiting-for-response?] false)))))
   {:status 200
    :body {:ok true
-          :result (assoc msg :message_id (-> (u/get-user-info @state/users msg)
+          :result (assoc msg :message_id (-> (get-user-info msg)
                                              (first)
                                              :msg-id))}})
 
@@ -47,7 +57,7 @@
   (log/debug "Incoming :editMessageText" msg)
   (swap! state/users (fn [users]
                       (let [mid (:message_id msg)
-                            [user uid] (u/get-user-info users msg)]
+                            [user uid] (get-user-info users msg)]
                         (when (not (contains? (:messages user) (:message_id msg)))
                           (throw (ex-info "No message to edit for user!"
                                           {:user user
@@ -59,7 +69,7 @@
                             (assoc-in [uid :waiting-for-response?] false)))))
   {:status 200
    :body {:ok true
-          :result (-> (u/get-user-info @state/users msg)
+          :result (-> (get-user-info msg)
                       (first)
                       :messages
                       (get (:message_id msg)))}})
@@ -76,7 +86,7 @@
   (log/debug "Incoming :deleteMessage" msg)
   (swap! state/users (fn [users]
                       (let [mid (:message_id msg)
-                            [user uid] (u/get-user-info users msg)]
+                            [user uid] (get-user-info users msg)]
                         (when (not (contains? (:messages user) (:message_id msg)))
                           (throw (ex-info "No message to delete for user!"
                                           {:user user
@@ -95,7 +105,7 @@
                 (update :reply_markup #(parse-string % true))
                 (update :chat_id #(Integer/parseInt %)))]
     (swap! state/users (fn [users]
-                        (let [[user uid] (u/get-user-info users msg)
+                        (let [[user uid] (get-user-info users msg)
                               mid (inc (:msg-id user))]
                           (-> users
                               (assoc-in [uid :msg-id] mid)
@@ -104,7 +114,7 @@
     {:status 200
      :body {:ok true
             :result (-> msg
-                        (assoc :message_id (-> (u/get-user-info @state/users msg)
+                        (assoc :message_id (-> (get-user-info msg)
                                                (first)
                                                :msg-id))
                         (dissoc :document))}}))
@@ -113,7 +123,7 @@
   [msg]
   (log/debug "Incoming :sendInvoice")
   (swap! state/users (fn [users]
-                      (let [[user uid] (u/get-user-info users msg)
+                      (let [[user uid] (get-user-info users msg)
                             mid (inc (:msg-id user))
                             invoice (select-keys msg [:title
                                                       :description
@@ -135,7 +145,7 @@
                             (assoc-in [uid :waiting-for-response?] false)))))
   {:status 200
    :body {:ok true
-          :result (assoc msg :message_id (-> (u/get-user-info @state/users msg)
+          :result (assoc msg :message_id (-> (get-user-info msg)
                                              (first)
                                              :msg-id))}})
 
