@@ -14,6 +14,8 @@ This README.md is under development
   - [Keyboard](#keyboard)
   - [Handlers](#handlers)
   - [Payments](#payments)
+  - [Interacting Datomic database](#interacting-datomic-database)
+  - [Datomic schema and initial data](#datomic-schema-and-initial-data)
 - [Testing](#testing)
 - [Logging](#logging)
 - [Configuration](#configuration)
@@ -145,7 +147,23 @@ Note that in this example any input except for button clicks will call `common` 
 
 ### Payments
 
-To make user pay for something use API function `cloregram.api/send-invoice`. When user succesfully paid, payment handler is called. Payment handler have to be located in `my-cloregram-bot.handler/payment` function. This function take parameters map with keys [:user](#user) and [:payment](https://core.telegram.org/bots/api#successfulpayment). Use user data and `:invoice_payload` field in payment map to determine further behaviour. 
+To make user pay for something use API function `cloregram.api/send-invoice`. When user succesfully paid, payment handler is called. Payment handler have to be located in `my-cloregram-bot.handler/payment` function. This function take parameters map with keys [:user](#user) and [:payment](https://core.telegram.org/bots/api#successfulpayment). Use user data and `:invoice_payload` field in payment map to determine further behaviour.
+
+### Interacting Datomic database
+
+Namespace `cloregram.db` provides functions for working with database:
+| Call | Description | Comment |
+|------|-------------|---------|
+| `(cloregram.db/conn)` | Returns Datomic connection | Look at [Datomic transactions](https://docs.datomic.com/pro/transactions/transactions.html) for details
+| `(cloregram.db/db)` | Returns database structure for queries, pulls etc | Look at [Datomic queries](https://docs.datomic.com/pro/query/query-executing.html) for details
+
+### Datomic schema and initial data
+
+Also `cloregram.db` namespace has two useful functions to keep the [schema](https://docs.datomic.com/pro/schema/schema.html) up to date and to load initial data:
+| Call | Description | Comment |
+|------|-------------|---------|
+| `(cloregram.db/update-schema)` | Wriring to database internal Cloregram schema ([User](#user) and Callback entities) and all entities from project's `resources/schema` folder. Schema entities data have to be located in **.edn** files. For conviency good to have different files for each entity. Nested folders are supported. | Take attention that this function is automatically launching every application startup. So kindly use `resources/schema` folder only for schema entities, but not for data. Otherwise data will be rewrited every startup even if it was changed by application. One more problem is that for now `update-schema` not removing entities attributes that are not in schema any more - ([Issue #6](https://github.com/algoflora/cloregram/issues/6)).
+| `(cloregram.db/load-data)` | Writing to database data from project's `resources/data` folder. Data have to be in **.edn** files. For conviency good to have different files for each entity. Nested folders are supported. | Take attention that this function is not called anywhere in code except `cloregram.test.fixtures/load-initial-data` test fixture. So you have to manage manual calling of `load-data` after project startup at first launch in production. Don't forget remove this call later or all involved data will be always overwritten from scratch. This behaviour expected to be changed in [Issue #6](https://github.com/algoflora/cloregram/issues/6).
 
 ## Testing
 
@@ -314,10 +332,6 @@ sudo systemctl restart datomic-transactor.service
 **Now you have to create database**
 
 Folow instructions [here](https://docs.datomic.com/pro/getting-started/connect-to-a-database.html).
-
-### Schema and initial data
-
-TODO: explain how to load initial data
 
 ### Starting your bot
 
