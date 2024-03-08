@@ -1,8 +1,6 @@
 # algoflora/cloregram
 
-[Clojure](https://clojure.org) and [Datomic](https://www.datomic.com) framework for making complex Telegram Bots/Applications
-
-This README.md is under development
+**[Clojure](https://clojure.org) and [Datomic](https://www.datomic.com) framework for making complex Telegram Bots/Applications**
 
 ## Table of Contents
 
@@ -21,7 +19,6 @@ This README.md is under development
 - [Configuration](#configuration)
 - [Deploy](#deploy)
   - [Preparing system](#preparing-system)
-  - [Schema and initial data](#schema-and-initial-data)
   - [Starting your bot](#starting-your-bot)
   - [Obtaining certificates](#obtaining-certificates)
 - [Further development and bugfixing](#further-development-and-bugfixing)
