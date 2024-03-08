@@ -1,3 +1,6 @@
+## 0.8.1 - 2024-03-08
+* Changed `cloregram.test.infrastructure.client/press-btn` to throw Exception if no expected button
+
 ## 0.8.0 - 2024-03-07
 * Added full `README.md` [<Issue #2>](https://github.com/algoflora/cloregram/issues/2)
 * Added documentation for public main API functions

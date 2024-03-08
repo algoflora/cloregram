@@ -20,6 +20,11 @@
     (u/add :testuser-2) 
     
     (c/send-text :testuser-1 "Hello, bot!")
+    (let [msg (u/main-message :testuser-1)]
+      (is (thrown-with-msg? Exception #"^No expected button in Message!$" (c/press-btn msg :testuser-1 "!")))
+      (is (thrown-with-msg? Exception #"^No expected button in Message!$" (c/press-btn msg :testuser-1 10 20)))
+      (is (thrown-with-msg? Exception #"^Wrong User interacting with Message!$" (c/press-btn msg :testuser-2 "+"))))
+    
     (-> (u/main-message :testuser-1)
         (i/check-text "testuser-1 HELLO, BOT!")
         (i/check-btns [["+" "-"]])

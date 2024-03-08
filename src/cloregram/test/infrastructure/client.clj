@@ -69,33 +69,42 @@
 (defn- assert-uid 
   [msg uid]
   (let [user (u/get-user-by-uid uid)]
-    (assert (= (:chat_id msg) (:id user)) (format "User %s tried to do dsomething in message %s" user msg))))
+    (when (not= (:chat_id msg) (:id user))
+      (throw (ex-info "Wrong User interacting with Message!" {:expected-user user
+                                                      :message msg})))))
 
 (defn press-btn
-  "Simulate clicking button in `row` and `col` or with text `btn` in message `msg` by user with username `uid`"
+  "Simulate clicking button in `row` and `col` or with text `btn` in message `msg` by user with username `uid`. Exception would be thrown if there is no expected button."
+  {:changed "0.8.1"}
   ([msg uid row col]
    (assert-uid msg uid)
    (log/infof "User %s pressed button %d/%d" uid row col)
-   (let [cbd (-> msg
-                 :reply_markup
-                 :inline_keyboard
-                 (nth (dec row))
-                 (nth (dec col))
-                 (:callback_data))]
+   (let [cbd (try (-> msg
+                      :reply_markup
+                      :inline_keyboard
+                      (nth (dec row))
+                      (nth (dec col))
+                      (:callback_data))
+                  (catch IndexOutOfBoundsException e
+                    (throw (ex-info "No expected button in Message!" {:row row
+                                                                      :column col
+                                                                      :message msg}))))]
      (send-callback-query uid cbd)
      msg))
-  ([msg uid btn]
+  ([msg uid btn-text]
    (assert-uid msg uid)
-   (log/infof "User %s pressed button \"%s\"" uid btn)
-   (let [cbd (->> msg
-                  :reply_markup
-                  :inline_keyboard
-                  (flatten)
-                  (filter #(= btn (:text %)))
-                  (first)
-                  (:callback_data))]
-     (send-callback-query uid cbd)
-     msg)))
+   (log/infof "User %s pressing button \"%s\"..." uid btn-text)
+   (if-let [cbd (->> msg
+                     :reply_markup
+                     :inline_keyboard
+                     (flatten)
+                     (filter #(= btn-text (:text %)))
+                     (first)
+                     (:callback_data))]
+     (do (send-callback-query uid cbd)
+         msg)
+     (throw (ex-info "No expected button in Message!" {:button-text btn-text
+                                                       :message msg})))))
 
 (defn pay-invoice
   "Simulate payment for invoice from message `msg` by user with username `uid`"
