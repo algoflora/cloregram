@@ -9,3 +9,5 @@
 (defonce users (atom {}))
 
 (defonce checkout-queries (atom {}))
+
+(defonce files (atom {}))

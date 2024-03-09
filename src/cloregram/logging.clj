@@ -4,7 +4,7 @@
 
 (defn transform-json
   [_ event]
-  (when (not (.contains (:message event) "message is not modified"))
+  (when true #_(not (.contains (:message event) "message is not modified"))
     (cond-> event
       true (dissoc :line)
       true (merge (utl/get-project-info))

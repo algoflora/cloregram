@@ -1,4 +1,4 @@
-(defproject algoflora/cloregram "0.8.1"
+(defproject algoflora/cloregram "0.9.0"
   :description "Clojure/Datomic framework for making complex Telegram Bots/Applications"
   :url "https://cloregram.io"
   :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"
@@ -26,6 +26,8 @@
   :profiles {:test {:dependencies [[eftest "0.6.0"]
                                    [http-kit "2.7.0"]
                                    [compojure "1.7.0"]
-                                   [ring/ring-json "0.5.1"]]}
+                                   [ring/ring-json "0.5.1"]
+                                   [net.mikera/imagez "0.12.0"]]
+                    :resource-paths ["test/resources"]}
              :uberjar {:aot :all
                        :jvm-opts ["-Dclojure.compiler.direct-linking=true"]}})

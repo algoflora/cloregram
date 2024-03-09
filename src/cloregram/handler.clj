@@ -23,12 +23,27 @@
   (main-handler upd))
 
 (defn- handle-dispatch
-  [user msg]
+  [_ msg]
   (cond
     (contains? msg :successful_payment) :payment
-    :else :text))
+    :else :default))
 
 (defmulti ^:private handle handle-dispatch)
+
+(defmethod handle :default
+  [user msg]
+  (let [hdata (:user/handler user)
+        handler-symbol (first hdata)
+        handler (utl/resolver handler-symbol)
+        common-handler (->> (utl/get-project-info) :name (format "%s.handler/common") (symbol))
+        args (-> hdata second edn/read-string (assoc :user user :message msg))]
+    (when (not= handler common-handler)
+      (u/set-handler user common-handler nil))
+    (log/infof "Handling message %s from User %s" (utl/msg->str msg) (utl/username user)) ; TODO: info?
+    (log/debugf "Calling %s with args %s" handler args)
+    (handler args)
+    (delete-message {:user user
+                     :mid (:message_id msg)})))
 
 (defmethod handle :payment
   [user msg]
@@ -43,20 +58,6 @@
     (log/infof "Handling successful payment %s from User %s" msg (utl/username user))
     (log/debugf "Calling %s with args %s" payment-handler args)
     (payment-handler args)))
-
-(defmethod handle :text
-  [user msg]
-  (let [hdata (:user/handler user)
-        handler (-> hdata first utl/resolver)
-        common-handler (symbol (str (:name (utl/get-project-info)) ".handler/common"))
-        args (-> hdata second edn/read-string (assoc :user user :message msg))]
-    (when (not= handler common-handler)
-      (u/set-handler user common-handler nil))
-    (log/infof "Handling message %s from User %s" (utl/msg->str msg) (utl/username user)) ; TODO: info?
-    (log/debugf "Calling %s with args %s" handler args)
-    (handler args)
-    (delete-message {:user user
-                     :mid (:message_id msg)})))
 
 (defmethod main-handler :message
   [upd]

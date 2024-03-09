@@ -4,8 +4,11 @@
             [cloregram.utils :as utl]))
 
 (defn add
+  
   "Creates virtual user with username and first-name `uid`, language-code 'en' and empty mesages storage. Writes this user into test infrastructure virtual users state storage with key `uid`."
+
   {:changed "0.8"}
+
   [uid]
   (let [user {:id (inc (count @state/users))
               :msg-id 0
@@ -17,8 +20,7 @@
               :messages (sorted-map)
               :waiting-for-response? false}]
     (swap! state/users #(assoc % uid user))
-    (log/infof "Added user @%s. Total users count: %d" (name uid) (count @state/users))
-    (log/debug "Users:" @state/users)))
+    (log/debugf "Added user @%s. Total users count: %d" (name uid) (count @state/users))))
 
 (defn- get-user-by-
   [key value]
@@ -59,12 +61,12 @@
 
 (defn- get-response-or-current
   [uid f s timeout]
-  (log/infof "Getting %s for User %s (timeout: %d)" s uid timeout)
+  (log/debugf "Getting %s for User %s (timeout: %d)" s uid timeout)
   (let [interval 100]
     (loop [t timeout]
       (cond (not (:waiting-for-response? (uid @state/users)))
             (let [resp (f uid)]
-              (log/infof "User %s got %s: %s" uid s resp)
+              (log/debugf "User %s got %s: %s" uid s resp)
               resp)
 
             (= 0 t) (throw (ex-info (format "No %s!" s) {:timeout timeout}))
@@ -73,22 +75,31 @@
                       (recur (- t interval)))))))
 
 (defn main-message
+  
   "Returns main message of virtual user with key `uid` from test infrastructure virtual users state storage. If virtual user is not awaiting response, then message structure or nil is returned immidiately. If virtual user is awaiting response, then function will wait until response or `timeout` milliseconds (default 2000). If awaiting of response not finished while timeout passed, Exception will be throwed."
+  
   {:added "0.8"}
+
   ([uid] (main-message uid 2000))
   ([uid timeout]
    (get-response-or-current uid main-message# "main Message" timeout)))
 
 (defn last-temp-message
+
   "Returns last temporal message of virtual user with key `uid` from test infrastructure virtual users state storage. If virtual user is not awaiting response, then temporal message structure or nil is returned immidiately. If virtual user is awaiting response, then function will wait until response or `timeout` milliseconds (default 2000). If awaiting of response not finished while timeout passed, Exception will be throwed."
+
   {:added "0.8"}
+
   ([uid] (last-temp-message uid 2000))
   ([uid timeout]
    (get-response-or-current uid last-temp-message# "temp Message" timeout)))
 
 (defn count-temp-messages
+
   "Returns count of temporal messages of virtual user with key `uid` from test infrastructure virtual users state storage. If virtual user is not awaiting response, then temporal messages count is returned immidiately. If virtual user is awaiting response, then function will wait until response or `timeout` milliseconds (default 2000). If awaiting of response not finished while timeout passed, Exception will be throwed."
+
   {:added "0.8"}
+
   ([uid] (count-temp-messages  uid 2000))
   ([uid timeout]
    (get-response-or-current uid count-temp-messages# "temp Messages count" timeout)))

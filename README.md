@@ -194,7 +194,7 @@ The `cloregram.test.infrastructure.client` namespace contains functions for inte
 (c/send-text :user-1 "Hello, bot!") ; sends to bot the text message "Hello, bot!" by virtual user "user-1"
 ```
 Also in this namespace are functions: 
-- `press-btn` to simulate clicking button in incoming message
+- `click-btn` to simulate clicking button in incoming message
 - `pay-invoice` to simulate clicking Pay button in incoming invoice
 - `send-message` to send more generic messages, not for common use cases
 
@@ -229,15 +229,15 @@ Common test workflow can be like following:
     (-> (u/main-message :testuser-1)
         (i/check-text "Hello, testuser-1! Initial number is 0.")
         (i/check-btns [["+" "-"]])
-        (c/press-btn :testuser-1 "+"))
+        (c/click-btn :testuser-1 "+"))
     (-> (u/main-message :testuser-1)
         (i/check-text "Number was incremented: 1")
         (i/check-btns [["+" "-"]])
-        (c/press-btn :testuser-1 "+"))
+        (c/click-btn :testuser-1 "+"))
     (-> (u/main-message :testuser-1)
         (i/check-text "Number was incremented: 2")
         (i/check-btns [["+" "-"]])
-        (c/press-btn :testuser-1 "-"))
+        (c/click-btn :testuser-1 "-"))
     (-> (u/main-message :testuser-1)
         (i/check-text "Number was decremented: 1"))))
 ```

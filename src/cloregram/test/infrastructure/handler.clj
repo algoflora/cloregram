@@ -22,7 +22,7 @@
   (log/debug "Incoming :setWebhook" url secret_token)
   (reset! state/webhook-address url)
   (reset! state/webhook-token secret_token)
-  (log/info "Webhook address and token saved")
+  (log/debug "Webhook address and token saved")
   {:status 200
    :body {:ok true}})
 
@@ -63,23 +63,21 @@
                                           {:user user
                                            :message-id (:message_id msg)
                                            :message msg})))
-                        (-> users
-                            (assoc-in [uid :messages mid :text] (:text msg))
-                            (assoc-in [uid :messages mid :reply_markup] (:reply_markup msg))
-                            (assoc-in [uid :waiting-for-response?] false)))))
+                        (cond-> users
+                          true (assoc-in [uid :messages mid :text] (:text msg))
+
+                          (contains? msg :reply_markup)
+                          (assoc-in [uid :messages mid :reply_markup] (:reply_markup msg))
+
+                          true (assoc-in [uid :waiting-for-response?] false)))))
   {:status 200
    :body {:ok true
           :result (-> (get-user-info msg)
                       (first)
                       :messages
-                      (get (:message_id msg)))}})
+                      (get (:message_id msg))
+                      (assoc :message_id (:message_id msg)))}})
     ;; TODO: Handle situation when User deleted message manually
-
-(defn- delete-msg
-  [uid msg]
-  (swap! state/users
-         (fn [users]
-           (update-in users [uid :messages] #(dissoc % (:message_id msg))))))
 
 (defmethod handler :deleteMessage
   [msg]

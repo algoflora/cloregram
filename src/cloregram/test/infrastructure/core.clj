@@ -42,10 +42,10 @@
         path (.getPath u)
         server (run-server (create-routes (str path bot-token))
                            {:ip host :port port})]
-    (log/info "Server started")
+    (log/debug "Server started")
     server))
 
 (defmethod ig/halt-key! :test/server
   [_ server]
   (server :timeout 3)
-  (log/info "Testing server shutted down"))
+  (log/debug "Testing server shutted down"))

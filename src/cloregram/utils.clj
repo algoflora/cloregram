@@ -10,6 +10,11 @@
   (log/debug "DBG:" x)
   x)
 
+(defn inf
+  [x]
+  (log/info "INF:" x)
+  x)
+
 (defn api-wrap
   [api-f & args]
   (log/debug (format "Calling (%s %s)" api-f (str/join " " args)))
@@ -24,7 +29,7 @@
     (:result resp)))
 
 (defn deep-merge
-  "Recursively merges maps."
+  "Recursively merges maps"
   [& maps]
   (letfn [(m [& xs]
             (if (some #(and (map? %) (not (record? %))) xs)

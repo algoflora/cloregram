@@ -8,13 +8,16 @@
             [dialog.logger :as log]))
 
 (defn- check-opt
-  [opt opts]
+  [opts opt]
   (boolean (some #{opt} opts)))
 
 (defn- prepare-options-map
   [opts]
-  (let [os #{:temp :markdown}]
-    (reduce #(assoc %1 %2 (check-opt %2 opts)) {} os)))
+  (let [to-edit-msg-id (->> opts (filter number?) (first))]
+    (-> {}
+        (assoc :temp           (or (check-opt opts :temp) (some? to-edit-msg-id)))
+        (assoc :markdown       (check-opt opts :markdown))
+        (assoc :to-edit-msg-id to-edit-msg-id))))
 
 (defmulti ^:private create-key (fn [kdata _] (type kdata)))
 
@@ -36,28 +39,41 @@
 
 (defn- prepare-keyboard
   [kbd user optm]
-  (let [mapf #(cond-> % (and (vector? %) (= 2 (count %))) (conj {}) true (create-key user))]
-    {:inline_keyboard
-     (cond->> kbd
-       true (mapv #(mapv mapf %))
-       (:temp optm) (#(conj % [{:text "✖️"
-                                :callback_data (str (java.util.UUID/randomUUID))}])))}))
+  (when kbd
+    (let [mapf #(cond-> % (and (vector? %) (= 2 (count %))) (conj {}) true (create-key user))]
+      {:inline_keyboard
+       (cond->> kbd
+         true (mapv #(mapv mapf %))
+         (:temp optm) (#(conj % [{:text "✖️"
+                                  :callback_data (str (java.util.UUID/randomUUID))}])))})))
 
 (defn- create-temp-delete-callback
   [user new-msg]
-  (clb/create (-> new-msg :reply_markup :inline_keyboard last first :callback_data java.util.UUID/fromString)
-              user 'cloregram.handler/delete-message {:mid (:message_id new-msg)}))
+  (-> new-msg
+      :reply_markup
+      :inline_keyboard
+      (last)
+      (first)
+      :callback_data
+      (java.util.UUID/fromString)
+      (clb/create user 'cloregram.handler/delete-message {:mid (:message_id new-msg)})))
 
 (defn- to-edit?
-  [optm user] (and (not (:temp optm)) (some? (:user/msg-id user)) (not= 0 (:user/msg-id user))))
+  [optm user]
+  (when (and (some? (:mdg-id user)) (= (:to-edit-msg-id optm) (:msg-id user)))
+    (throw (ex-info "Prohibited way to edit Main Message!" {})))
+  (if (:temp optm)
+   (some? (:to-edit-msg-id optm))
+   (and (some? (:user/msg-id user))
+        (not= 0 (:user/msg-id user)))))
 
 (defn- prepare-arguments-map
   [argm kbd optm user]
   (cond-> argm
     true                 (assoc :chat_id (:user/id user))
-    (not-empty kbd)      (assoc :reply_markup kbd)
+    (some? kbd)          (assoc :reply_markup kbd)
     (:markdown optm)     (assoc :parse_mode "Markdown")
-    (to-edit? optm user) (assoc :message_id (:user/msg-id user))))
+    (to-edit? optm user) (assoc :message_id (or (:to-edit-msg-id optm) (:user/msg-id user)))))
 
 (defmulti ^:private send-to-chat (fn [& args] (identity (first args))))
 
@@ -71,7 +87,8 @@
     (when (:temp optm)
       (create-temp-delete-callback user new-msg))
     (when (and (not (:temp optm)) (not= new-msg-id (:msg-id user)))
-      (u/set-msg-id user new-msg-id))))
+      (u/set-msg-id user new-msg-id))
+    new-msg))
 
 (defmethod send-to-chat :file
   [_ user data kbd optm]
@@ -88,7 +105,8 @@
   [_ user data kbd optm]
   (let [argm (prepare-arguments-map data kbd optm user)
         new-msg (utl/api-wrap tbot/send-invoice (bot) argm)]
-    (create-temp-delete-callback user new-msg)))
+    (create-temp-delete-callback user new-msg)
+    new-msg))
 
 (defn- prepare-and-send
   [type user data kbd & opts]
@@ -103,10 +121,13 @@
   "Sends text message with content `text` and inline keyboard `kbd` to `user`.
   Possible `opts`:
 
-  | key     | description |
-  |---------|-------------|
-  | `:temp` | Sends 'temporal' message that appears with notification under 'main' one. This message will have button to delete it in the end
-  | `:markdown` | Messsage will use Markdown parse_mode"
+  | option      | description | comment |
+  |-------------|-------------|---------|
+  | `:temp`     | Sends 'temporal' message that appears with notification under 'main' one. This message will have button to delete it in the end | |
+  | `:markdown` | Messsage will use Markdown parse_mode | |
+  | Long value  | Temporal Message ID you want to edit. It must be text message. `nil` as `kbd` value then means to leave keyboard layout unchanged | since 0.9.0 |" 
+
+  {:changed "0.9.0"}
   
   [user text kbd & opts]
   (apply prepare-and-send :message user text kbd opts))
@@ -117,11 +138,13 @@
   "Sends file in `path` as a temporary messaage with caption `caption` and inline keyboard `kbd` to `user`.
   Possible `opts`:
 
-  | key         | description |
-  |-------------|-------------|
-  | `:markdown` | Messsage will use Markdown parse_mode"
-
-  {:added "0.4"}
+  | option      | description | comment |
+  |-------------|-------------|---------|
+  | `:markdown` | Messsage will use Markdown parse_mode | |
+  | Long value  | Temporal Message ID you want to edit. It must be media message. `nil` as `kbd` value then means to leave keyboard layout unchanged | since 0.9.0 |"
+  
+  {:added "0.4"
+   :changed "0.9.0"}
 
   [user path caption kbd & opts]
   (apply prepare-and-send :file user {:path path :caption caption} kbd :temp opts))
@@ -131,6 +154,7 @@
 
   "Sends invoice as 'temporal' message with inline keyboard `kbd` to `user`. Keyboard will have payment button with `pay-text` in the beginning and button to delete it in the end.  
   Description of `data` map (all keys required):
+  
   | key               | description |
   |-------------------|-------------|
   | `:title`          | Product name, 1-32 characters
@@ -144,3 +168,12 @@
 
   [user data pay-text kbd]
   (prepare-and-send :invoice user data (vec (cons [{:text pay-text :pay true}] kbd)) :temp))
+
+(defn get-file
+
+  "Returns `java.io.File` by `file-id`."
+
+  {:added "0.9.0"}
+
+  [file-id]
+  (utl/api-wrap ))
