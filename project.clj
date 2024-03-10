@@ -10,6 +10,7 @@
 
                  [telegrambot-lib "2.12.0"]
 
+                 [http-kit "2.7.0"]
                  [ring/ring-jetty-adapter "1.9.2"]
 
                  [nano-id "1.0.0"]
@@ -24,7 +25,6 @@
 
   :target-path "target/%s"
   :profiles {:test {:dependencies [[eftest "0.6.0"]
-                                   [http-kit "2.7.0"]
                                    [compojure "1.7.0"]
                                    [ring/ring-json "0.5.1"]
                                    [net.mikera/imagez "0.12.0"]]

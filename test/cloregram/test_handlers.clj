@@ -37,15 +37,21 @@
 
 (defn new-temp-2
   [{:keys [user]}]
-  (log/debug "<=====")
   (api/send-message user "New temp message 2" nil :temp @temp-id))
+
+(defn send-edit
+  [{:keys [user message]}]
+  (let [msg-id (-> message :text Integer/parseInt)]
+    (api/send-message user "Temp message" nil :temp msg-id)))
 
 (defn photo-handler
   [{user :user {:keys [photo]} :message}]
   (let [photo# (fn [u pss]
-                 (let [ps (max-key :width pss)
-                       file-id (:file_id ps)]
-                   ))]
+                 (let [resp (->> pss
+                                 (apply max-key :width)
+                                 :file_id
+                                 (api/get-file))]
+                   (log/debug "RESP" resp)))]
     (if photo
       (photo# user photo)
       (api/send-message user "Image expected!" [] :temp))))

@@ -1,8 +1,10 @@
 (ns cloregram.api
   (:require [cloregram.system.state :refer [bot]]
             [cloregram.utils :as utl]
+            [cloregram.system.state :refer [system]]
             [cloregram.callbacks :as clb]
             [cloregram.users :as u]
+            [org.httpkit.client :refer [get]]
             [cheshire.core :refer [generate-string]]
             [telegrambot-lib.core :as tbot]
             [dialog.logger :as log]))
@@ -81,7 +83,7 @@
   [_ user text kbd optm]
   (let [argm (prepare-arguments-map {:text text} kbd optm user)
         func (if (to-edit? optm user)
-               tbot/edit-message-text tbot/send-message)
+               tbot/edit-message-text tbot/send-message) ;; TODO: Implement fallback for edit
         new-msg (utl/api-wrap func (bot) argm)
         new-msg-id (:message_id new-msg)]
     (when (:temp optm)
@@ -176,4 +178,7 @@
   {:added "0.9.0"}
 
   [file-id]
-  (utl/api-wrap ))
+  (->> (utl/api-wrap tbot/get-file (bot) file-id)
+    :file_path
+    (format "https://api.telegram.org/file/bot%s/%s" (:bot/token @system))
+    (get)))

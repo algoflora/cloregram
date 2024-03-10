@@ -72,7 +72,7 @@
   ([uid text] (send-text uid text []))
   ([uid text entities]
    (log/debugf "User %s sendind message \"%s\"..." uid text)
-   (send-message uid {:text text :entities entities})))
+   (send-message uid {:text (str text) :entities entities})))
 
 (defn send-photo
 

@@ -44,7 +44,7 @@
                         (cond-> users
                           (nil? (:main-msg-id user)) (assoc-in [uid :main-msg-id] mid)
                           true (assoc-in [uid :msg-id] mid)
-                          true (assoc-in [uid :messages mid] msg)
+                          true (assoc-in [uid :messages mid] (assoc msg :message_id mid))
                           true (assoc-in [uid :waiting-for-response?] false)))))
   {:status 200
    :body {:ok true
@@ -163,3 +163,7 @@
                                               :invoice_payload (:payload invoice)}} :silent)
     {:status 200
      :body true}))
+
+(defmethod handler :getFile
+  [msg]
+  (log/debug "Incoming :getFile" msg))

@@ -26,7 +26,11 @@
   [path]
   (defroutes routes
     (context path []
-             (POST "/:endpoint" [] #(handler (:params %)))))
+             (POST "/:endpoint" [] #(try (handler (:params %))
+                                         (catch java.lang.Exception e
+                                           {:status 200
+                                            :body {:ok false
+                                                   :description e}})))))
   (-> routes
       logging-middleware
       wrap-keyword-params
