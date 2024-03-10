@@ -3,7 +3,7 @@
             [cloregram.system.state :refer [system]]
             [cloregram.utils :as utl]
             [cloregram.schema :refer [schema]]
-            [dialog.logger :as log]))
+            [taoensso.timbre :as log]))
 
 (defn conn
   "Returns database connection"

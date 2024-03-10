@@ -3,7 +3,7 @@
             [clojure.edn :as edn]
             [clojure.string :as str]
             [resauce.core :as res]
-            [dialog.logger :as log]))
+            [taoensso.timbre :as log]))
 
 (defn dbg
   [x]

@@ -1,5 +1,5 @@
 (ns cloregram.users
-  (:require [dialog.logger :as log]
+  (:require [taoensso.timbre :as log]
             [cloregram.db :as db]
             [datomic.api :as d]
             [cloregram.utils :as utl]))

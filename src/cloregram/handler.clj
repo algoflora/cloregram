@@ -4,7 +4,7 @@
             [cloregram.users :as u]
             [cloregram.utils :as utl]
             [cloregram.callbacks :as clb]
-            [dialog.logger :as log]
+            [taoensso.timbre :as log]
             [clojure.string :as str]
             [clojure.edn :as edn]
             [telegrambot-lib.core :as tbot]))

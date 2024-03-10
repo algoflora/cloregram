@@ -1,5 +1,5 @@
 (ns cloregram.test.infrastructure.core
-  (:require [dialog.logger :as log]
+  (:require [taoensso.timbre :as log]
             [integrant.core :as ig]
             [clojure.java.io :as io]
             [org.httpkit.server :refer [run-server]]

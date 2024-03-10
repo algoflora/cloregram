@@ -1,5 +1,5 @@
 (ns cloregram.callbacks
-  (:require [dialog.logger :as log]
+  (:require [taoensso.timbre :as log]
             [cloregram.db :as db]
             [cloregram.utils :as utl]
             [datomic.api :as d]

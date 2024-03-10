@@ -7,7 +7,7 @@
             [cloregram.test.infrastructure.users :as u]
             [cloregram.test.infrastructure.client :as c]
             [cloregram.test.infrastructure.inspector :as i]
-            [dialog.logger :as log]
+            [taoensso.timbre :as log]
             [nano-id.core :refer [nano-id]]))
 
 (use-fixtures :once

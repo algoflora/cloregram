@@ -1,7 +1,7 @@
 (ns cloregram.system.init
   (:require [integrant.core :as ig]
             [cheshire.core :refer [parse-string]]
-            [dialog.logger :as log]
+            [taoensso.timbre :as log]
             [nano-id.core :refer [nano-id]]
             [ring.adapter.jetty :refer [run-jetty]]
             [datomic.api :as d]

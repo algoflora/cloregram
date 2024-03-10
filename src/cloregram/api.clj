@@ -5,7 +5,7 @@
             [cloregram.users :as u]
             [cheshire.core :refer [generate-string]]
             [telegrambot-lib.core :as tbot]
-            [dialog.logger :as log]))
+            [taoensso.timbre :as log]))
 
 (defn- check-opt
   [opt opts]

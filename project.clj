@@ -1,4 +1,4 @@
-(defproject algoflora/cloregram "0.8.1"
+(defproject algoflora/cloregram "0.9.0"
   :description "Clojure/Datomic framework for making complex Telegram Bots/Applications"
   :url "https://cloregram.io"
   :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"
@@ -6,7 +6,7 @@
   
   :dependencies [[org.clojure/clojure "1.11.1"]
                  [integrant "0.8.1"]
-                 [com.amperity/dialog "2.0.115"]
+                 [com.taoensso/timbre "6.5.0"]
 
                  [telegrambot-lib "2.12.0"]
 

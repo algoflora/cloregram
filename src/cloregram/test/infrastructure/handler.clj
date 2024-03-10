@@ -2,7 +2,7 @@
   (:require [cloregram.test.infrastructure.state :as state]
             [cloregram.test.infrastructure.client :as c]
             [cheshire.core :refer [parse-string]]
-            [dialog.logger :as log]))
+            [taoensso.timbre :as log]))
 
 
 (defn- get-user-info

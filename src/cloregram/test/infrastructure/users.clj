@@ -1,5 +1,5 @@
 (ns cloregram.test.infrastructure.users
-  (:require [dialog.logger :as log]
+  (:require [taoensso.timbre :as log]
             [cloregram.test.infrastructure.state :as state]
             [cloregram.utils :as utl]))
 
@@ -64,7 +64,7 @@
     (loop [t timeout]
       (cond (not (:waiting-for-response? (uid @state/users)))
             (let [resp (f uid)]
-              (log/infof "User %s got %s: %s" uid s resp)
+              (log/info (format "User %s got %s" uid s) {s resp})
               resp)
 
             (= 0 t) (throw (ex-info (format "No %s!" s) {:timeout timeout}))
