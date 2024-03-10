@@ -1,5 +1,6 @@
 (ns cloregram.utils
-  (:require [clojure.java.io :as io]
+  (:require [cloregram.system.state :refer [bot]]
+            [clojure.java.io :as io]
             [clojure.edn :as edn]
             [clojure.string :as str]
             [resauce.core :as res]
@@ -15,17 +16,23 @@
   (log/info "INF:" x)
   x)
 
-(defn api-wrap
-  [api-f & args]
-  (log/debug (format "Calling (%s %s)" api-f (str/join " " args)))
-  (let [resp (apply api-f args)
-        ok   (true? (:ok resp))]
+(defn api-wrap-
+  [api-f-sym bot & args]
+  (log/debug (format "Calling (%s %s)" api-f-sym (str/join " " args)))
+  (let [api-f (ns-resolve (find-ns 'telegrambot-lib.core) api-f-sym)
+        resp  (apply api-f bot args)
+        ok    (true? (:ok resp))]
     (when (not ok)
-      (throw (ex-info "API response error!" {:call api-f
-                                             :arguments args
-                                             :description (:description resp)})))
+      (log/debug "RESP" resp)
+      (throw (ex-info "API response error!" {:response resp
+                                             :call api-f-sym
+                                             :arguments args})))
     (log/debug (format "%s response is OK: %s" api-f resp))
     (:result resp)))
+
+(defn api-wrap
+  [api-f-sym & args]
+  (apply api-wrap- api-f-sym (bot) args))
 
 (defn deep-merge
   "Recursively merges maps"

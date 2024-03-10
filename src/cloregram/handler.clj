@@ -1,17 +1,16 @@
 (ns cloregram.handler
-  (:require [cloregram.system.state :refer [bot system]]
+  (:require [cloregram.system.state :refer [system]]
             [cloregram.api :as api]
             [cloregram.users :as u]
             [cloregram.utils :as utl]
             [cloregram.callbacks :as clb]
             [dialog.logger :as log]
             [clojure.string :as str]
-            [clojure.edn :as edn]
-            [telegrambot-lib.core :as tbot]))
+            [clojure.edn :as edn]))
 
 (defn delete-message
   [{:keys [mid user]}]
-  (utl/api-wrap tbot/delete-message (bot) {:chat_id (:user/id user)
+  (utl/api-wrap 'delete-message {:chat_id (:user/id user)
                                            :message_id mid}))
 
 (defmulti main-handler #(some #{:message :callback_query :pre_checkout_query} (keys %)))
@@ -80,7 +79,7 @@
   [upd]
   (let [pcqid (get-in upd [:pre_checkout_query :id])]
     (log/infof "Handling pre-checkout query with id  %s. Simply answering OK..." pcqid)
-    (utl/api-wrap tbot/answer-precheckout-query-ok (bot) pcqid)))
+    (utl/api-wrap 'answer-precheckout-query-ok pcqid)))
 
 (defmethod main-handler nil
   [upd]

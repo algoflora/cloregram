@@ -2,6 +2,7 @@
   (:require [clojure.java.io :as io]
             [dialog.logger :as log]
             [integrant.core :as ig]
+            [cloregram.logging]
             [cloregram.utils :as utl]
             [cloregram.utils :refer [deep-merge]]
             [cloregram.system.init :refer [startup shutdown!]]

@@ -166,4 +166,7 @@
 
 (defmethod handler :getFile
   [msg]
-  (log/debug "Incoming :getFile" msg))
+  (log/debug "Incoming :getFile" msg)
+  {:status 501
+   :body {:ok false
+          :description "Not Implemented!"}})

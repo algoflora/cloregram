@@ -1,12 +1,10 @@
 (ns cloregram.api
-  (:require [cloregram.system.state :refer [bot]]
-            [cloregram.utils :as utl]
+  (:require [cloregram.utils :as utl]
             [cloregram.system.state :refer [system]]
             [cloregram.callbacks :as clb]
             [cloregram.users :as u]
             [org.httpkit.client :refer [get]]
             [cheshire.core :refer [generate-string]]
-            [telegrambot-lib.core :as tbot]
             [dialog.logger :as log]))
 
 (defn- check-opt
@@ -81,10 +79,10 @@
 
 (defmethod send-to-chat :message
   [_ user text kbd optm]
-  (let [argm (prepare-arguments-map {:text text} kbd optm user)
-        func (if (to-edit? optm user)
-               tbot/edit-message-text tbot/send-message) ;; TODO: Implement fallback for edit
-        new-msg (utl/api-wrap func (bot) argm)
+  (let [argm       (prepare-arguments-map {:text text} kbd optm user)
+        func-sym   (if (to-edit? optm user)
+                     'edit-message-text 'send-message) ;; TODO: Implement fallback for edit
+        new-msg    (utl/api-wrap func-sym argm)
         new-msg-id (:message_id new-msg)]
     (when (:temp optm)
       (create-temp-delete-callback user new-msg))
@@ -100,13 +98,13 @@
                                              :document (-> data :path (java.io.File.))}
                                             kbd optm user-mp)
                      :reply_markup generate-string)
-        new-msg (utl/api-wrap tbot/send-document (bot) argm)]
+        new-msg (utl/api-wrap 'send-document argm)]
     (create-temp-delete-callback user new-msg)))
 
 (defmethod send-to-chat :invoice
   [_ user data kbd optm]
   (let [argm (prepare-arguments-map data kbd optm user)
-        new-msg (utl/api-wrap tbot/send-invoice (bot) argm)]
+        new-msg (utl/api-wrap 'send-invoice argm)]
     (create-temp-delete-callback user new-msg)
     new-msg))
 
@@ -178,7 +176,7 @@
   {:added "0.9.0"}
 
   [file-id]
-  (->> (utl/api-wrap tbot/get-file (bot) file-id)
+  (->> (utl/api-wrap 'get-file file-id)
     :file_path
     (format "https://api.telegram.org/file/bot%s/%s" (:bot/token @system))
     (get)))

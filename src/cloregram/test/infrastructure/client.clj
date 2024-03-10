@@ -18,16 +18,22 @@
                      :data data})))
   (let [upd-id (swap! state/update-id inc)
         upd (merge {:update_id upd-id} data)]
-    (log/debug (format "Sending update to %s: %s" @state/webhook-address upd))
+    (log/debug (format "Sending update %d to %s: %s" upd-id @state/webhook-address upd))
     (swap! state/users #(assoc-in % [uid :waiting-for-response?] true))
     (post @state/webhook-address {:body (generate-string upd)
                                   :headers {"X-Telegram-Bot-Api-Secret-Token" @state/webhook-token
                                             "Content-Type" "application/json"}}
           (fn async-callback [{:keys [status error] :as resp}]
             (cond
-              (some? error) (throw (ex-info "<ASYNC> Client error occured on sending update" resp))
-              (not= 200 status) (throw (ex-info "<ASYNC> Error when sending update" resp))
-              :else (log/debug "<ASYNC> Update response:" resp))))))
+              (some? error) (throw (ex-info "<ASYNC> Client error occured on sending update"
+                                            {:status status
+                                             :update-id upd-id
+                                             :response resp}))
+              (not= 200 status) (throw (ex-info "<ASYNC> Error when sending update"
+                                                {:update-id upd-id
+                                                 :status status
+                                                 :response resp}))
+              :else (log/debugf "<ASYNC> Update %d response: %s" upd-id resp))))))
 
 (defn send-message
 
