@@ -14,7 +14,7 @@
 (defn api-wrap
   [api-f & args]
   (log/debug (format "API method calling" {:method api-f
-                                    :arguments args}))
+                                           :arguments args}))
   (let [resp (apply api-f args)
         ok   (-> resp :ok true?)
         desc (:description resp)]
@@ -28,7 +28,7 @@
     (:result resp)))
 
 (defn deep-merge
-  "Recursively merges maps."
+  "Recursively merges maps"
   [& maps]
   (letfn [(m [& xs]
             (if (some #(and (map? %) (not (record? %))) xs)
