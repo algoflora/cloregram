@@ -6,15 +6,15 @@
             [taoensso.timbre :as log]))
 
 (defn conn
-  "Returns database connection"
+  "Returns Datiomic database connection"
   []
   (:db/connection @system))
 
 (defn db
-  "Returns current database state"
+  "Returns current Datomic database state"
   []
   (let [db (d/db (conn))]
-    (log/debug "Received current database state" db)
+    (log/debug "Received current Datomic database state" {:database-state db)
     db))
 
 (defn- read-project-schema
