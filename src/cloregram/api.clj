@@ -3,9 +3,9 @@
             [cloregram.utils :as utl]
             [cloregram.callbacks :as clb]
             [cloregram.users :as u]
-            [cheshire.core :refer [generate-string]]
+            [cheshire.core :refer [generate-string parse-string]]
             [telegrambot-lib.core :as tbot]
-            [dialog.logger :as log]))
+            [taoensso.timbre :as log]))
 
 (defn- check-opt
   [opt opts]
@@ -79,7 +79,7 @@
         argm (update (prepare-arguments-map {:content-type :multipart
                                              :caption (:caption data)
                                              :document (-> data :path (java.io.File.))}
-                                            kbd optm user-mp)
+                                            kbd optm user-mp)
                      :reply_markup generate-string)
         new-msg (utl/api-wrap tbot/send-document (bot) argm)]
     (create-temp-delete-callback user new-msg)))
