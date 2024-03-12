@@ -14,7 +14,7 @@
   "Returns current Datomic database state"
   []
   (let [db (d/db (conn))]
-    (log/debug "Received current Datomic database state" {:database-state db)
+    (log/debug "Received current Datomic database state" {:database-state db})
     db))
 
 (defn- read-project-schema
