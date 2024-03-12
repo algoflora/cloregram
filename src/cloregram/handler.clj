@@ -4,7 +4,7 @@
             [cloregram.users :as u]
             [cloregram.utils :as utl]
             [cloregram.callbacks :as clb]
-            [dialog.logger :as log]
+            [taoensso.timbre :as log]
             [clojure.string :as str]
             [clojure.edn :as edn]
             [telegrambot-lib.core :as tbot]))
@@ -19,7 +19,8 @@
 (defn- reset
   [user upd]
   (u/set-msg-id user 0)
-  (log/debug "Reset of msg-id of User" user)
+  (log/warn "Reset of msg-id called" {:update upd
+                                      :user user})
   (main-handler upd))
 
 (defn- handle-dispatch
@@ -40,8 +41,10 @@
                             (utl/resolver 'cloregram.handler/payment))
         args {:user user
               :payment (:successful_payment msg)}]
-    (log/infof "Handling successful payment %s from User %s" msg (utl/username user))
-    (log/debugf "Calling %s with args %s" payment-handler args)
+    (log/debug "Handling payment Message..." {:payment-handler payment-handler
+                                              :arguments args
+                                              :message msg
+                                              :user user})
     (payment-handler args)))
 
 (defmethod handle :text
@@ -52,8 +55,10 @@
         args (-> hdata second edn/read-string (assoc :user user :message msg))]
     (when (not= handler common-handler)
       (u/set-handler user common-handler nil))
-    (log/infof "Handling message %s from User %s" (utl/msg->str msg) (utl/username user)) ; TODO: info?
-    (log/debugf "Calling %s with args %s" handler args)
+    (log/debug "Handling text Message..." {:handler handler
+                                           :arguments (or args {})
+                                           :message msg
+                                           :user user})
     (handler args)
     (delete-message {:user user
                      :mid (:message_id msg)})))
@@ -66,24 +71,27 @@
       (if (and (= "/start" (:text msg)) (some? (:user/msg-id user)) (not= 0 (:user/msg-id user)))
         (reset user upd)
         (handle user msg)))
-    (log/warn "Message from non-private chat!" upd)))
+    (log/warn "Update from non-private chat!" {:update upd})))
 
 (defmethod main-handler :callback_query
   [upd]
   (let [cbq (:callback_query upd)
         user (u/get-or-create (:from cbq))]
-    (log/infof "Handling callbak query for User %s" (utl/username user))
+    (log/debug "Handling Callback Query..." {:callback-query cbq
+                                            :user user})
     (clb/call user (-> cbq :data java.util.UUID/fromString))))
 
 (defmethod main-handler :pre_checkout_query
   [upd]
-  (let [pcqid (get-in upd [:pre_checkout_query :id])]
-    (log/infof "Handling pre-checkout query with id  %s. Simply answering OK..." pcqid)
-    (utl/api-wrap tbot/answer-precheckout-query-ok (bot) pcqid)))
+  (let [pcq (upd :pre_checkout_query)
+        user (u/get-or-create (:from pcq))]
+    (log/debug "Handling Precheckout Query..." {:pre-checkout-query pcq
+                                               :user user})
+    (utl/api-wrap tbot/answer-precheckout-query-ok (bot) (:id pcq))))
 
 (defmethod main-handler nil
   [upd]
-  (log/warn "main-handler dispatch function returned nil!" upd))
+  (log/warn "main-handler dispatch function returned nil!" {:update upd}))
 
 (defn common
   [{:keys [user]}]
