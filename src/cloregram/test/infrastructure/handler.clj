@@ -19,10 +19,10 @@
 
 (defmethod handler :setWebhook
   [{:keys [url secret_token]}]
-  (log/info "Incoming :setWebhook" {:url url :secret-token secret_token})
+  (log/info "Incoming :setWebhook" {:url url :secret_token secret_token})
   (reset! state/webhook-address url)
   (reset! state/webhook-token secret_token)
-  (log/info "Webhook address and token saved" {:address url :token secret_token})
+  (log/info "Webhook address and token saved" {:webhook-address url :webhook-token secret_token})
   {:status 200
    :body {:ok true}})
 
