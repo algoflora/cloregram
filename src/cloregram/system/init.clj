@@ -29,7 +29,7 @@
 (defmethod ig/init-key :bot/handler ; TODO: Check update_id
   [_ {:keys [webhook-key]}]
   (fn [req]
-    (log/debug "Incoming webhook request" req)
+    (log/debug "Incoming webhook request" {:webhook-request req})
     (let [headers (:headers req)
           upd (-> req :body slurp (parse-string true))]
       (if (or (= webhook-key (headers "X-Telegram-Bot-Api-Secret-Token"))
@@ -86,7 +86,7 @@
                                            :server server})
       server)
     (catch Exception e
-      (log/error "Error starting webhook server!" {:errort e})
+      (log/error "Error starting webhook server!" {:error e})
       (throw e))))
 
 (defmethod ig/halt-key! :bot/server
@@ -112,12 +112,12 @@
   [_ {:keys [create? uri]}]
   (when create? (d/create-database uri))
   (when-let [conn (d/connect uri)]
-    (log/info "Database connection established" {:database-uri uri})
+    (log/info "Datomic database connection established" {:database-uri uri})
     conn))
 
 (defmethod ig/halt-key! :db/connection
   [_ conn]
-  (log/info "Releasing database connection...")
+  (log/info "Releasing Datomic database connection...")
   (d/release conn))
 
 (defmethod ig/init-key :project/config
