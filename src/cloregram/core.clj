@@ -33,7 +33,7 @@
   Detailed config reference will be provided later."
   
   [& args]
-  (log/debug "Starting run function" {:arguments args})
+  (log/debug "Starting \"run\" function..." {:run-arguments args})
   (let [config-default    (-> "default-config.edn" io/resource get-conf)
         project-conf-path (System/getProperty "config.path" "config.prod.edn")
         config-project    (-> project-conf-path io/resource get-conf)
