@@ -17,7 +17,7 @@
                              :callback/user [:user/id (:user/id user)]}])
      (log/debug "Created Callback" {:callback-uuid uuid
                                     :callback-function f
-                                    :arguments args
+                                    :callback-arguments args
                                     :user user})
      uuid)))
 
@@ -36,6 +36,6 @@
         func (:callback/function callback)
         args (-> callback :callback/args edn/read-string (assoc :user user))]
     (log/debug "Calling Callback function" {:callback-function func
-                                            :arguments args
+                                            :callback-arguments args
                                             :user user})
     ((utl/resolver func) args)))
