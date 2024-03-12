@@ -12,7 +12,8 @@
 (Thread/setDefaultUncaughtExceptionHandler
  (reify Thread$UncaughtExceptionHandler
    (uncaughtException [_ thread ex]
-     (log/error ex "Uncaught exception on" (.getName thread))
+     (log/error "Uncaught Exception!" {:thread (.getName thread)
+                                       :exeption ex})
      (throw ex))))
 
 (defn- get-conf
@@ -32,15 +33,14 @@
   Detailed config reference will be provided later."
   
   [& args]
-  (log/debug "run function args:" args)
+  (log/debug "Starting run function" {:arguments args})
   (let [config-default    (-> "default-config.edn" io/resource get-conf)
         project-conf-path (System/getProperty "config.path" "config.prod.edn")
         config-project    (-> project-conf-path io/resource get-conf)
         config-args       (map get-conf args)
         config            (apply deep-merge config-default config-project config-args)]
-    (log/info "Config loaded")
-    (log/debug "Config:" config)
+    (log/info "Config loaded" {:config config})
     (.addShutdownHook (Runtime/getRuntime) (Thread. shutdown!))
     (startup config)
     (db/update-schema)
-    (log/debug "System initialized:" @cloregram.system.state/system)))
+    (log/info "System initialized" {:system @cloregram.system.state/system})))

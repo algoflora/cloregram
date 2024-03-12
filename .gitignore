@@ -19,4 +19,7 @@ pom.xml.asc
 .\#*
 *~
 
+*.DS_Store
+
 .emacs.desktop
+.emacs.desktop.lock

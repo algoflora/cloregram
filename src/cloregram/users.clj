@@ -17,7 +17,7 @@
   [udata]
   (let [user (d/pull (db/db) '[*] [:user/id (:id udata)])]
     (if (some? (:db/id user))
-      (do (log/debug "Loaded User:" user)
+      (do (log/debug "Loaded User" user)
           user) ; TODO: Check info and update if needed
       (do (d/transact (db/conn) [(->> {:user/id (:id udata)
                                        :user/username (:username udata)
@@ -27,17 +27,17 @@
                                        :user/handler [(symbol (str (:name (utl/get-project-info)) ".handler/common")) nil]}
                                       (filter second) ; 'false' values will be removed!
                                       (into {}))])
-          (log/info "Created User by data:" udata)
+          (log/info "Created User" udata)
           (get-or-create udata)))))
 
 (defn set-msg-id
   [user msg-id]
-  (log/debugf "Setting msg-id=%d for User %s" msg-id (utl/username user))
+  (log/debug "Setting main Message ID for User" {:msg-id msg-id :user user})
   (d/transact (db/conn) [{:user/id (:user/id user)
                           :user/msg-id msg-id}]))
 
 (defn set-handler
   [user handler args]
-  (log/debugf "Setting handler %s with arguments %s for User %s" handler args user)
+  (log/debug "Setting Handler for User" {:handler handler :arguments args :user user})
   (d/transact (db/conn) [{:user/id (:user/id user)
                           :user/handler [handler args]}]))

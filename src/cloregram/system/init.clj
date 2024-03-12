@@ -12,8 +12,7 @@
 
 (defn startup
   [config]
-  (reset! system (ig/init config))
-  (log/info "Startup complete"))
+  (reset! system (ig/init config)))
 
 (defn shutdown!
   []
@@ -25,13 +24,12 @@
   [_ _]
   (when-let [key (nano-id)]
     (log/info "Webhook key created")
-    (log/debug "Webhook key:" key)
     key))
 
 (defmethod ig/init-key :bot/handler ; TODO: Check update_id
   [_ {:keys [webhook-key]}]
   (fn [req]
-    (log/debug "Incoming request:" req)
+    (log/debug "Incoming webhook request" req)
     (let [headers (:headers req)
           upd (-> req :body slurp (parse-string true))]
       (if (or (= webhook-key (headers "X-Telegram-Bot-Api-Secret-Token"))
@@ -84,11 +82,11 @@
   [_ {:keys [options handler]}]
   (try
     (when-let [server (run-jetty handler (adjust-opts options))]
-      (log/info (format "Server started with options %s" options))
-      (log/debug "Server:" server)
+      (log/info "Webhook server started" {:server-options options
+                                           :server server})
       server)
     (catch Exception e
-      (log/error e)
+      (log/error "Error starting webhook server!" {:errort e})
       (throw e))))
 
 (defmethod ig/halt-key! :bot/server
@@ -107,15 +105,14 @@
                        :url (format "%s://%s:%d" schema ip port)
                        :secret_token webhook-key}
                 https? (assoc :certificate (clojure.java.io/file (or certificate "./ssl/cert.pem")))))
-    (log/info "Webhook is set")
-    (log/debug "Webhook info:" (api-wrap tbot/get-webhook-info bot))
+    (log/info "Webhook is set" {:webhook-info (api-wrap tbot/get-webhook-info bot)})
     bot))
 
 (defmethod ig/init-key :db/connection
   [_ {:keys [create? uri]}]
   (when create? (d/create-database uri))
   (when-let [conn (d/connect uri)]
-    (log/info (format "Database connection to %s established" uri))
+    (log/info "Database connection established" {:database-uri uri})
     conn))
 
 (defmethod ig/halt-key! :db/connection
@@ -125,5 +122,5 @@
 
 (defmethod ig/init-key :project/config
   [_ config]
-  (log/info "Using project config:" config)
+  (log/info "Project config loaded" {:project-config config})
   config)

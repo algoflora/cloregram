@@ -15,21 +15,27 @@
                              :callback/function f
                              :callback/args args
                              :callback/user [:user/id (:user/id user)]}])
-     (log/debugf "Created Callback %s for User %s: %s %s" uuid user f args)
+     (log/debug "Created Callback" {:callback-uuid uuid
+                                    :callback-function f
+                                    :arguments args
+                                    :user user})
      uuid)))
 
 (defn- load-callback
   [user uuid]
   (let [callback (d/pull (db/db) '[* {:callback/user [*]}] [:callback/uuid uuid])]
-    (log/debug (format "Loaded callback %s: %s" uuid callback))
+    (log/debug "Loaded callback" {:callback-uuid uuid
+                                  :callback-data callback})
     (when (not= (:id user) (-> callback :callback/user :id))
-      (throw (ex-info "Wrong User in loaded Callback!" {:user user :callback callback})))
+      (throw (ex-info "Wrong User attempt to load Callback!" {:user user :callback-data callback})))
     callback))
 
 (defn call
   [user ^java.util.UUID uuid]
   (let [callback (load-callback user uuid)
         func (:callback/function callback)
-        args (-> callback :callback/args edn/read-string)]
-    (log/debugf "Calling %s with args %s and user %s" func args user)
-    ((utl/resolver func) (assoc args :user user))))
+        args (-> callback :callback/args edn/read-string (assoc :user user))]
+    (log/debug "Calling Callback function" {:callback-function func
+                                            :arguments args
+                                            :user user})
+    ((utl/resolver func) args)))

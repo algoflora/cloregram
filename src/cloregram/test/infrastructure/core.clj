@@ -19,7 +19,7 @@
 (defn- logging-middleware
   [handler]
   (fn [req]
-    (do (log/debug "Incoming request:" req)
+    (do (log/debug "Incoming request to virtual Telegram API server" req)
         (handler req))))
 
 (defn- create-routes
@@ -42,7 +42,7 @@
         path (.getPath u)
         server (run-server (create-routes (str path bot-token))
                            {:ip host :port port})]
-    (log/info "Server started")
+    (log/info "Testing server started" {:server server})
     server))
 
 (defmethod ig/halt-key! :test/server

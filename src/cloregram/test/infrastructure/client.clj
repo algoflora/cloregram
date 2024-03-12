@@ -15,16 +15,23 @@
                      :data data})))
   (let [upd-id (swap! state/update-id inc)
         upd (merge {:update_id upd-id} data)]
-    (log/debug (format "Sending update to %s: %s" @state/webhook-address upd))
+    (log/debug "Sending Update" {:address @state/webhook-address
+                                 :update upd
+                                 :virtual-user (uid @state/users)})
     (swap! state/users #(assoc-in % [uid :waiting-for-response?] true))
     (post @state/webhook-address {:body (generate-string upd)
                                   :headers {"X-Telegram-Bot-Api-Secret-Token" @state/webhook-token
                                             "Content-Type" "application/json"}}
           (fn async-callback [{:keys [status error] :as resp}]
             (cond
-              (some? error) (throw (ex-info "<ASYNC> Client error occured on sending update" resp))
-              (not= 200 status) (throw (ex-info "<ASYNC> Error when sending update" resp))
-              :else (log/debug "<ASYNC> Update response:" resp))))))
+              (some? error) (throw (ex-info "<ASYNC> Client error occured on sending update" {:error error
+                                                                                              :response resp
+                                                                                              :update upd}))
+              (not= 200 status) (throw (ex-info "<ASYNC> Error when sending update" {:status status
+                                                                                     :response resp
+                                                                                     :update upd}))
+              :else (log/info "<ASYNC> Successful response on Update" {:response resp
+                                                                        :update upd}))))))
 
 (defn send-message
   "Simulate sending raw message represented in `data` to user with username `uid`. In most cases you don't need this function. Use it only if you definitely know what you are doing. Optionaly use `:silent` option to not save message in test user's state"
@@ -63,7 +70,8 @@
   "Simulate sending `text` by user with username `uid`. Optionaly `entities` array can be provided for formatting message."
   ([uid text] (send-text uid text []))
   ([uid text entities]
-   (log/infof "User %s sent message \"%s\"" uid text)
+   (log/info "Virtual user sending text Message" {:virtual-user (uid @state/users)
+                                                  :text text})
    (send-message uid {:text text :entities entities})))
 
 (defn- assert-uid 
@@ -71,14 +79,17 @@
   (let [user (u/get-user-by-uid uid)]
     (when (not= (:chat_id msg) (:id user))
       (throw (ex-info "Wrong User interacting with Message!" {:expected-user user
-                                                      :message msg})))))
+                                                              :message msg})))))
 
 (defn press-btn
   "Simulate clicking button in `row` and `col` or with text `btn` in message `msg` by user with username `uid`. Exception would be thrown if there is no expected button."
   {:changed "0.8.1"}
   ([msg uid row col]
    (assert-uid msg uid)
-   (log/infof "User %s pressed button %d/%d" uid row col)
+   (log/info "Virtual user pressing button" {:virtual-user (uid @state/users)
+                                             :button-row row
+                                             :button-column col
+                                             :message msg})
    (let [cbd (try (-> msg
                       :reply_markup
                       :inline_keyboard
@@ -86,14 +97,16 @@
                       (nth (dec col))
                       (:callback_data))
                   (catch IndexOutOfBoundsException e
-                    (throw (ex-info "No expected button in Message!" {:row row
-                                                                      :column col
+                    (throw (ex-info "No expected button in Message!" {:button-row row
+                                                                      :button-column col
                                                                       :message msg}))))]
      (send-callback-query uid cbd)
      msg))
   ([msg uid btn-text]
    (assert-uid msg uid)
-   (log/infof "User %s pressing button \"%s\"..." uid btn-text)
+   (log/info "Virtual user pressing button" {:virtual-user (uid @state/users)
+                                             :button-text btn-text
+                                             :message msg})
    (if-let [cbd (->> msg
                      :reply_markup
                      :inline_keyboard
@@ -115,7 +128,8 @@
   (let [invoice (:invoice msg)
         user (uid @state/users)
         pcqid (nano-id)]
-    (log/infof "User %s paying invoice %s" uid invoice)
+    (log/info "Virtual user paying invoice" {:virtual-user (uid @state/users)
+                                             :invoice invoice})
     (swap! state/checkout-queries #(assoc % pcqid {:uid uid :invoice invoice}))
     (send-update uid {:pre_checkout_query {:id pcqid
                                            :from (-> user

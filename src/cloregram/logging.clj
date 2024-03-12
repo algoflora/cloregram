@@ -2,8 +2,12 @@
   (:require [clojure.string :as str]
             [clojure.walk :as walk]
             [taoensso.timbre :as timbre]
+            [taoensso.timbre.appenders.core :refer [println-appender]]
             [cheshire.core :refer [generate-string]]
+            [cheshire.generate :refer [add-encoder]]
             [cloregram.utils :as utl]))
+
+(add-encoder Object (fn [obj jsonGenerator] (.writeString jsonGenerator (prn-str obj))))
 
 (defn- my-keywordize-keys
   [m]
@@ -15,67 +19,64 @@
                          v]
                         [k v]))]
     ;; only apply to maps
-    (walk/postwalk (fn [x] (if (map? x) (into {} (map f x)) x)) m)))(defn- keywordize
-  [m])
+    (walk/postwalk (fn [x] (if (map? x) (into {} (map f x)) x)) m)))
 
-(defn custom-appender
+(defn- transform-additional-data
+  [ad]
+  (cond
+    (map? ad) ad
+
+    (and (coll? ad) (<= 1 (count ad)))
+    (transform-additional-data (first ad))
+
+    (seq? ad) (vec ad)
+    (some? ad) ad
+    :else nil))
+
+(defn- generate-log-entry
   [data]
-  (let [{:keys [level ?err ?file ?line vargs]} data
-        message (first vargs)
-        additional-data (next vargs)
-        log-entry (-> (utl/get-project-info)
-                      (merge {:time (str (java.time.Instant/now))
-                              :file ?file
-                              :line ?line
-                              :level (name level)
-                              :message (-> message type str)
-                              :data (map #(-> % type str) (when additional-data (vec additional-data)))
-                              :error ?err}))]
-    (spit "./logs/logfile.json" (str (generate-string log-entry) "\n") :append true)))
+  (let [{:keys [msg-type level ?err ?file ?line msg_ vargs hostname_]} data
+        is-p? (= :p msg-type)
+        message (if is-p? (first vargs) @msg_)
+        additional-data (when is-p? (next vargs))]
+    (-> (utl/get-project-info)
+        (merge {:time (str (java.time.Instant/now))
+                :host @hostname_
+                :file ?file
+                :line ?line
+                :level (name level)
+                :message (apply str message)
+                :data (transform-additional-data additional-data)
+                :error ?err})
+        (my-keywordize-keys))))
+
+(defn custom-json-appender
+  [data]
+  (let [log-entry (-> data generate-log-entry generate-string (str "\n"))]
+    (spit "./logs/logs.json" log-entry :append true)))
+
+(defn custom-edn-appender
+  [data]
+  (let [log-entry (-> data generate-log-entry prn-str)]
+    (spit "./logs/logs.edn" log-entry :append true)))
+
+(def original-output-fn (-> timbre/*config* :output-fn))
 
 (timbre/merge-config!
- {:appenders {:custom-appender {:enabled? true
-                                :fn custom-appender}}})
+ {:appenders
+
+  {:custom-json-appender
+   {:enabled? true
+    :fn custom-json-appender}
+
+   :custom-edn-appender {:enabled? true
+                         :fn custom-edn-appender}
+
+   :println {:enabled? true
+             :output-fn (fn [data]
+                          (original-output-fn (update
+                                               data
+                                               :vargs
+                                               #(if (= :p (:msg-type data)) (take 1 %) %))))}}})
 
 (timbre/info "Logging initiated with Timbre" timbre/*config*)
-
-
-;; {:output-opts nil,
-;;  :hash_ #object[clojure.lang.Delay 0xcd381e4 {:status :pending,
-;;                                               :val nil}],
-;;  :instant #inst "2024-03-10T19:33:29.871-00:00",
-;;  :spying? nil,
-;;  :config {:min-level :debug,
-;;           :ns-filter #{"*"},
-;;           :middleware [],
-;;           :timestamp-opts {:pattern :iso8601,
-;;                            :locale :jvm-default,
-;;                            :timezone :utc},
-;;           :output-fn #object[taoensso.timbre$default_output_fn 0x2fab6393 "taoensso.timbre$default_output_fn@2fab6393"],
-;;           :appenders {:println {:enabled? true,
-;;                                 :fn #object[taoensso.timbre.appenders.core$println_appender$fn__7829 0x41e5664e "taoensso.timbre.appenders.core$println_appender$fn__7829@41e5664e"]},
-;;                       :custom-appender {:enabled? true,
-;;                                         :fn #object[cloregram.logging$custom_appender 0x960a64a "cloregram.logging$custom_appender@960a64a"]}},
-;;           :_init-config {:loaded-from-source [:default],
-;;                          :compile-time-config {:min-level nil, :ns-pattern "*"}}},
-;;  :vargs ["Everything finished. Good bye!"],
-;;  :output_ #object[clojure.lang.Delay 0x631f378d {:status :pending, :val nil}],
-;;  :msg_ #object[clojure.lang.Delay 0x51f31f7c {:status :pending, :val nil}],
-;;  :?file "cloregram/system/init.clj",
-;;  :hostname_ #object[clojure.lang.Delay 0x1bf885c6 {:status :ready,
-;;                                                    :val "mbpm2-avbo.local"}],
-;;  :error-level? false,
-;;  :appender {:enabled? true,
-;;             :fn #object[cloregram.logging$custom_appender 0x960a64a "cloregram.logging$custom_appender@960a64a"]},
-;;  :appender-id :custom-appender,
-;;  :?ns-str "cloregram.system.init",
-;;  :level :info,
-;;  :msg-type :p,
-;;  :output-fn #object[taoensso.timbre$protected_fn$fn__8284 0x2adedc6d "taoensso.timbre$protected_fn$fn__8284@2adedc6d"],
-;;  :?err nil,
-;;  :timestamp_ #object[clojure.lang.Delay 0x73d354b2 {:status :ready, :val "2024-03-10T19:33:29.871Z"}],
-;;  :context nil,
-;;  :?line 22,
-;;  :?meta nil,
-;;  :?msg-fmt nil,
-;;  :?column 3}

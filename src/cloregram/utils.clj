@@ -6,21 +6,25 @@
             [taoensso.timbre :as log]))
 
 (defn dbg
-  [x]
-  (log/debug "DBG:" x)
-  x)
+  ([x] (dbg nil x))
+  ([msg x]
+   (log/debug msg x)
+   x))
 
 (defn api-wrap
   [api-f & args]
-  (log/debug (format "Calling (%s %s)" api-f (str/join " " args)))
+  (log/debug (format "API method calling" {:method api-f
+                                    :arguments args}))
   (let [resp (apply api-f args)
-        ok (or (true? resp) (= (:ok resp) true))
+        ok   (-> resp :ok true?)
         desc (:description resp)]
     (when (not ok)
-      (throw (ex-info "API response error" {:call api-f
-                                            :description desc
-                                            :response resp})))
-    (log/debug (format "%s response is OK: %s" api-f resp))
+      (throw (ex-info "API response error" {:method api-f
+                                            :arguments args
+                                            :error desc})))
+    (log/debug "Response is OK" {:method api-f
+                                 :arguments args
+                                 :response resp})
     (:result resp)))
 
 (defn deep-merge
@@ -66,7 +70,7 @@
     (require ns)
     (if-let [resolved (ns-resolve ns nm)]
       resolved
-      (log/error "Callback not resolved:" sym))))
+      (log/error "Callback not resolved" {:callback-symbol sym}))))
 
 (defn- read-resource [resource-url]
   (with-open [stream (io/input-stream resource-url)]

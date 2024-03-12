@@ -14,10 +14,10 @@
   "Returns current database state"
   []
   (let [db (d/db (conn))]
-    (log/debug "Received current database state:" db)
+    (log/debug "Received current database state" db)
     db))
 
-(defn- read-user-schema
+(defn- read-project-schema
   []
   (utl/read-resource-dir "schema"))
 
@@ -25,13 +25,13 @@
   "Updates schema with new entities data. Not removing unactual."
   []
   (log/info "Updating schema...")
-  (let [user-schema (read-user-schema)
-        full-schema (concat schema user-schema)]
-    (log/debug "Schema:" full-schema)
+  (let [project-schema (read-project-schema)
+        full-schema (concat schema project-schema)]
+    (log/debug "Schema" full-schema)
     (let [f (d/transact (conn) full-schema)]
-      (log/info "Schema successfully updated with" (count (:tx-data @f)) "Datoms"))))
+      (log/debug "Schema successfully updated" {:datoms (:tx-data @f)}))))
 
-(defn- read-user-data
+(defn- read-project-data
   []
   (utl/read-resource-dir "data"))
 
@@ -39,7 +39,7 @@
   "Loads initial data. Re-write if something exists"
   []
   (log/info "Updating data...")
-  (let [user-data (read-user-data)]
-    (log/debug "Data:" user-data)
+  (let [user-data (read-project-data)]
+    (log/debug "Readed project data" user-data)
     (let [f (d/transact (conn) user-data)]
-      (log/info "Data successfully updated with" (count (:tx-data @f)) "Datoms"))))
+      (log/debug "Data successfully updated" {:datoms (:tx-data @f)}))))
