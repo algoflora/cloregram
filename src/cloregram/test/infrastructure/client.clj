@@ -31,7 +31,7 @@
                                                                                      :response resp
                                                                                      :update upd}))
               :else (log/info "<ASYNC> Successful response on Update" {:response resp
-                                                                        :update upd}))))))
+                                                                       :update upd}))))))
 
 (defn send-message
   "Simulate sending raw message represented in `data` to user with username `uid`. In most cases you don't need this function. Use it only if you definitely know what you are doing. Optionaly use `:silent` option to not save message in test user's state"
