@@ -19,7 +19,7 @@
 (defn- logging-middleware
   [handler]
   (fn [req]
-    (do (log/debug "Incoming request to virtual Telegram API server" req)
+    (do (log/debug "Incoming request to virtual Telegram API server" {:virtual-tg-api-request req})
         (handler req))))
 
 (defn- create-routes
@@ -48,4 +48,4 @@
 (defmethod ig/halt-key! :test/server
   [_ server]
   (server :timeout 3)
-  (log/info "Testing server shutted down"))
+  (log/info "Testing server shut down"))
