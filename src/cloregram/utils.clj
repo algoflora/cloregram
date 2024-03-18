@@ -20,11 +20,10 @@
         resp  (apply api-f bot args)
         ok    (true? (:ok resp))]
     (when (not ok)
-      (throw (ex-info "API response error" {:method api-f
+      (throw (ex-info "API response error" {:method api-f-sym
                                             :arguments args
-                                            :error desc
                                             :response resp})))
-    (log/debug "Response is OK" {:method api-f
+    (log/debug "Response is OK" {:method api-f-sym
                                  :arguments args
                                  :response resp})
     (:result resp)))

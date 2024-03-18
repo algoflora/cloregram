@@ -1,10 +1,10 @@
 (ns cloregram.test-handlers
   (:require [cloregram.api :as api]
             [clojure.string :as str]
-            [dialog.logger :as log]
+            [taoensso.timbre :as log]
             [cloregram.utils :as utl]))
 
-(defn main-handler
+(defn core
   [{:keys [user message]}]
   (api/send-message user
                     (str (:user/username user) " " (str/upper-case (:text message)))
