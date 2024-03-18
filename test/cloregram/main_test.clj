@@ -48,10 +48,45 @@
           (c/click-btn :testuser-1 2 1))
       (-> (u/last-temp-message :testuser-1)
           (i/check-text "Temp message")
-          (i/check-btns [["✖️"]]))
+          (i/check-btns [["New text"]["✖️"]]))
+
       (is (= 1 (u/count-temp-messages :testuser-1)))
+
       (-> (u/last-temp-message :testuser-1)
-          (c/click-btn :testuser-1 1 1))
+          (c/click-btn :testuser-1 2 1))
+
+      (is (= 0 (u/count-temp-messages :testuser-1)))
+
+      (-> (u/main-message :testuser-1)
+          (i/check-text "Incremented: 3")
+          (i/check-btns [["+" "-"]["Temp"]])
+          (c/click-btn :testuser-1 2 1))
+      (-> (u/last-temp-message :testuser-1)
+          (i/check-text "Temp message")
+          (i/check-btns [["New text"]["✖️"]]))
+      
+      (is (= 1 (u/count-temp-messages :testuser-1)))
+
+      (-> (u/last-temp-message :testuser-1)
+          (c/click-btn :testuser-1 "New text"))
+
+      (-> (u/last-temp-message :testuser-1)
+          (i/check-text "New temp message")
+          (i/check-btns [["New text 2"]["✖️"]]))
+
+      (is (= 1 (u/count-temp-messages :testuser-1)))
+
+      (-> (u/last-temp-message :testuser-1)
+          (c/click-btn :testuser-1 "New text 2"))
+
+      (-> (u/last-temp-message :testuser-1)
+          (i/check-text "New temp message 2")
+          (i/check-btns [["New text 2"]["✖️"]]))
+
+      (is (= 1 (u/count-temp-messages :testuser-1)))
+
+      (-> (u/last-temp-message :testuser-1)
+          (c/click-btn :testuser-1 "✖️"))
 
       (is (= 0 (u/count-temp-messages :testuser-1))))
 

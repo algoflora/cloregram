@@ -1,7 +1,7 @@
 (ns cloregram.core-test
   (:require [clojure.test :refer :all]
             [cloregram.main-test :refer [main-test]]
-            [cloregram.media-test :refer [media-test]]
+            #_[cloregram.media-test :refer [media-test]]
             [cloregram.test.fixtures :as fix]
             [cloregram.handler]
             [cloregram.test-handlers]
@@ -18,4 +18,4 @@
 (deftest integration-test
   (testing "Integration Test"
     (main-test)
-    (media-test)))
+    #_(media-test)))

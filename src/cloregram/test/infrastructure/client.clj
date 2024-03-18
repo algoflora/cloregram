@@ -124,16 +124,16 @@
                                              :button-row row
                                              :button-column col
                                              :message msg})
-   (let [cbd (try (-> msg
-                      :reply_markup
-                      :inline_keyboard
-                      (nth (dec row))
-                      (nth (dec col))
-                      :callback_data)
-                  (catch IndexOutOfBoundsException e
-                    (throw (ex-info "No expected button in Message!" {:button-row row
-                                                                      :button-column col
-                                                                      :message msg}))))]
+   (if-let [cbd (try (-> msg
+                         :reply_markup
+                         :inline_keyboard
+                         (nth (dec row))
+                         (nth (dec col))
+                         :callback_data)
+                     (catch IndexOutOfBoundsException e
+                       (throw (ex-info "No expected button in Message!" {:button-row row
+                                                                         :button-column col
+                                                                         :message msg}))))]
      (send-callback-query uid cbd)
      (throw (ex-info "Nil value of :reply_markup, :inline_keyboard or :callback_data in Message!"
                      {:row row
