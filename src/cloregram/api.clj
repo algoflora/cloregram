@@ -79,7 +79,7 @@
         argm (update (prepare-arguments-map {:content-type :multipart
                                              :caption (:caption data)
                                              :document (-> data :path (java.io.File.))}
-                                            kbd optm user-mp)
+                                            kbd optm user-mp)
                      :reply_markup generate-string)
         new-msg (utl/api-wrap tbot/send-document (bot) argm)]
     (create-temp-delete-callback user new-msg)))
@@ -99,7 +99,7 @@
 ;;; Public API
 
 (defn send-message
-  
+
   "Sends text message with content `text` and inline keyboard `kbd` to `user`.
   Possible `opts`:
 
@@ -107,7 +107,7 @@
   |---------|-------------|
   | `:temp` | Sends 'temporal' message that appears with notification under 'main' one. This message will have button to delete it in the end
   | `:markdown` | Messsage will use Markdown parse_mode"
-  
+
   [user text kbd & opts]
   (apply prepare-and-send :message user text kbd opts))
 
@@ -129,7 +129,7 @@
 
 (defn send-invoice
 
-  "Sends invoice as 'temporal' message with inline keyboard `kbd` to `user`. Keyboard will have payment button with `pay-text` in the beginning and button to delete it in the end.  
+  "Sends invoice as 'temporal' message with inline keyboard `kbd` to `user`. Keyboard will have payment button with `pay-text` in the beginning and button to delete it in the end.
   Description of `data` map (all keys required):
   | key               | description |
   |-------------------|-------------|

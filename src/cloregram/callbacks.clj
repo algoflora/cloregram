@@ -13,7 +13,7 @@
    (let [args (or args {})]
      (d/transact (db/conn) [{:callback/uuid uuid
                              :callback/function f
-                             :callback/args (prn-str args)
+                             :callback/args (prn-str args)
                              :callback/user [:user/id (:user/id user)]}])
      (log/debug "Created Callback" {:callback-uuid uuid
                                     :callback-function f
