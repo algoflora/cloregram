@@ -1,5 +1,5 @@
 (ns cloregram.test.infrastructure.core
-  (:require [dialog.logger :as log]
+  (:require [taoensso.timbre :as log]
             [integrant.core :as ig]
             [clojure.java.io :as io]
             [org.httpkit.server :refer [run-server]]
@@ -19,7 +19,7 @@
 (defn- logging-middleware
   [handler]
   (fn [req]
-    (do (log/debug "Incoming request:" req)
+    (do (log/debug "Incoming request to virtual Telegram API server" {:virtual-tg-api-request req})
         (handler req))))
 
 (defn- create-routes
@@ -46,10 +46,10 @@
         path (.getPath u)
         server (run-server (create-routes (str path bot-token))
                            {:ip host :port port})]
-    (log/debug "Server started")
+    (log/info "Testing server started" {:server server})
     server))
 
 (defmethod ig/halt-key! :test/server
   [_ server]
   (server :timeout 3)
-  (log/debug "Testing server shutted down"))
+  (log/info "Testing server shut down"))

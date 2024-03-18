@@ -4,30 +4,29 @@
             [clojure.edn :as edn]
             [clojure.string :as str]
             [resauce.core :as res]
-            [dialog.logger :as log]))
+            [taoensso.timbre :as log]))
 
 (defn dbg
-  [x]
-  (log/debug "DBG:" x)
-  x)
-
-(defn inf
-  [x]
-  (log/info "INF:" x)
-  x)
+  ([x] (dbg nil x))
+  ([msg x]
+   (log/debug msg x)
+   x))
 
 (defn api-wrap-
   [api-f-sym bot & args]
-  (log/debug (format "Calling (%s %s)" api-f-sym (str/join " " args)))
+  (log/debug "API method calling" {:method api-f-sym
+                                   :arguments args})
   (let [api-f (ns-resolve (find-ns 'telegrambot-lib.core) api-f-sym)
         resp  (apply api-f bot args)
         ok    (true? (:ok resp))]
     (when (not ok)
-      (log/debug "RESP" resp)
-      (throw (ex-info "API response error!" {:response resp
-                                             :call api-f-sym
-                                             :arguments args})))
-    (log/debug (format "%s response is OK: %s" api-f resp))
+      (throw (ex-info "API response error" {:method api-f
+                                            :arguments args
+                                            :error desc
+                                            :response resp})))
+    (log/debug "Response is OK" {:method api-f
+                                 :arguments args
+                                 :response resp})
     (:result resp)))
 
 (defn api-wrap
@@ -77,7 +76,7 @@
     (require ns)
     (if-let [resolved (ns-resolve ns nm)]
       resolved
-      (log/error "Callback not resolved:" sym))))
+      (log/error "Callback not resolved" {:callback-symbol sym}))))
 
 (defn- read-resource [resource-url]
   (with-open [stream (io/input-stream resource-url)]

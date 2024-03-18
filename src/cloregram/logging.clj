@@ -1,105 +1,85 @@
 (ns cloregram.logging
-  (:require [cloregram.utils :as utl]
-            [cheshire.core :refer [parse-string]]
-            [dialog.logger]))
+  (:require [clojure.string :as str]
+            [clojure.walk :as walk]
+            [taoensso.timbre :as timbre]
+            [taoensso.timbre.appenders.core :refer [println-appender]]
+            [cheshire.core :refer [generate-string]]
+            [cheshire.generate :refer [add-encoder]]
+            [cloregram.utils :as utl]))
 
-(defn- extract-json [s]
-  (let [possible-json (re-find #" \{.*\}$| \[.*\]$" s)]
-    (try
-      (when possible-json
-        [(parse-string possible-json true) (count possible-json)])
-      (catch Exception e
-        nil))))
+(add-encoder Object (fn [obj jsonGenerator] (.writeString jsonGenerator (prn-str obj))))
 
-(defn- manipulate-message
-  [event]
-  (if-let [[data length] (extract-json (:message event))]
-    (-> event
-        (assoc :data data)
-        (update :message #(drop-last length %)))
-    event))
+(defn- my-keywordize-keys
+  [m]
+  (let [f (fn [[k v]] (if (string? k)
+                        [(-> k
+                             (str/lower-case)
+                             (str/replace " " "-")
+                             (keyword))
+                         v]
+                        [k v]))]
+    ;; only apply to maps
+    (walk/postwalk (fn [x] (if (map? x) (into {} (map f x)) x)) m)))
 
-(defn transform-json
-  [_ event]
-  (-> event
-    (dissoc :line)
-    (merge (utl/get-project-info))
-    (manipulate-message)))
+(defn- transform-additional-data
+  [ad]
+  (cond
+    (map? ad) ad
 
-;; (defn -log-macro#
-;;   "Pass a message into the logging system. Used by the logging macro
-;;   expansion - consumers should call `log-event` directly."
-;;   [event f x & more]
-;;   (log-event
-;;    (cond
-;;      (instance? clojure.lang.ExceptionInfo x)
-;;      (assoc event
-;;             :message (apply f (.getMessage x) more)
-;;             :error x
-;;             :data (cond
-;;                     (map? (:data event))
-;;                     (assoc (.getData x) :more (:data event))
+    (and (coll? ad) (<= 1 (count ad)))
+    (transform-additional-data (first ad))
 
-;;                     (seq? (:data event))
-;;                     (conj (:data event) (.getData x))
+    (seq? ad) (vec ad)
+    (some? ad) ad
+    :else nil))
 
-;;                     :else
-;;                     (conj [:data event] (.getData x)))
-     
-;;      (instance? Throwable x)
-;;      (assoc event
-;;             :message (apply f (.getMessage x) more)
-;;             :error x)
+(defn- generate-log-entry
+  [data]
+  (let [{:keys [msg-type level ?err ?file ?line ?ns-str msg_ instant vargs hostname_]} data
+        is-p? (= :p msg-type)
+        message (if is-p? (first vargs) @msg_)
+        additional-data (when is-p? (-> vargs next transform-additional-data my-keywordize-keys))]
+    (-> (utl/get-project-info)
+        (merge {:time    instant
+                :host    @hostname_
+                :file    ?file
+                :line    ?line
+                :logger  ?ns-str
+                :level   (name level)
+                :message (cond-> {:message message
+                                  :data additional-data}
+                           (some? ?err) (assoc :error ?err)
+                           true generate-string)})
+        (my-keywordize-keys))))
 
-;;      :else
-;;      (assoc event
-;;             :message (apply f x more)))))
+(defn custom-json-appender
+  [data]
+  (future
+    (let [log-entry (-> data generate-log-entry generate-string (str "\n"))]
+      (spit "./logs/logs.json" log-entry :append true))))
 
-;; (intern 'dialog.logger '-log-macro -log-macro#)
-  
-;; (defmacro logp#
-;;   "Log a message using print style args. Can optionally take a throwable as its
-;;   second arg."
-;;   {:arglists '([level message & more] [level throwable message & more])}
-;;   [level x & more]
-;;   (throw (new Exception "Yeah!"))
-;;   (let [logger (str (ns-name *ns*))
-;;         line (:line (meta &form))]
-;;     (cond
-;;       ;; Coverage-friendly form. Args are always evaluated and passed to the
-;;       ;; helper function.
-;;       (coverage-mode?)
-;;       `(-log-macro
-;;          {:logger ~logger
-;;           :level ~level
-;;           :line ~line
-;;           :data (if (>= 1 (count ~more)) (first ~more) ~more)}
-;;          print-str
-;;          ~x)
+;; (defn custom-edn-appender
+;;   [data]
+;;   (let [log-entry (-> data generate-log-entry prn-str)]
+;;     (spit "./logs/logs.edn" log-entry :append true)))
 
-;;       ;; First argument can't be an error, use simpler form.
-;;       (or (string? x) (nil? more))
-;;       `(let [logger# ~logger
-;;              level# ~level]
-;;          (when (enabled? logger# level#)
-;;            (log-event
-;;              {:logger logger#
-;;               :level level#
-;;               :line ~line
-;;               :message (str ~x)
-;;               :data (if (>= 1 (count ~more)) (first ~more) ~more))})))
+(def original-output-fn (-> timbre/*config* :output-fn))
 
-;;       ;; General form.
-;;       :else
-;;       `(let [logger# ~logger
-;;              level# ~level]
-;;          (when (enabled? logger# level#)
-;;            (-log-macro
-;;              {:logger logger#
-;;               :level level#
-;;               :line ~line
-;;               :data (if (>= 1 (count ~more)) (first ~more) ~more)}
-;;              print-str
-;;              ~x))))))
+(timbre/merge-config!
+ {:appenders
 
-;; (intern 'dialog.logger 'logp logp#)
+  {:custom-json-appender {:enabled? true
+                          :fn custom-json-appender}
+
+   ;; :custom-edn-appender {:enabled? true
+   ;;                       :fn custom-edn-appender}
+
+   :println {:enabled? true
+             :min-level :warn
+             :output-fn (fn [data]
+                          (original-output-fn (update
+                                               data
+                                               :vargs
+                                               #(if (= :p (:msg-type data)) (take 1 %) %))))}}})
+
+(timbre/info "Logging initiated with Timbre" timbre/*config*)

@@ -1,5 +1,5 @@
 (ns cloregram.test.infrastructure.client
-  (:require [dialog.logger :as log]
+  (:require [taoensso.timbre :as log]
             [cheshire.core :refer [generate-string]]
             [org.httpkit.client :refer [post]]
             [cloregram.utils :refer [keys-hyphens->underscores]]
@@ -18,22 +18,23 @@
                      :data data})))
   (let [upd-id (swap! state/update-id inc)
         upd (merge {:update_id upd-id} data)]
-    (log/debug (format "Sending update %d to %s: %s" upd-id @state/webhook-address upd))
+    (log/debug "Sending Update" {:address @state/webhook-address
+                                 :update upd
+                                 :virtual-user (uid @state/users)})
     (swap! state/users #(assoc-in % [uid :waiting-for-response?] true))
     (post @state/webhook-address {:body (generate-string upd)
                                   :headers {"X-Telegram-Bot-Api-Secret-Token" @state/webhook-token
                                             "Content-Type" "application/json"}}
           (fn async-callback [{:keys [status error] :as resp}]
             (cond
-              (some? error) (throw (ex-info "<ASYNC> Client error occured on sending update"
-                                            {:status status
-                                             :update-id upd-id
-                                             :response resp}))
-              (not= 200 status) (throw (ex-info "<ASYNC> Error when sending update"
-                                                {:update-id upd-id
-                                                 :status status
-                                                 :response resp}))
-              :else (log/debugf "<ASYNC> Update %d response: %s" upd-id resp))))))
+              (some? error) (throw (ex-info "<ASYNC> Client error occured on sending update" {:error error
+                                                                                              :response resp
+                                                                                              :update upd}))
+              (not= 200 status) (throw (ex-info "<ASYNC> Error when sending update" {:status status
+                                                                                     :response resp
+                                                                                     :update upd}))
+              :else (log/info "<ASYNC> Successful response on Update" {:response resp
+                                                                       :update upd}))))))
 
 (defn send-message
 
@@ -77,14 +78,15 @@
 
   ([uid text] (send-text uid text []))
   ([uid text entities]
-   (log/debugf "User %s sendind message \"%s\"..." uid text)
-   (send-message uid {:text (str text) :entities entities})))
+   (log/info "Virtual user sending text Message" {:virtual-user (uid @state/users)
+                                                  :text text})
+   (send-message uid {:text text :entities entities})))
 
 (defn send-photo
 
   "Simulate sending photo with optional `caption` from resource `path` by user with username `uid`. Optionaly `entities` array can be provided for formatting caption."
 
-  {:added "0.9"}
+  {:added "0.9.1"}
 
   ([uid path] (send-photo uid nil path))
   ([uid caption path] (send-photo uid caption [] path))
@@ -108,7 +110,7 @@
   (let [user (u/get-user-by-uid uid)]
     (when (not= (:chat_id msg) (:id user))
       (throw (ex-info "Wrong User interacting with Message!" {:expected-user user
-                                                      :message msg})))))
+                                                              :message msg})))))
 
 (defn click-btn
   
@@ -118,17 +120,20 @@
 
   ([msg uid row col]
    (assert-uid msg uid)
-   (log/debugf "User %s clicking button %d/%d..." uid row col)
-   (if-let [cbd (try (some-> msg
-                             :reply_markup
-                             :inline_keyboard
-                             (nth (dec row))
-                             (nth (dec col))
-                             (:callback_data))
-                     (catch IndexOutOfBoundsException e
-                       (throw (ex-info "No expected button in Message!" {:row row
-                                                                         :column col
-                                                                         :message msg}))))]
+   (log/info "Virtual user pressing button" {:virtual-user (uid @state/users)
+                                             :button-row row
+                                             :button-column col
+                                             :message msg})
+   (let [cbd (try (-> msg
+                      :reply_markup
+                      :inline_keyboard
+                      (nth (dec row))
+                      (nth (dec col))
+                      :callback_data)
+                  (catch IndexOutOfBoundsException e
+                    (throw (ex-info "No expected button in Message!" {:button-row row
+                                                                      :button-column col
+                                                                      :message msg}))))]
      (send-callback-query uid cbd)
      (throw (ex-info "Nil value of :reply_markup, :inline_keyboard or :callback_data in Message!"
                      {:row row
@@ -137,7 +142,9 @@
    msg)
   ([msg uid btn-text]
    (assert-uid msg uid)
-   (log/debugf "User %s pressing button \"%s\"..." uid btn-text)
+   (log/info "Virtual user pressing button" {:virtual-user (uid @state/users)
+                                             :button-text btn-text
+                                             :message msg})
    (if-let [cbd (->> msg
                      :reply_markup
                      :inline_keyboard
@@ -172,7 +179,8 @@
   (let [invoice (:invoice msg)
         user (uid @state/users)
         pcqid (nano-id)]
-    (log/debugf "User %s paying invoice %s..." uid invoice)
+    (log/info "Virtual user paying invoice" {:virtual-user (uid @state/users)
+                                             :invoice invoice})
     (swap! state/checkout-queries #(assoc % pcqid {:uid uid :invoice invoice}))
     (send-update uid {:pre_checkout_query {:id pcqid
                                            :from (-> user

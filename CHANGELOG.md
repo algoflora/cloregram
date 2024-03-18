@@ -1,3 +1,8 @@
+## 0.9.0 - 2024-03-16
+* Changed logging library. Using [taoensso.timbre](https://github.com/taoensso/timbre) from now [<Issue #8>](https://github.com/algoflora/cloregram/issues/8)
+* Changed logging structures [<Issue #8>](https://github.com/algoflora/cloregram/issues/8)
+* Minor refactorings
+
 ## 0.8.1 - 2024-03-08
 * Changed `cloregram.test.infrastructure.client/click-btn` to throw Exception if no expected button
 

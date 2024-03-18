@@ -3,9 +3,9 @@
             [cloregram.system.state :refer [system]]
             [cloregram.callbacks :as clb]
             [cloregram.users :as u]
-            [org.httpkit.client :refer [get]]
             [cheshire.core :refer [generate-string]]
-            [dialog.logger :as log]))
+            [telegrambot-lib.core :as tbot]
+            [taoensso.timbre :as log]))
 
 (defn- check-opt
   [opts opt]
@@ -117,7 +117,7 @@
 ;;; Public API
 
 (defn send-message
-  
+
   "Sends text message with content `text` and inline keyboard `kbd` to `user`.
   Possible `opts`:
 
@@ -128,7 +128,7 @@
   | Long value  | Temporal Message ID you want to edit. It must be text message. `nil` as `kbd` value then means to leave keyboard layout unchanged | since 0.9.0 |" 
 
   {:changed "0.9.0"}
-  
+
   [user text kbd & opts]
   (apply prepare-and-send :message user text kbd opts))
 
@@ -152,7 +152,7 @@
 
 (defn send-invoice
 
-  "Sends invoice as 'temporal' message with inline keyboard `kbd` to `user`. Keyboard will have payment button with `pay-text` in the beginning and button to delete it in the end.  
+  "Sends invoice as 'temporal' message with inline keyboard `kbd` to `user`. Keyboard will have payment button with `pay-text` in the beginning and button to delete it in the end.
   Description of `data` map (all keys required):
   
   | key               | description |

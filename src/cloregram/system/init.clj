@@ -2,7 +2,7 @@
   (:require [clojure.string :as str]
             [integrant.core :as ig]
             [cheshire.core :refer [parse-string]]
-            [dialog.logger :as log]
+            [taoensso.timbre :as log]
             [nano-id.core :refer [nano-id]]
             [ring.adapter.jetty :refer [run-jetty]]
             [datomic.api :as d]
@@ -13,8 +13,7 @@
 
 (defn startup
   [config]
-  (reset! system (ig/init config))
-  (log/info "Startup complete"))
+  (reset! system (ig/init config)))
 
 (defn shutdown!
   []
@@ -26,13 +25,12 @@
   [_ _]
   (when-let [key (nano-id)]
     (log/info "Webhook key created")
-    (log/debug "Webhook key:" key)
     key))
 
 (defmethod ig/init-key :bot/handler ; TODO: Check update_id
   [_ {:keys [webhook-key]}]
   (fn [req]
-    (log/debug "Incoming request:" req)
+    (log/debug "Incoming webhook request" {:webhook-request req})
     (let [headers (:headers req)
           upd (-> req :body slurp (parse-string true))]
       (if (or (= webhook-key (headers "X-Telegram-Bot-Api-Secret-Token"))
@@ -87,10 +85,9 @@
          (catch Exception e
            (let [data (assoc (if (instance? clojure.lang.ExceptionInfo e)
                                (.getData e) {})
-                             :test-key "test-value"
-                             :class       (str (class e))
-                             :cause       (.getCause e)
-                             :stack-trace (str/join "\n" (mapv str (.getStackTrace e))))]
+                             :exception-class (str (class e))
+                             :exception-cause (.getCause e)
+                             :stack-trace     (str/join "\n" (mapv str (.getStackTrace e))))]
              (log/error (.getMessage e) data)
              {:status 500
               :body {:ok false
@@ -100,11 +97,11 @@
   [_ {:keys [options handler]}]
   (try
     (when-let [server (run-jetty (wrap-exception handler) (adjust-opts options))]
-      (log/info (format "Server started with options %s" options))
-      (log/debug "Server:" server)
+      (log/info "Webhook server started" {:server-options options
+                                          :server server})
       server)
     (catch Exception e
-      (log/error e)
+      (log/error "Error starting webhook server!" {:error e})
       (throw e))))
 
 (defmethod ig/halt-key! :bot/server
@@ -119,27 +116,26 @@
         bot (tbot/create config)
         schema (if https? "https" "http")]
     (api-wrap- 'set-webhook bot (cond-> {:content-type :multipart
-                                        :url (format "%s://%s:%d" schema ip port)
-                                        :secret_token webhook-key}
-                                 https? (assoc :certificate (clojure.java.io/file
-                                                             (or certificate "./ssl/cert.pem")))))
-    (log/info "Webhook is set")
-    (log/debug "Webhook info:" (api-wrap- 'get-webhook-info bot))
+                                         :url (format "%s://%s:%d" schema ip port)
+                                         :secret_token webhook-key}
+                                  https? (assoc :certificate (clojure.java.io/file
+                                                              (or certificate "./ssl/cert.pem")))))
+    (log/info "Webhook is set" {:webhook-info (api-wrap- 'get-webhook-info bot)})
     bot))
 
 (defmethod ig/init-key :db/connection
   [_ {:keys [create? uri]}]
   (when create? (d/create-database uri))
   (when-let [conn (d/connect uri)]
-    (log/info (format "Database connection to %s established" uri))
+    (log/info "Datomic database connection established" {:database-uri uri})
     conn))
 
 (defmethod ig/halt-key! :db/connection
   [_ conn]
-  (log/info "Releasing database connection...")
+  (log/info "Releasing Datomic database connection...")
   (d/release conn))
 
 (defmethod ig/init-key :project/config
   [_ config]
-  (log/info "Using project config:" config)
+  (log/info "Project config loaded" {:project-config config})
   config)
