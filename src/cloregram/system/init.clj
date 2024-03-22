@@ -5,7 +5,9 @@
             [taoensso.timbre :as log]
             [nano-id.core :refer [nano-id]]
             [ring.adapter.jetty :refer [run-jetty]]
-            [datomic.api :as d]
+            [datalevin.core :as d]
+            [clojure.java.io :as io]
+            [cloregram.db :as db]
             [telegrambot-lib.core :as tbot]
             [cloregram.system.state :refer [system]]
             [cloregram.handler :refer [main-handler]]
@@ -19,6 +21,7 @@
   []
   (log/info "Gracefully shutting down...")
   (ig/halt! @system)
+  (shutdown-agents)
   (log/info "Everything finished. Good bye!"))
 
 (defmethod ig/init-key :bot/webhook-key
@@ -123,17 +126,30 @@
     (log/info "Webhook is set" {:webhook-info (api-wrap- 'get-webhook-info bot)})
     bot))
 
+(defn- delete-directory-recursive
+  "Recursively delete a directory."
+  [^java.io.File file]
+  (when (.isDirectory file)
+    (run! delete-directory-recursive (.listFiles file)))
+  (io/delete-file file))
+
 (defmethod ig/init-key :db/connection
-  [_ {:keys [create? uri]}]
-  (when create? (d/create-database uri))
-  (when-let [conn (d/connect uri)]
-    (log/info "Datomic database connection established" {:database-uri uri})
+  [_ {:keys [uri clear?]}]
+  (when clear?
+    (delete-directory-recursive (io/file uri)))
+  (let [options {:validate-data? true
+                 :closed-schema? true}
+        schema (db/get-full-schema)
+        conn (d/get-conn uri schema options)]
+    (log/info "Datalevin database connection established" {:database-uri uri
+                                                           :database-schema (d/schema conn)
+                                                           :database-options (d/opts conn)})
     conn))
 
 (defmethod ig/halt-key! :db/connection
   [_ conn]
-  (log/info "Releasing Datomic database connection...")
-  (d/release conn))
+  (log/info "Releasing Datalevin database connection...")
+  (d/close conn))
 
 (defmethod ig/init-key :project/config
   [_ config]

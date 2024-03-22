@@ -42,5 +42,4 @@
     (log/info "Config loaded" {:config config})
     (.addShutdownHook (Runtime/getRuntime) (Thread. shutdown!))
     (startup config)
-    (db/update-schema)
     (log/info "System initialized" {:system @cloregram.system.state/system})))

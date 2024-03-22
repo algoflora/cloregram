@@ -2,7 +2,7 @@
   (:require [taoensso.timbre :as log]
             [cloregram.db :as db]
             [cloregram.utils :as utl]
-            [datomic.api :as d]
+            [datalevin.core :as d]
             [clojure.edn :as edn]))
 
 (defn ^java.util.UUID create
@@ -13,7 +13,7 @@
    (let [args (or args {})]
      (d/transact (db/conn) [{:callback/uuid uuid
                              :callback/function f
-                             :callback/args (prn-str args)
+                             :callback/arguments args
                              :callback/user [:user/id (:user/id user)]}])
      (log/debug "Created Callback" {:callback-uuid uuid
                                     :callback-function f
@@ -34,8 +34,7 @@
   [user ^java.util.UUID uuid]
   (let [callback (load-callback user uuid)
         func (:callback/function callback)
-        args (or (-> callback :callback/args edn/read-string (assoc :user user)) {})]
+        args (-> callback :callback/arguments (assoc :user user))]
     (log/debug "Calling Callback function" {:callback-function func
-                                            :callback-arguments args
-                                            :user user})
+                                            :callback-arguments args})
     ((utl/resolver func) args)))

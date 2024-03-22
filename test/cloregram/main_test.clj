@@ -13,9 +13,6 @@
   []
   (with-redefs [cloregram.handler/common cloregram.test-handlers/core]
     (testing "Core"
-      (u/add :testuser-1)
-      (u/add :testuser-2)
-    
       (c/send-text :testuser-1 "Hello, bot!")
       (let [msg (u/main-message :testuser-1)]
         (is (thrown-with-msg? Exception #"^No expected button in Message!$" (c/click-btn msg :testuser-1 "!")))
@@ -69,7 +66,6 @@
 
       (-> (u/last-temp-message :testuser-1)
           (c/click-btn :testuser-1 "New text"))
-
       (-> (u/last-temp-message :testuser-1)
           (i/check-text "New temp message")
           (i/check-btns [["New text 2"]["✖️"]]))

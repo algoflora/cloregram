@@ -1,35 +1,38 @@
 (ns cloregram.db
-  (:require [datomic.api :as d]
+  (:require [datalevin.core :as d]
             [cloregram.system.state :refer [system]]
             [cloregram.utils :as utl]
             [cloregram.schema :refer [schema]]
             [taoensso.timbre :as log]))
 
 (defn conn
-  "Returns Datiomic database connection"
+  "Returns Datalevin database connection"
   []
   (:db/connection @system))
 
 (defn db
-  "Returns current Datomic database state"
+  "Returns current Datalevin database state"
   []
   (let [db (d/db (conn))]
-    (log/debug "Received current Datomic database state")
+    (log/debug "Received current Datalevin database state")
     db))
 
 (defn- read-project-schema
   []
   (utl/read-resource-dir "schema"))
 
-(defn update-schema
-  "Updates Datomic database schema with new entities data. Not removing unactual."
+(defn get-full-schema
+  "Updates Datolevin database schema with new entities data. Not removing unactual."
   []
-  (log/info "Updating Datomic database schema...")
+  (log/info "Updating Datalevin database schema...")
   (let [project-schema (read-project-schema)
-        full-schema (concat schema project-schema)]
-    (log/debug "Datomic database schema loaded" {:schema full-schema})
-    (let [f (d/transact (conn) full-schema)]
-      (log/debug "Datomic database schema successfully updated" {:datoms (:tx-data @f)}))))
+        full-schema (merge schema project-schema)]
+    (log/debug "Datalevin database schema loaded" {:s1 schema
+                                                   :s2 project-schema
+                                                   :database-schema full-schema})
+    full-schema
+    #_(let [f (d/transact (conn) full-schema)]
+      (log/debug "Datalevin database schema successfully updated" {:datoms (:tx-data @f)}))))
 
 (defn- read-project-data
   []

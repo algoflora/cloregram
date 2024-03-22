@@ -35,12 +35,12 @@
 
 (defn- generate-log-entry
   [data]
-  (let [{:keys [msg-type level ?err ?file ?line ?ns-str msg_ instant vargs hostname_]} data
+  (let [{:keys [msg-type level ?err ?file ?line ?ns-str msg_ vargs hostname_]} data
         is-p? (= :p msg-type)
         message (if is-p? (first vargs) @msg_)
         additional-data (when is-p? (-> vargs next transform-additional-data my-keywordize-keys))]
     (-> (utl/get-project-info)
-        (merge {:time    instant
+        (merge {:time    (str (java.time.Instant/now))
                 :host    @hostname_
                 :file    ?file
                 :line    ?line
@@ -54,9 +54,8 @@
 
 (defn custom-json-appender
   [data]
-  (future
-    (let [log-entry (-> data generate-log-entry generate-string (str "\n"))]
-      (spit "./logs/logs.json" log-entry :append true))))
+  (let [log-entry (-> data generate-log-entry generate-string (str "\n"))]
+    (spit "./logs/logs.json" log-entry :append true)))
 
 ;; (defn custom-edn-appender
 ;;   [data]
@@ -69,13 +68,14 @@
  {:appenders
 
   {:custom-json-appender {:enabled? true
+                          :async? true
                           :fn custom-json-appender}
 
    ;; :custom-edn-appender {:enabled? true
    ;;                       :fn custom-edn-appender}
 
    :println {:enabled? true
-             :min-level :warn
+             :min-level :info
              :output-fn (fn [data]
                           (original-output-fn (update
                                                data

@@ -33,10 +33,10 @@
 (defmethod handle :default
   [user msg]
   (let [hdata (:user/handler user)
-        handler-symbol (first hdata)
+        handler-symbol (:user/handler-function user)
         handler (utl/resolver handler-symbol)
         common-handler (->> (utl/get-project-info) :name (format "%s.handler/common") (symbol))
-        args (-> hdata second edn/read-string (assoc :user user :message msg))]
+        args (-> user :user/handler-arguments (assoc :user user :message msg))]
     (when (not= handler common-handler)
       (u/set-handler user common-handler nil))
     (log/infof "Handling message %s from User %s" (utl/msg->str msg) (utl/username user)) ; TODO: info?

@@ -78,8 +78,8 @@
 
   ([uid text] (send-text uid text []))
   ([uid text entities]
-   (log/info "Virtual user sending text Message" {:virtual-user (uid @state/users)
-                                                  :text text})
+   (log/info "Virtual user sending text Message..." {:virtual-user (uid @state/users)
+                                                     :text text})
    (send-message uid {:text text :entities entities})))
 
 (defn send-photo
@@ -93,9 +93,12 @@
   ([uid caption entities path]
    (let [file-id (nano-id)
          res (io/resource path)]
-     (log/debugf "User %s sending photo %s..." uid (.getPath res))
+     (log/info "Virtual user sending photo Message..." {:virtual-user (uid @state/users)
+                                                        :photo-path (.getPath res)
+                                                        :photo-caption caption})
      (swap! state/files #(assoc % file-id (io/file res)))
      (let [file (@state/files file-id)
+           _ (log/debug "FILES" {:files @state/files :file file})
            img (img/load-image file)]
        (send-message uid {:caption caption
                           :caption_entities entities

@@ -1,6 +1,6 @@
 # algoflora/cloregram
 
-**[Clojure](https://clojure.org) and [Datomic](https://www.datomic.com) framework for making complex Telegram Bots/Applications**
+**[Clojure](https://clojure.org) and [Datalevin](https://github.com/juji-io/datalevin) framework for making complex Telegram Bots/Applications**
 
 ## Table of Contents
 
@@ -13,7 +13,7 @@
   - [Handlers](#handlers)
   - [Payments](#payments)
   - [Interacting Datomic database](#interacting-datomic-database)
-  - [Datomic schema and initial data](#datomic-schema-and-initial-data)
+  - [Datalevin schema and initial data](#datalevin-schema-and-initial-data)
 - [Testing](#testing)
 - [Logging](#logging)
 - [Configuration](#configuration)
@@ -28,7 +28,7 @@
  
 Cloregram has several main ideas:
 1. **Main and temporal messages** - there is one main actual message that mostly reacts and interacting with user. For certain cases can be used such a "temporal" messages with button to delete them. Temporal messages appear with notification, when main one is changing smoothly.
-2. **Stateless approach** - actually not completely stateless, but Cloregram does not save exact user state. Instead, each button points to unique Callback entity with user ref, function symbol and arguments in [EDN](https://github.com/edn-format/edn) notation saved in [Datomic](https://www.datomic.com). Only interaction with user input (text/media etc) needs to change user state. This approach allows to describe more robust and predictible bot behaviour.
+2. **Stateless approach** - actually not completely stateless, but Cloregram does not save exact user state. Instead, each button points to unique Callback entity with user ref, function symbol and [EDN](https://github.com/edn-format/edn)-serialised arguments saved in [Datalevin](https://github.com/juji-io/datalevin). Only interaction with user input (text/media etc) needs to change user state. This approach allows to describe more robust and predictible bot behaviour.
 3. **Virtual users testing** - Cloregram comes with ready-made integration testing framework. It mocks Telegram API server to allow developer describe users behaviour and test bot outcome in very convenient and flexible way.
 
 ## Installation
@@ -146,17 +146,17 @@ Note that in this example any input except for button clicks will call `common` 
 
 To make user pay for something use API function `cloregram.api/send-invoice`. When user succesfully paid, payment handler is called. Payment handler have to be located in `my-cloregram-bot.handler/payment` function. This function take parameters map with keys [:user](#user) and [:payment](https://core.telegram.org/bots/api#successfulpayment). Use user data and `:invoice_payload` field in payment map to determine further behaviour.
 
-### Interacting Datomic database
+### Interacting Datalevin database
 
 Namespace `cloregram.db` provides functions for working with database:
 | Call | Description | Comment |
 |------|-------------|---------|
-| `(cloregram.db/conn)` | Returns Datomic connection | Look at [Datomic transactions](https://docs.datomic.com/pro/transactions/transactions.html) for details
-| `(cloregram.db/db)` | Returns database structure for queries, pulls etc | Look at [Datomic queries](https://docs.datomic.com/pro/query/query-executing.html) for details
+| `(cloregram.db/conn)` | Returns Datalevin connection | Look at [Datalevin Datalog store example](https://github.com/juji-io/datalevin/blob/master/README.md#use-as-a-datalog-store) for details
+| `(cloregram.db/db)` | Returns database structure for queries, pulls etc | Look at [Datalevin Datalog store example](https://github.com/juji-io/datalevin/blob/master/README.md#use-as-a-datalog-store) for details
 
-### Datomic schema and initial data
+### Datalevin schema and initial data
 
-Also `cloregram.db` namespace has two useful functions to keep the [schema](https://docs.datomic.com/pro/schema/schema.html) up to date and to load initial data:
+Also `cloregram.db` namespace has two useful functions to keep the [schema](https://github.com/juji-io/datalevin/blob/master/README.md#use-as-a-datalog-store) up to date and to load initial data:
 | Call | Description | Comment |
 |------|-------------|---------|
 | `(cloregram.db/update-schema)` | Wriring to database internal Cloregram schema ([User](#user) and Callback entities) and all entities from project's `resources/schema` folder. Schema entities data have to be located in **.edn** files. For conviency good to have different files for each entity. Nested folders are supported. | Take attention that this function is automatically launching every application startup. So kindly use `resources/schema` folder only for schema entities, but not for data. Otherwise data will be rewrited every startup even if it was changed by application. One more problem is that for now `update-schema` not removing entities attributes that are not in schema any more - ([Issue #6](https://github.com/algoflora/cloregram/issues/6)).
@@ -246,9 +246,9 @@ Cloregram is already configurated to use for testing purposes [weavejester/eftes
 
 ## Logging
 
-For logging Cloregram using `com.amperity/dialog` library. Config is in file **resources/dialog.edn**.
+For logging Cloregram using [taoensso/timbre](https://github.com/taoensso/timbre/tree/master/src/taoensso) library.
 
-Out of the box it displays logs in console and record them to **logs/logs.json** file. This configuration works well with such [logs monitoring suite](https://github.com/algoflora/logging-system-docker).
+Out of the box it displays logs in console and record them to **logs/logs.json** file.
 
 Currently there are little problems ([Issue #8](https://github.com/algoflora/cloregram/issues/8)) with logs consistency in console and in JSON in some cases like tests crash with uncaught exception. But mostly such logging configuration presents convienent tool for monitoring and debugging. 
 
@@ -267,8 +267,7 @@ You have to create in `resources` folder file `config.prod.edn` for production d
 | `:bot/server -> :options -> :keystore` | Keystore path for SSL | "./ssl/keystore.jks" | Look [Obtaining certificates](#obtaining-certificates) for details |
 | `:bot/server -> :options -> :keystore-password` | Password for SSL keystore | "cloregram.keystorepass" | Look [Obtaining certificates](#obtaining-certificates) for details |
 | `:bot/instance -> :certificate` | Path to PEM certificate | "./ssl/cert.pem" | Look [Obtaining certificates](#obtaining-certificates) for details |
-| `:db/connection -> :uri` | Datomic database URI | | In tests `datomic:mem://test` is used. In production something like `datomic:sql://127.0.0.1:4334/my-cloregram-bot` |
-| `:db/connection -> :create?` | Indicates if need to create new database | false | Mostly for testing purposes |
+| `:db/connection -> :uri` | Datalevin database URI | | In tests `datomic:mem://test` is used. In production something like `datomic:sql://127.0.0.1:4334/my-cloregram-bot` |
 | `:project/config` | Map of project specific config | `{}` | Values from this map could be accessed with hekp of function `(cloregram.system.state/config :key :nested-key ...)` |
 
 ## Deploy
@@ -281,54 +280,6 @@ On your server install required JAVA package:
 ```
 sudo apt update && sudo apt install -y default-jre-headless
 ```
-
-Obtain and Datomic transactor:
-```
-cd ~
-wget https://datomic-pro-downloads.s3.amazonaws.com/1.0.7075/datomic-pro-1.0.7075.zip
-unzip -d datomic datomic-pro-1.0.7075.zip
-cd datomic
-cp config/samples/dev-transactor-template.properties config/dev-transactor-template.properties
-```
-
-Run transactor:
-```
-bin/transactor -Ddatomic.printConnectionInfo=true config/dev-transactor-template.properties
-```
-In production, a more complicated setup will eventually be necessary. Please look on [Datomic documentation](https://docs.datomic.com/pro/).
-
-**Or you can start Datomic transactor as systemd service**
-
-Use editor to create service file `/etc/systemd/system/datomic-transactor.service`:
-```
-[Unit]
-Description=Datomic Transactor Service
-After=network.target
-
-[Service]
-User=my-username
-ExecStart=/home/my-username/datomic/bin/transactor -Ddatomic.printConnectionInfo=true /home/my-username/datomic/config/datomic-transactor.properties
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Then start service, enable it on startup and check health:
-```
-sudo systemctl start datomic-transactor.service
-sudo systemctl enable datomic-transactor.service
-sudo systemctl status datomic-transactor.service
-```
-
-If the config .properties file is updated, restart the service::
-```
-sudo systemctl restart datomic-transactor.service
-```
-
-**Now you have to create database**
-
-Folow instructions [here](https://docs.datomic.com/pro/getting-started/connect-to-a-database.html).
 
 ### Starting your bot
 

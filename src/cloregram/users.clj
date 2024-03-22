@@ -1,7 +1,7 @@
 (ns cloregram.users
   (:require [taoensso.timbre :as log]
             [cloregram.db :as db]
-            [datomic.api :as d]
+            [datalevin.core :as d]
             [cloregram.utils :as utl]))
 
 (defn get-list
@@ -24,7 +24,8 @@
                                        :user/first-name (:first_name udata)
                                        :user/last-name (:last_name udata)
                                        :user/language-code (:language_code udata)
-                                       :user/handler [(symbol (str (:name (utl/get-project-info)) ".handler/common")) nil]}
+                                       :user/handler-function (symbol (str (:name (utl/get-project-info)) ".handler/common"))
+                                       :user/handler-arguments {}}
                                       (filter second) ; 'false' values will be removed!
                                       (into {}))])
           (log/info "Created User" {:user-data udata})
@@ -40,4 +41,5 @@
   [user handler args]
   (log/debug "Setting Handler for User" {:handler-function handler :handler-arguments args :user user})
   (d/transact (db/conn) [{:user/id (:user/id user)
-                          :user/handler [handler (prn-str args)]}]))
+                          :user/handler-function handler
+                          :user/handler-arguments (if (nil? args) {} args)}]))
