@@ -2,7 +2,10 @@
   (:require [cloregram.api :as api]
             [clojure.string :as str]
             [taoensso.timbre :as log]
-            [cloregram.utils :as utl]))
+            [cloregram.utils :as utl]
+            [nano-id.core :refer [nano-id]]
+            [fivetonine.collage.util :as clgu]
+            [fivetonine.collage.core :as clg]))
 
 (defn core
   [{:keys [user message]}]
@@ -50,7 +53,10 @@
                  (let [resp (->> pss
                                  (apply max-key :width)
                                  :file_id
-                                 (api/get-file))]
+                                 api/get-file
+                                 clgu/load-image
+                                 (clg/flip :horizontal)
+                                 (clg/flip :vertical))]
                    (log/debug "RESP" resp)))]
     (if photo
       (photo# user photo)

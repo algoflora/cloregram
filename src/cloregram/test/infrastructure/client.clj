@@ -7,7 +7,8 @@
             [cloregram.test.infrastructure.state :as state]
             [cloregram.test.infrastructure.users :as u]
             [resauce.core :as res]
-            [mikera.image.core :as img]
+            [fivetonine.collage.util :as clgu]
+            [fivetonine.collage.core :as clg]
             [clojure.java.io :as io]))
 
 (defn- send-update
@@ -98,14 +99,13 @@
                                                         :photo-caption caption})
      (swap! state/files #(assoc % file-id (io/file res)))
      (let [file (@state/files file-id)
-           _ (log/debug "FILES" {:files @state/files :file file})
-           img (img/load-image file)]
+           img (clgu/load-image file)]
        (send-message uid {:caption caption
                           :caption_entities entities
                           :photo [{:file_id file-id
                                    :file_unique_id file-id
-                                   :width (img/width img)
-                                   :height (img/height img)
+                                   :width (.getWidth img)
+                                   :height (.getHeight img)
                                    :file_size (.length file)}]})))))
 
 (defn- assert-uid 

@@ -21,4 +21,4 @@
 
   (testing "Integration Test"
     (main-test)
-    #_(media-test)))
+    (media-test)))

@@ -3,12 +3,14 @@
             [integrant.core :as ig]
             [clojure.java.io :as io]
             [org.httpkit.server :refer [run-server]]
-            [compojure.core :refer [defroutes POST context]]
+            [compojure.core :refer [defroutes GET POST context]]
             [ring.middleware.json :refer [wrap-json-params]]
             [ring.middleware.keyword-params :refer [wrap-keyword-params]]
             [ring.middleware.multipart-params :refer [wrap-multipart-params]]
             [cheshire.core :refer [generate-string]]
-            [cloregram.test.infrastructure.handler :refer [handler]]))
+            [cloregram.test.infrastructure.handler :refer [handler]]
+            [cloregram.test.infrastructure.state :as state]
+            [cloregram.utils :as utl]))
 
 (defn- json-reponse-body-middleware
   [handler]
@@ -19,24 +21,37 @@
 (defn- logging-middleware
   [handler]
   (fn [req]
-    (do (log/debug "Incoming request to virtual Telegram API server" {:virtual-tg-api-request req})
-        (handler req))))
+    (log/debug "Incoming request to virtual Telegram API server" {:virtual-tg-api-request req})
+    (let [resp (handler req)]
+      (log/debug "Outgoing response from virtual Telegram API server" {:virtual-tg-api-response resp})
+      resp)))
 
 (defn- create-routes
-  [path]
-  (defroutes routes
-    (context path []
-             (POST "/:endpoint" [] #(try (handler (:params %))
-                                         (catch java.lang.Exception e
+  [path bot-token]
+  (let [api-path  (format "%s%s/:endpoint" path bot-token)
+        file-path (format "%sfile/bot%s/:file_path" path bot-token)]
+    (defroutes routes
+      (POST api-path [] (fn [req] (handler (:params req))))
+      (GET file-path [] (fn [req] (if-let [file (->> req
+                                                  :params
+                                                  :file_path
+                                                  (.decode (java.util.Base64/getDecoder))
+                                                  String.
+                                                  (get @state/files))]
                                            {:status 200
-                                            :body {:ok false
-                                                   :description e}})))))
-  (-> routes
-      logging-middleware
-      wrap-keyword-params
-      wrap-json-params
-      wrap-multipart-params
-      json-reponse-body-middleware))
+                                            :headers {"Content-Type" "application/octet-stream"
+                                                      "Content-Length" (.length file)}
+                                            :body (io/input-stream file)}
+                                           {:status 404
+                                            :headers {"Content-Type" "text/plain"}
+                                            :body "File not found!"}))))
+    (-> routes
+        logging-middleware
+        wrap-keyword-params
+        wrap-json-params
+        wrap-multipart-params
+        utl/wrap-exception
+        json-reponse-body-middleware)))
 
 (defmethod ig/init-key :test/server
   [_ {:keys [url bot-token]}]
@@ -44,7 +59,7 @@
         host (.getHost u)
         port (.getPort u)
         path (.getPath u)
-        server (run-server (create-routes (str path bot-token))
+        server (run-server (create-routes path bot-token)
                            {:ip host :port port})]
     (log/info "Testing server started" {:server server})
     server))

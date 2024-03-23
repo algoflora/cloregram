@@ -1,8 +1,10 @@
 (ns cloregram.api
   (:require [cloregram.utils :as utl]
+            [nano-id.core :refer [nano-id]]
             [cloregram.system.state :refer [system]]
             [cloregram.callbacks :as clb]
             [cloregram.users :as u]
+            [org.httpkit.client :as http]
             [cheshire.core :refer [generate-string]]
             [telegrambot-lib.core :as tbot]
             [taoensso.timbre :as log]))
@@ -52,10 +54,10 @@
   (-> new-msg
       :reply_markup
       :inline_keyboard
-      (last)
-      (first)
+      last
+      first
       :callback_data
-      (java.util.UUID/fromString)
+      java.util.UUID/fromString
       (clb/create user 'cloregram.handler/delete-message {:mid (:message_id new-msg)})))
 
 (defn- to-edit?
@@ -95,7 +97,7 @@
   (let [user-mp (update user :user/id str)
         argm (update (prepare-arguments-map {:content-type :multipart
                                              :caption (:caption data)
-                                             :document (-> data :path (java.io.File.))}
+                                             :document (-> data :path .toString java.io.File.)}
                                             kbd optm user-mp)
                      :reply_markup generate-string)
         new-msg (utl/api-wrap 'send-document argm)]
@@ -132,10 +134,23 @@
   [user text kbd & opts]
   (apply prepare-and-send :message user text kbd opts))
 
+(defn send-photo
+
+  "Sends photo message with picture from `path` as a temporary message with caption `caption` and inline keyboard `kbd` to `user`.
+  Possible `opts`:
+
+  | option      | description |
+  |-------------|-------------|
+  | `:markdown` | Messsage will use Markdown parse_mode |
+  | Long value  | Temporal Message ID you want to edit. It must be media message. `nil` as `kbd` value then means to leave keyboard layout unchanged |"
+  
+  {:added "0.9.1"}
+
+  [user])
 
 (defn send-document
 
-  "Sends file in `path` as a temporary messaage with caption `caption` and inline keyboard `kbd` to `user`.
+  "Sends file in `path` as a temporary message with caption `caption` and inline keyboard `kbd` to `user`.
   Possible `opts`:
 
   | option      | description | comment |
@@ -171,12 +186,21 @@
 
 (defn get-file
 
-  "Returns `java.io.File` by `file-id`."
+  "Returns `java.io.File` or `nil` by `file-id`."
 
-  {:added "0.9.0"}
+  {:added "0.9.1"}
 
   [file-id]
-  (->> (utl/api-wrap 'get-file file-id)
-    :file_path
-    (format "https://api.telegram.org/file/bot%s/%s" (:bot/token @system))
-    (get)))
+  (let [bis (->> (utl/api-wrap 'get-file file-id)
+                 :file_path
+                 (format "%sfile/bot%s/%s"
+                         (or (:bot/api-url @system) "https://api.telegram.org/")
+                         (:bot/token @system))
+                 http/get deref :body)
+        file (-> (nano-id) utl/temp-path .toFile)
+        fos (java.io.FileOutputStream. file)]
+    (try
+      (.transferTo bis fos)
+      (finally
+        (.close fos)))
+    file))

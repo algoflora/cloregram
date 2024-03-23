@@ -39,8 +39,10 @@
         args (-> user :user/handler-arguments (assoc :user user :message msg))]
     (when (not= handler common-handler)
       (u/set-handler user common-handler nil))
-    (log/infof "Handling message %s from User %s" (utl/msg->str msg) (utl/username user)) ; TODO: info?
-    (log/debugf "Calling %s with args %s" handler args)
+    (log/infof "Handling incoming message..." {:message msg
+                                               :user user
+                                               :handler-function handler-symbol
+                                               :handler-arguments args})
     (handler args)
     (delete-message {:user user
                      :mid (:message_id msg)})))

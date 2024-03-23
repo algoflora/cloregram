@@ -179,7 +179,16 @@
 
 (defmethod handler :getFile
   [msg]
-  (log/debug "Incoming :getFile" msg)
-  {:status 501
-   :body {:ok false
-          :description "Not Implemented!"}})
+  (log/debug "Incoming :getFile" {:message msg})
+  (let [file-id (:file_id msg)
+        file (@state/files file-id)]
+    (if file
+      {:status 200
+       :body {:ok true
+              :result {:file_id file-id
+                       :file_unique_id file-id
+                       :file_size (.length file)
+                       :file_path (.encodeToString (java.util.Base64/getEncoder) (.getBytes file-id))}}}
+      {:status 200
+       :body {:ok false
+              :description "File not found!"}})))

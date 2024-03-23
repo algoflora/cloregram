@@ -11,7 +11,7 @@
             [telegrambot-lib.core :as tbot]
             [cloregram.system.state :refer [system]]
             [cloregram.handler :refer [main-handler]]
-            [cloregram.utils :refer [api-wrap-]]))
+            [cloregram.utils :as utl]))
 
 (defn startup
   [config]
@@ -42,7 +42,8 @@
             {:status 200
              :headers {"Content-Type" "application/json"}
              :body "OK"})
-        {:status 403}))))
+        {:status 403
+         :body "Forbidden!"}))))
 
 (defmethod ig/init-key :bot/https?
   [_ https?]
@@ -82,24 +83,10 @@
                                   :keystore (or (:keystore opts) "./ssl/keystore.jks")
                                   :key-password (or (:keystore-password opts) "cloregram.keystorepass")))))
 
-(defn- wrap-exception [handler]
-  (fn [request]
-    (try (handler request)
-         (catch Exception e
-           (let [data (assoc (if (instance? clojure.lang.ExceptionInfo e)
-                               (.getData e) {})
-                             :exception-class (str (class e))
-                             :exception-cause (.getCause e)
-                             :stack-trace     (str/join "\n" (mapv str (.getStackTrace e))))]
-             (log/error (.getMessage e) data)
-             {:status 500
-              :body {:ok false
-                     :description (.getMessage e)}})))))
-
 (defmethod ig/init-key :bot/server
   [_ {:keys [options handler]}]
   (try
-    (when-let [server (run-jetty (wrap-exception handler) (adjust-opts options))]
+    (when-let [server (run-jetty (utl/wrap-exception handler) (adjust-opts options))]
       (log/info "Webhook server started" {:server-options options
                                           :server server})
       server)
@@ -118,12 +105,12 @@
         config (merge _config (if (some? api-url) {:bot-api api-url} {}))
         bot (tbot/create config)
         schema (if https? "https" "http")]
-    (api-wrap- 'set-webhook bot (cond-> {:content-type :multipart
-                                         :url (format "%s://%s:%d" schema ip port)
-                                         :secret_token webhook-key}
-                                  https? (assoc :certificate (clojure.java.io/file
-                                                              (or certificate "./ssl/cert.pem")))))
-    (log/info "Webhook is set" {:webhook-info (api-wrap- 'get-webhook-info bot)})
+    (utl/api-wrap- 'set-webhook bot (cond-> {:content-type :multipart
+                                             :url (format "%s://%s:%d" schema ip port)
+                                             :secret_token webhook-key}
+                                      https? (assoc :certificate (clojure.java.io/file
+                                                                  (or certificate "./ssl/cert.pem")))))
+    (log/info "Webhook is set" {:webhook-info (utl/api-wrap- 'get-webhook-info bot)})
     bot))
 
 (defn- delete-directory-recursive
