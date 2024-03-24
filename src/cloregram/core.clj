@@ -3,10 +3,8 @@
             [taoensso.timbre :as log]
             [integrant.core :as ig]
             [cloregram.logging]
-            [cloregram.utils :as utl]
             [cloregram.utils :refer [deep-merge]]
-            [cloregram.system.init :refer [startup shutdown!]]
-            [cloregram.db :as db])
+            [cloregram.system.init :refer [startup shutdown!]])
   (:gen-class))
 
 (Thread/setDefaultUncaughtExceptionHandler
@@ -22,15 +20,15 @@
     (-> cfg slurp ig/read-string)
     {}))
 
+;; Public API
+
 (defn run
 
   "Main function. Configs used overriding each other:
 
-  - default config of cloregram framework
-  - config from config.edn resource of project
-  - config from .edn files or resources provided as arguments
-
-  Detailed config reference will be provided later."
+  - default config of Cloregram framework
+  - config from `config.dev.edn`, `config.test.edn` or `config.prod.edn` resource of project depending of current Leiningen profile
+  - EDN-serialised configs from `java.io.File` files or `java.newt.URL` resources provided as arguments"
   
   [& args]
   (log/debug "Starting \"run\" function..." {:run-arguments args})

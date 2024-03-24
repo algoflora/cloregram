@@ -19,7 +19,7 @@
     (if (some? (:db/id user))
       (do (log/debug "Loaded User" {:user user})
           user) ; TODO: Check info and update if needed
-      (do (d/transact (db/conn) [(->> {:user/id (:id udata)
+      (do (d/transact! (db/conn) [(->> {:user/id (:id udata)
                                        :user/username (:username udata)
                                        :user/first-name (:first_name udata)
                                        :user/last-name (:last_name udata)
@@ -34,12 +34,12 @@
 (defn set-msg-id
   [user msg-id]
   (log/debug "Setting main Message ID for User" {:msg-id msg-id :user user})
-  (d/transact (db/conn) [{:user/id (:user/id user)
+  (d/transact! (db/conn) [{:user/id (:user/id user)
                           :user/msg-id msg-id}]))
 
 (defn set-handler
   [user handler args]
   (log/debug "Setting Handler for User" {:handler-function handler :handler-arguments args :user user})
-  (d/transact (db/conn) [{:user/id (:user/id user)
+  (d/transact! (db/conn) [{:user/id (:user/id user)
                           :user/handler-function handler
                           :user/handler-arguments (if (nil? args) {} args)}]))

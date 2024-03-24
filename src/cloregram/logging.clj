@@ -26,7 +26,7 @@
   (cond
     (map? ad) ad
 
-    (and (coll? ad) (<= 1 (count ad)))
+    (and (coll? ad) (<= (count ad) 1))
     (transform-additional-data (first ad))
 
     (seq? ad) (vec ad)

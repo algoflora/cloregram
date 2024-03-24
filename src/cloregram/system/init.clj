@@ -118,7 +118,8 @@
   [^java.io.File file]
   (when (.isDirectory file)
     (run! delete-directory-recursive (.listFiles file)))
-  (io/delete-file file))
+  (try (io/delete-file file)
+       (catch Exception e (println (.getMessage e)))))
 
 (defmethod ig/init-key :db/connection
   [_ {:keys [uri clear?]}]

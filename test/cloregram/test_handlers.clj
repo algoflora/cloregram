@@ -1,8 +1,8 @@
 (ns cloregram.test-handlers
   (:require [cloregram.api :as api]
+            [cloregram.filesystem :as fs]
             [clojure.string :as str]
             [taoensso.timbre :as log]
-            [cloregram.utils :as utl]
             [nano-id.core :refer [nano-id]]
             [fivetonine.collage.util :as clgu]
             [fivetonine.collage.core :as clg]))
@@ -50,14 +50,16 @@
 (defn photo-handler
   [{user :user {:keys [photo]} :message}]
   (let [photo# (fn [u pss]
-                 (let [resp (->> pss
+                 (let [file (->> pss
                                  (apply max-key :width)
                                  :file_id
-                                 api/get-file
-                                 clgu/load-image
-                                 (clg/flip :horizontal)
-                                 (clg/flip :vertical))]
-                   (log/debug "RESP" resp)))]
+                                 api/get-file)
+                       path (fs/temp-path (str (nano-id) ".png"))]
+                   (clg/with-image file
+                     (clg/flip :horizontal)
+                     (clg/flip :vertical)
+                     (clgu/save path :quality 1.0 ))
+                   #_(api/send-photo user path)))]
     (if photo
       (photo# user photo)
       (api/send-message user "Image expected!" [] :temp))))

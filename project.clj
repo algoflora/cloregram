@@ -31,7 +31,7 @@
   :profiles {:testing-stuff {:dependencies [[eftest "0.6.0"]
                                             [compojure "1.7.0"]
                                             [ring/ring-json "0.5.1"]
-                                            [net.mikera/imagez "0.12.0"]]
+                                            [fivetonine/collage "0.3.0"]]
                              :resource-paths ["test/resources"]}
              :repl [:testing-stuff]
              :test [:testing-stuff]

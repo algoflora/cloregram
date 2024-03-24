@@ -1,5 +1,6 @@
 (ns cloregram.api
-  (:require [cloregram.utils :as utl]
+  (:require [cloregram.filesystem :as fs]
+            [cloregram.utils :as utl]
             [nano-id.core :refer [nano-id]]
             [cloregram.system.state :refer [system]]
             [cloregram.callbacks :as clb]
@@ -60,14 +61,23 @@
       java.util.UUID/fromString
       (clb/create user 'cloregram.handler/delete-message {:mid (:message_id new-msg)})))
 
+(defn- set-callbacks-message-id
+  [user msg]
+  (clb/set-new-message-ids
+   user
+   (:message_id msg)
+   (->> msg
+        :reply_markup :inline_keyboard flatten
+        (mapv #(some-> % :callback_data java.util.UUID/fromString)) (filterv some?))))
+
 (defn- to-edit?
   [optm user]
   (when (and (some? (:mdg-id user)) (= (:to-edit-msg-id optm) (:msg-id user)))
     (throw (ex-info "Prohibited way to edit Main Message!" {})))
   (if (:temp optm)
-   (some? (:to-edit-msg-id optm))
-   (and (some? (:user/msg-id user))
-        (not= 0 (:user/msg-id user)))))
+    (some? (:to-edit-msg-id optm))
+    (and (some? (:user/msg-id user))
+         (not= 0 (:user/msg-id user)))))
 
 (defn- prepare-arguments-map
   [argm kbd optm user]
@@ -90,7 +100,18 @@
       (create-temp-delete-callback user new-msg))
     (when (and (not (:temp optm)) (not= new-msg-id (:msg-id user)))
       (u/set-msg-id user new-msg-id))
+    (set-callbacks-message-id user new-msg)
     new-msg))
+
+#_(defmethod send-to-chat :photo
+  [_ user data kbd optm]
+  (let [user-mp (update user :user/id str)
+        argm (update (prepare-arguments-map {:content-type :multipart
+                                             :caption (:caption data)
+                                             :photo (-> data :path .toString java.io.File.)}
+                                            kbd optm user-mp)
+                     :reply_markup generate-string)
+        ]))
 
 (defmethod send-to-chat :file
   [_ user data kbd optm]
@@ -101,13 +122,16 @@
                                             kbd optm user-mp)
                      :reply_markup generate-string)
         new-msg (utl/api-wrap 'send-document argm)]
-    (create-temp-delete-callback user new-msg)))
+    (create-temp-delete-callback user new-msg)
+    (set-callbacks-message-id user new-msg)
+    new-msg))
 
 (defmethod send-to-chat :invoice
   [_ user data kbd optm]
   (let [argm (prepare-arguments-map data kbd optm user)
         new-msg (utl/api-wrap 'send-invoice argm)]
     (create-temp-delete-callback user new-msg)
+    (set-callbacks-message-id user new-msg)
     new-msg))
 
 (defn- prepare-and-send
@@ -146,7 +170,8 @@
   
   {:added "0.9.1"}
 
-  [user])
+  [user path caption kbd & opts]
+  (apply prepare-and-send :photo user {:path path :caption caption} kbd :temp opts))
 
 (defn send-document
 
@@ -197,7 +222,7 @@
                          (or (:bot/api-url @system) "https://api.telegram.org/")
                          (:bot/token @system))
                  http/get deref :body)
-        file (-> (nano-id) utl/temp-path .toFile)
+        file (-> (nano-id) fs/temp-path .toFile)
         fos (java.io.FileOutputStream. file)]
     (try
       (.transferTo bis fos)

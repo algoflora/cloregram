@@ -9,17 +9,66 @@
   ([user ^clojure.lang.Symbol f] (create user f nil))
   ([user ^clojure.lang.Symbol f args]
    (create (java.util.UUID/randomUUID) user f args))
-  ([uuid user ^clojure.lang.Symbol f args]
+  ([^java.util.UUID uuid user ^clojure.lang.Symbol f args]
+   (create uuid nil user f args))
+  ([^java.util.UUID uuid msg-id user ^clojure.lang.Symbol f args]
    (let [args (or args {})]
-     (d/transact (db/conn) [{:callback/uuid uuid
-                             :callback/function f
-                             :callback/arguments args
-                             :callback/user [:user/id (:user/id user)]}])
+     (d/transact! (db/conn) [(cond-> {:callback/uuid uuid
+                                      :callback/function f
+                                      :callback/arguments args
+                                      :callback/user [:user/id (:user/id user)]}
+                               (some? msg-id) (assoc :callback/message-id msg-id))])
      (log/debug "Created Callback" {:callback-uuid uuid
                                     :callback-function f
                                     :callback-arguments args
+                                    :callback-message-id msg-id
                                     :user user})
      uuid)))
+
+(defn delete
+  [user mid]
+  (let [to-retract (d/q '[:find ?cb
+                          :in $ ?uid ?mid
+                          :where
+                          [?cb :callback/message-id ?mid]
+                          [?cb :callback/user ?user]
+                          [?user :user/id ?uid]]
+                        (db/db) (:user/id user) mid)]
+    (d/transact! (db/conn) (mapv #(vector :db/retractEntity (first %)) to-retract))
+    (log/debug "Retracted Callbacks" {:callback-message-id mid
+                                      :retracted-count (count to-retract)
+                                      :callbacks-count (ffirst
+                                                        (d/q '[:find (count ?cb)
+                                                               :where [?cb :callback/uuid]] (db/db)))
+                                      
+                                      #_:callbacks #_(d/q '[:find (pull ?cb [*]) ?uname
+                                                        :where
+                                                        [?cb :callback/user ?u]
+                                                        [?u :user/username ?uname]] (db/db))})))
+
+(defn set-new-message-ids
+  [user mid uuids]
+  (let [to-retract (d/q '[:find ?cb
+                          :in $ ?uid ?mid ?uuids
+                          :where
+                          [?cb :callback/message-id ?mid]
+                          [?cb :callback/user ?user]
+                          [?user :user/id ?uid]
+                          (not [?cb :callback/uuid ?uuids])]
+                        (db/db) (:user/id user) mid uuids)]
+    (d/transact! (db/conn) (mapv #(vector :db/retractEntity (first %)) to-retract))
+    (d/transact! (db/conn) (mapv #(into {} [[:callback/uuid %] [:callback/message-id mid]]) uuids))
+    (log/debug "Callback Message IDs are set" {:callback-uuids uuids
+                                               :callback-message-id mid
+                                               :retracted-count (count to-retract)
+                                               :to-retract to-retract
+                                               :callbacks-count (ffirst
+                                                                 (d/q '[:find (count ?cb)
+                                                                        :where [?cb :callback/uuid]] (db/db)))
+                                               #_:callbacks #_(d/q '[:find (pull ?cb [*]) ?uname
+                                                                 :where
+                                                                 [?cb :callback/user ?u]
+                                                                 [?u :user/username ?uname]] (db/db))})))
 
 (defn- load-callback
   [user uuid]

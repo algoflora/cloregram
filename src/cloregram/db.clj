@@ -31,7 +31,7 @@
                                                    :s2 project-schema
                                                    :database-schema full-schema})
     full-schema
-    #_(let [f (d/transact (conn) full-schema)]
+    #_(let [f (d/transact! (conn) full-schema)]
       (log/debug "Datalevin database schema successfully updated" {:datoms (:tx-data @f)}))))
 
 (defn- read-project-data
@@ -44,5 +44,5 @@
   (log/info "Updating data...")
   (let [user-data (read-project-data)]
     (log/debug "Project data loaded" {:data user-data})
-    (let [f (d/transact (conn) user-data)]
+    (let [f (d/transact! (conn) user-data)]
       (log/debug "Project data successfully uploaded" {:datoms (:tx-data @f)}))))

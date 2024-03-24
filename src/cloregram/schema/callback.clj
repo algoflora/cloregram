@@ -15,4 +15,8 @@
    
    :callback/user {:db/valueType :db.type/ref
                    :db/cardinality :db.cardinality/one
-                   :db/doc "The User for whom this Callbak is intended"}})
+                   :db/doc "The User for whom this Callbak is intended"}
+
+   :callback/message-id {:db/valueType :db.type/long
+                         :db/cardinality :db.cardinality/one
+                         :db/doc "ID of Message this Callback is associated with"}})

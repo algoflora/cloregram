@@ -11,7 +11,9 @@
 (defn delete-message
   [{:keys [mid user]}]
   (utl/api-wrap 'delete-message {:chat_id (:user/id user)
-                                           :message_id mid}))
+                                 :message_id mid})
+  
+  (clb/delete user mid))
 
 (defmulti main-handler #(some #{:message :callback_query :pre_checkout_query} (keys %)))
 
