@@ -10,7 +10,7 @@
             [cheshire.core :refer [generate-string]]
             [cloregram.test.infrastructure.handler :refer [handler]]
             [cloregram.test.infrastructure.state :as state]
-            [cloregram.utils :as utl]))
+            [cloregram.middleware :as mw]))
 
 (defn- json-reponse-body-middleware
   [handler]
@@ -50,7 +50,7 @@
         wrap-keyword-params
         wrap-json-params
         wrap-multipart-params
-        utl/wrap-exception
+        mw/wrap-exception
         json-reponse-body-middleware)))
 
 (defmethod ig/init-key :test/server

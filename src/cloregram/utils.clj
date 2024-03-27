@@ -90,17 +90,5 @@
          (filter #(str/ends-with? % ".edn"))
          (mapcat read-resource))))
 
-(defn wrap-exception [handler]
-  (fn [request]
-    (try (handler request)
-         (catch Exception e
-           (let [data (assoc (if (instance? clojure.lang.ExceptionInfo e)
-                               (.getData e) {})
-                             :exception-class (str (class e))
-                             :exception-cause (.getCause e)
-                             :stack-trace     (str/join "\n" (mapv str (.getStackTrace e))))]
-             (log/error (.getMessage e) data)
-             {:status 200
-              :body {:ok false
-                     :description (.getMessage e)}})))))
+
 

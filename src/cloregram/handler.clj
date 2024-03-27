@@ -5,6 +5,7 @@
             [cloregram.utils :as utl]
             [cloregram.callbacks :as clb]
             [taoensso.timbre :as log]
+            [com.brunobonacci.mulog :as μ]
             [clojure.string :as str]
             [clojure.edn :as edn]))
 

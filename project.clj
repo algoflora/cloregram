@@ -7,6 +7,9 @@
   :dependencies [[org.clojure/clojure "1.11.1"]
                  [integrant "0.8.1"]
                  [com.taoensso/timbre "6.5.0"]
+                 [com.brunobonacci/mulog "0.9.0"]
+                 [com.brunobonacci/mulog-zipkin "0.9.0"]
+                 [com.brunobonacci/mulog-adv-file "0.9.0"]
 
                  [telegrambot-lib "2.12.0"]
 

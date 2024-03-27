@@ -1,4 +1,4 @@
-{:bot/webhook-key nil
+{:bot/webhook-key {}
 
  :bot/token "0000000000:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
  
@@ -26,5 +26,12 @@
                 :port #ig/ref :bot/port
                 ;; :certificate PUBLIC_KEY
                 }
+
+ :mulog/publishers [{:type :zipkin
+                     :url "http://localhost:9411"
+                     :max-items 5000
+                     :publish-delay 5000}
+                    {:type :simple-file
+                     :filename "./logs/log.mulog"}]
 
  :project/config {}}

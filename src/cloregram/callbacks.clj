@@ -37,25 +37,27 @@
     (d/transact! (db/conn) (mapv #(vector :db/retractEntity (first %)) to-retract))
     (log/debug "Retracted Callbacks" {:callback-message-id mid
                                       :retracted-count (count to-retract)
+                                      :to-retract to-retract
                                       :callbacks-count (ffirst
                                                         (d/q '[:find (count ?cb)
                                                                :where [?cb :callback/uuid]] (db/db)))
                                       
-                                      #_:callbacks #_(d/q '[:find (pull ?cb [*]) ?uname
+                                      :callbacks (d/q '[:find (pull ?cb [*]) ?uname
                                                         :where
                                                         [?cb :callback/user ?u]
                                                         [?u :user/username ?uname]] (db/db))})))
 
 (defn set-new-message-ids
   [user mid uuids]
-  (let [to-retract (d/q '[:find ?cb
-                          :in $ ?uid ?mid ?uuids
-                          :where
-                          [?cb :callback/message-id ?mid]
-                          [?cb :callback/user ?user]
-                          [?user :user/id ?uid]
-                          (not [?cb :callback/uuid ?uuids])]
-                        (db/db) (:user/id user) mid uuids)]
+  (let [to-retract (into [] (d/q '[:find ?cb
+                                   :in $ ?uid ?mid ?uuids
+                                   :where
+                                   [?cb :callback/message-id ?mid]
+                                   [?cb :callback/user ?user]
+                                   [?user :user/id ?uid]
+                                   [?cd :callback/uuid ?uuid]
+                                   (not [(contains? ?uuids ?uuid)])]
+                                 (db/db) (:user/id user) mid (set uuids)))]
     (d/transact! (db/conn) (mapv #(vector :db/retractEntity (first %)) to-retract))
     (d/transact! (db/conn) (mapv #(into {} [[:callback/uuid %] [:callback/message-id mid]]) uuids))
     (log/debug "Callback Message IDs are set" {:callback-uuids uuids
@@ -65,7 +67,7 @@
                                                :callbacks-count (ffirst
                                                                  (d/q '[:find (count ?cb)
                                                                         :where [?cb :callback/uuid]] (db/db)))
-                                               #_:callbacks #_(d/q '[:find (pull ?cb [*]) ?uname
+                                               :callbacks (d/q '[:find (pull ?cb [*]) ?uname
                                                                  :where
                                                                  [?cb :callback/user ?u]
                                                                  [?u :user/username ?uname]] (db/db))})))

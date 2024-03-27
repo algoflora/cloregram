@@ -2,6 +2,7 @@
   (:require [clojure.string :as str]
             [integrant.core :as ig]
             [cheshire.core :refer [parse-string]]
+            [com.brunobonacci.mulog :as μ]
             [taoensso.timbre :as log]
             [nano-id.core :refer [nano-id]]
             [ring.adapter.jetty :refer [run-jetty]]
@@ -11,6 +12,7 @@
             [telegrambot-lib.core :as tbot]
             [cloregram.system.state :refer [system]]
             [cloregram.handler :refer [main-handler]]
+            [cloregram.middleware :as mw]
             [cloregram.utils :as utl]))
 
 (defn startup
@@ -22,7 +24,10 @@
   (log/info "Gracefully shutting down...")
   (ig/halt! @system)
   (shutdown-agents)
-  (log/info "Everything finished. Good bye!"))
+  (log/info "Everything finished. Good bye!")
+  (Thread/sleep 2000)
+  (let [pubs (:mulog/publishers @system)]
+    (mapv #(%) pubs)))
 
 (defmethod ig/init-key :bot/webhook-key
   [_ _]
@@ -33,12 +38,13 @@
 (defmethod ig/init-key :bot/handler ; TODO: Check update_id
   [_ {:keys [webhook-key]}]
   (fn [req]
-    (log/debug "Incoming webhook request" {:webhook-request req})
     (let [headers (:headers req)
           upd (-> req :body slurp (parse-string true))]
+      (μ/log ::incoming-update :update upd)
       (if (or (= webhook-key (headers "X-Telegram-Bot-Api-Secret-Token"))
               (= webhook-key (headers (clojure.string/lower-case "X-Telegram-Bot-Api-Secret-Token"))))
-        (do (main-handler upd)
+        (do (μ/trace ::main-handler [:update upd]
+                     (main-handler upd))
             {:status 200
              :headers {"Content-Type" "application/json"}
              :body "OK"})
@@ -86,7 +92,8 @@
 (defmethod ig/init-key :bot/server
   [_ {:keys [options handler]}]
   (try
-    (when-let [server (run-jetty (utl/wrap-exception handler) (adjust-opts options))]
+    (when-let [server (run-jetty (-> handler mw/wrap-exception mw/wrap-tracking-events)
+                                 (adjust-opts options))]
       (log/info "Webhook server started" {:server-options options
                                           :server server})
       server)
@@ -138,6 +145,17 @@
   [_ conn]
   (log/info "Releasing Datalevin database connection...")
   (d/close conn))
+
+(defmethod ig/init-key :mulog/publishers
+  [_ pubs]
+  (let [funcs (mapv μ/start-publisher! pubs)]
+    (μ/log ::publishers-started :funcs funcs)
+    funcs))
+
+#_(defmethod ig/halt-key! :mulog/publishers
+  [_ pubs]
+  (future
+    (mapv #(%) pubs)))
 
 (defmethod ig/init-key :project/config
   [_ config]
