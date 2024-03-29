@@ -27,11 +27,4 @@
                 ;; :certificate PUBLIC_KEY
                 }
 
- :mulog/publishers [{:type :zipkin
-                     :url "http://localhost:9411"
-                     :max-items 5000
-                     :publish-delay 5000}
-                    {:type :simple-file
-                     :filename "./logs/log.mulog"}]
-
  :project/config {}}

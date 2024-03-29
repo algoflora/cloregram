@@ -1,5 +1,5 @@
 (ns cloregram.test.infrastructure.client
-  (:require [taoensso.timbre :as log]
+  (:require [clojure.tools.logging :as log]
             [cheshire.core :refer [generate-string]]
             [org.httpkit.client :refer [post]]
             [cloregram.utils :refer [keys-hyphens->underscores]]

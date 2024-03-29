@@ -1,5 +1,6 @@
 (ns cloregram.callbacks
-  (:require [taoensso.timbre :as log]
+  (:require [clojure.tools.logging :as log]
+            [com.brunobonacci.mulog :as μ]
             [cloregram.db :as db]
             [cloregram.utils :as utl]
             [datalevin.core :as d]
@@ -88,4 +89,5 @@
         args (-> callback :callback/arguments (assoc :user user))]
     (log/debug "Calling Callback function" {:callback-function func
                                             :callback-arguments args})
-    ((utl/resolver func) args)))
+    (μ/trace ::callback-call [:user-username (utl/username user) :function func :arguments args]
+             ((utl/resolver func) args))))

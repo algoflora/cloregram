@@ -1,5 +1,5 @@
 (ns cloregram.test.infrastructure.users
-  (:require [taoensso.timbre :as log]
+  (:require [clojure.tools.logging :as log]
             [cloregram.test.infrastructure.state :as state]
             [cloregram.utils :as utl]))
 

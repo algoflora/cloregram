@@ -6,11 +6,13 @@
   
   :dependencies [[org.clojure/clojure "1.11.1"]
                  [integrant "0.8.1"]
-                 [com.taoensso/timbre "6.5.0"]
                  [com.brunobonacci/mulog "0.9.0"]
                  [com.brunobonacci/mulog-zipkin "0.9.0"]
-                 [com.brunobonacci/mulog-adv-file "0.9.0"]
-
+                 [com.brunobonacci/mulog-elasticsearch "0.9.0"]
+                 [com.brunobonacci/where "0.5.6"]
+                 [org.slf4j/slf4j-api "1.7.30"]
+                 [ch.qos.logback/logback-classic "1.2.3"]
+                 
                  [telegrambot-lib "2.12.0"]
 
                  [http-kit "2.7.0"]
@@ -30,7 +32,7 @@
 
   :jvm-opts ["--add-opens=java.base/java.nio=ALL-UNNAMED"
              "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED"]
-  
+
   :profiles {:testing-stuff {:dependencies [[eftest "0.6.0"]
                                             [compojure "1.7.0"]
                                             [ring/ring-json "0.5.1"]

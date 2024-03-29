@@ -1,5 +1,6 @@
 (ns cloregram.api
   (:require [cloregram.filesystem :as fs]
+            [com.brunobonacci.mulog :as μ]
             [cloregram.utils :as utl]
             [nano-id.core :refer [nano-id]]
             [cloregram.system.state :refer [system]]
@@ -8,7 +9,7 @@
             [org.httpkit.client :as http]
             [cheshire.core :refer [generate-string]]
             [telegrambot-lib.core :as tbot]
-            [taoensso.timbre :as log]))
+            [clojure.tools.logging :as log]))
 
 (defn- check-opt
   [opts opt]
@@ -103,7 +104,7 @@
     (set-callbacks-message-id user new-msg)
     new-msg))
 
-#_(defmethod send-to-chat :photo
+(defmethod send-to-chat :photo
   [_ user data kbd optm]
   (let [user-mp (update user :user/id str)
         argm (update (prepare-arguments-map {:content-type :multipart
@@ -111,7 +112,7 @@
                                              :photo (-> data :path .toString java.io.File.)}
                                             kbd optm user-mp)
                      :reply_markup generate-string)
-        ]))
+        new-msg (utl/api-wrap 'send-photo argm)]))
 
 (defmethod send-to-chat :file
   [_ user data kbd optm]
@@ -209,6 +210,11 @@
   [user data pay-text kbd]
   (prepare-and-send :invoice user data (vec (cons [{:text pay-text :pay true}] kbd)) :temp))
 
+(defn- http-get
+  [uri]
+  (μ/trace ::http-get {:pairs [:http-get/uri uri] :capture (fn [resp] {:http-get/response resp})}
+           (-> uri http/get deref :body)))
+
 (defn get-file
 
   "Returns `java.io.File` or `nil` by `file-id`."
@@ -221,10 +227,11 @@
                  (format "%sfile/bot%s/%s"
                          (or (:bot/api-url @system) "https://api.telegram.org/")
                          (:bot/token @system))
-                 http/get deref :body)
+                 http-get)
         file (-> (nano-id) fs/temp-path .toFile)
         fos (java.io.FileOutputStream. file)]
     (try
+      (μ/log ::transfer-to :bis bis :fos fos)
       (.transferTo bis fos)
       (finally
         (.close fos)))

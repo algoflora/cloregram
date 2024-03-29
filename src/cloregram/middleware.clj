@@ -11,26 +11,35 @@
                              :exception-class (str (class e))
                              :exception-cause (.getCause e)
                              :stack-trace     (str/join "\n" (mapv str (.getStackTrace e))))]
-             (μ/log ::http-request-failed :exception e)
              {:status 200
               :body {:ok false
                      :description (.getMessage e)}})))))
 
-(defn wrap-tracking-events
+(defn wrap-tracking-requests
   "tracks api events with μ/log."
-  [handler]
-  (fn [req]
-    (μ/with-context
-      {:uri            (get req :uri)
-       :request-method (get req :request-method)}
+  ([handler] (wrap-tracking-requests nil handler))
+  ([prefix handler]
+   (fn [req]
+     (μ/trace (keyword (str "::" prefix "tracking-http-request"))
+       ;; add here all the key/value pairs for tracking event only
+              {:pairs [:uri              (get req :uri)
+                       :request-method   (get req :request-method)
+                       :content-type     (get-in req [:headers "content-type"])
+                       :content-encoding (get-in req [:headers "content-encoding"])]
+        ;; out of the response capture the http status code.
+        :capture (fn [{:keys [status]}] {:http-status status})}
 
-      ;; track the request duration and outcome
-      (μ/trace ::http-request
-        ;; add here all the key/value pairs for tracking event only
-        {:pairs [:content-type     (get-in req [:headers "content-type"])
-                 :content-encoding (get-in req [:headers "content-encoding"])]
-         ;; out of the response capture the http status code.
-         :capture (fn [{:keys [status]}] {:http-status status})}
+       ;; call the request handler
+       (handler req)))))
 
-        ;; call the request handler
-        (handler req)))))
+;; (defn pass-mulog-trace
+;;   [handler]
+;;   (fn [req]
+;;     (let [ctx    (μ/local-context)
+;;           root   (get-in req [:headers "MULOG-PASS-ROOT-TRACE"])
+;;           parent (get-in req [:headers "MULOG-PASS-PARENT-TRACE"])
+;;           ctx#   (cond-> ctx
+;;                    (some? root)   (assoc :mulog/root-trace root)
+;;                    (some? parent) (assoc :mulog/parent-trace parent))]
+;;       (μ/with-context ctx#
+;;         (handler req)))))

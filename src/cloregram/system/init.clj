@@ -3,7 +3,7 @@
             [integrant.core :as ig]
             [cheshire.core :refer [parse-string]]
             [com.brunobonacci.mulog :as μ]
-            [taoensso.timbre :as log]
+            [clojure.tools.logging :as log]
             [nano-id.core :refer [nano-id]]
             [ring.adapter.jetty :refer [run-jetty]]
             [datalevin.core :as d]
@@ -13,7 +13,8 @@
             [cloregram.system.state :refer [system]]
             [cloregram.handler :refer [main-handler]]
             [cloregram.middleware :as mw]
-            [cloregram.utils :as utl]))
+            [cloregram.utils :as utl]
+            [cloregram.logging :refer [stop-publishers!]]))
 
 (defn startup
   [config]
@@ -23,11 +24,9 @@
   []
   (log/info "Gracefully shutting down...")
   (ig/halt! @system)
-  (shutdown-agents)
   (log/info "Everything finished. Good bye!")
-  (Thread/sleep 2000)
-  (let [pubs (:mulog/publishers @system)]
-    (mapv #(%) pubs)))
+  (stop-publishers!)
+  (shutdown-agents))
 
 (defmethod ig/init-key :bot/webhook-key
   [_ _]
@@ -89,10 +88,14 @@
                                   :keystore (or (:keystore opts) "./ssl/keystore.jks")
                                   :key-password (or (:keystore-password opts) "cloregram.keystorepass")))))
 
+(def ^:private wrap-tracking-events-bot- (partial mw/wrap-tracking-requests "bot-"))
+
 (defmethod ig/init-key :bot/server
   [_ {:keys [options handler]}]
   (try
-    (when-let [server (run-jetty (-> handler mw/wrap-exception mw/wrap-tracking-events)
+    (when-let [server (run-jetty (-> handler
+                                     mw/wrap-exception
+                                     wrap-tracking-events-bot-)
                                  (adjust-opts options))]
       (log/info "Webhook server started" {:server-options options
                                           :server server})
@@ -145,17 +148,6 @@
   [_ conn]
   (log/info "Releasing Datalevin database connection...")
   (d/close conn))
-
-(defmethod ig/init-key :mulog/publishers
-  [_ pubs]
-  (let [funcs (mapv μ/start-publisher! pubs)]
-    (μ/log ::publishers-started :funcs funcs)
-    funcs))
-
-#_(defmethod ig/halt-key! :mulog/publishers
-  [_ pubs]
-  (future
-    (mapv #(%) pubs)))
 
 (defmethod ig/init-key :project/config
   [_ config]

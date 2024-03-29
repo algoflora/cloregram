@@ -4,7 +4,7 @@
             [cloregram.users :as u]
             [cloregram.utils :as utl]
             [cloregram.callbacks :as clb]
-            [taoensso.timbre :as log]
+            [clojure.tools.logging :as log]
             [com.brunobonacci.mulog :as μ]
             [clojure.string :as str]
             [clojure.edn :as edn]))
@@ -35,36 +35,41 @@
 
 (defmethod handle :default
   [user msg]
-  (let [hdata (:user/handler user)
-        handler-symbol (:user/handler-function user)
-        handler (utl/resolver handler-symbol)
-        common-handler (->> (utl/get-project-info) :name (format "%s.handler/common") (symbol))
-        args (-> user :user/handler-arguments (assoc :user user :message msg))]
-    (when (not= handler common-handler)
-      (u/set-handler user common-handler nil))
-    (log/infof "Handling incoming message..." {:message msg
-                                               :user user
-                                               :handler-function handler-symbol
-                                               :handler-arguments args})
-    (handler args)
-    (delete-message {:user user
-                     :mid (:message_id msg)})))
+  (μ/trace ::handle-default [:user-username (utl/username user) :message msg]
+           (let [hdata (:user/handler user)
+                 handler-symbol (:user/handler-function user)
+                 handler (utl/resolver handler-symbol)
+                 common-handler (->> (utl/get-project-info) :name (format "%s.handler/common") (symbol))
+                 args (-> user :user/handler-arguments (assoc :user user :message msg))]
+             (when (not= handler common-handler)
+               (u/set-handler user common-handler nil))
+             (log/infof "Handling incoming message..." {:message msg
+                                                        :user user
+                                                        :handler-function handler-symbol
+                                                        :handler-arguments args})
+             (μ/trace ::handler
+                      {:pairs [:handler/function handler-symbol :handler/arguments args]
+                       :capture (fn [resp] {:handler/response resp})}
+                      (handler args))
+             (delete-message {:user user
+                              :mid (:message_id msg)}))))
 
 (defmethod handle :payment
   [user msg]
-  (let [payment-handler (or (->> (utl/get-project-info)
-                                 :name
-                                 (format "%s.handler/payment")
-                                 (symbol)
-                                 (utl/resolver))
-                            (utl/resolver 'cloregram.handler/payment))
-        args {:user user
-              :payment (:successful_payment msg)}]
-    (log/debug "Handling payment Message..." {:payment-handler payment-handler
-                                              :arguments args
-                                              :message msg
-                                              :user user})
-    (payment-handler args)))
+  (μ/trace ::handle-payment [:user-username (utl/username user) :message msg]
+           (let [payment-handler (or (->> (utl/get-project-info)
+                                          :name
+                                          (format "%s.handler/payment")
+                                          (symbol)
+                                          (utl/resolver))
+                                     (utl/resolver 'cloregram.handler/payment))
+                 args {:user user
+                       :payment (:successful_payment msg)}]
+             (log/debug "Handling payment Message..." {:payment-handler payment-handler
+                                                       :arguments args
+                                                       :message msg
+                                                       :user user})
+             (payment-handler args))))
 
 (defmethod main-handler :message
   [upd]
@@ -79,10 +84,11 @@
 (defmethod main-handler :callback_query
   [upd]
   (let [cbq (:callback_query upd)
+        cb-uuid (-> cbq :data java.util.UUID/fromString)
         user (u/get-or-create (:from cbq))]
     (log/debug "Handling Callback Query..." {:callback-query cbq
-                                            :user user})
-    (clb/call user (-> cbq :data java.util.UUID/fromString))))
+                                             :user user})
+    (clb/call user cb-uuid)))
 
 (defmethod main-handler :pre_checkout_query
   [upd]

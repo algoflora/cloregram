@@ -3,7 +3,7 @@
             [cloregram.system.state :refer [system]]
             [cloregram.utils :as utl]
             [cloregram.schema :refer [schema]]
-            [taoensso.timbre :as log]))
+            [clojure.tools.logging :as log]))
 
 (defn conn
   "Returns Datalevin database connection"

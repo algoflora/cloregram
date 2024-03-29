@@ -1,5 +1,5 @@
 (ns cloregram.users
-  (:require [taoensso.timbre :as log]
+  (:require [clojure.tools.logging :as log]
             [cloregram.db :as db]
             [datalevin.core :as d]
             [cloregram.utils :as utl]))

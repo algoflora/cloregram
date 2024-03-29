@@ -1,85 +1,70 @@
 (ns cloregram.logging
-  (:require [clojure.string :as str]
-            [clojure.walk :as walk]
-            [taoensso.timbre :as timbre]
-            [taoensso.timbre.appenders.core :refer [println-appender]]
-            [cheshire.core :refer [generate-string]]
-            [cheshire.generate :refer [add-encoder]]
-            [cloregram.utils :as utl]))
+  (:require [cloregram.utils :refer [get-project-info]]
+            [com.brunobonacci.mulog :as μ]
+            [where.core :refer [where]]
+            [clojure.string :as str]))
 
-(add-encoder Object (fn [obj jsonGenerator] (.writeString jsonGenerator (prn-str obj))))
+(defonce ^:private publishers (atom nil))
 
-(defn- my-keywordize-keys
-  [m]
-  (let [f (fn [[k v]] (if (string? k)
-                        [(-> k
-                             (str/lower-case)
-                             (str/replace " " "-")
-                             (keyword))
-                         v]
-                        [k v]))]
-    ;; only apply to maps
-    (walk/postwalk (fn [x] (if (map? x) (into {} (map f x)) x)) m)))
+;; (defn transform-add-timestamp
+;;   [events]
+;;   (map #(assoc % "@timestamp" (:mulog/timestamp %)) events))
 
-(defn- transform-additional-data
-  [ad]
-  (cond
-    (map? ad) ad
+(def ^:private errors-filter (partial filter #(contains? % :exception)))
 
-    (and (coll? ad) (<= (count ad) 1))
-    (transform-additional-data (first ad))
+(def ^:private publisher-errors-filter (partial filter (where :mulog/event-name :in? [:mulog/publisher-error :myapp/invalid-json-value])))
 
-    (seq? ad) (vec ad)
-    (some? ad) ad
-    :else nil))
+(defn- capitalize-words 
+  "Capitalize every word in a string"
+  [s]
+  (->> (str/split (str s) #"\b") 
+       (map str/capitalize)
+       str/join))
 
-(defn- generate-log-entry
-  [data]
-  (let [{:keys [msg-type level ?err ?file ?line ?ns-str msg_ vargs hostname_]} data
-        is-p? (= :p msg-type)
-        message (if is-p? (first vargs) @msg_)
-        additional-data (when is-p? (-> vargs next transform-additional-data my-keywordize-keys))]
-    (-> (utl/get-project-info)
-        (merge {:time    (str (java.time.Instant/now))
-                :host    @hostname_
-                :file    ?file
-                :line    ?line
-                :logger  ?ns-str
-                :level   (name level)
-                :message (cond-> {:message message
-                                  :data additional-data}
-                           (some? ?err) (assoc :error ?err)
-                           true generate-string)})
-        (my-keywordize-keys))))
+(def ^:private console-log-transformer
+  (partial
+   map #(-> %
+            (select-keys [:mulog/timestamp :mulog/event-name :exception])
+            (update :mulog/timestamp (fn [ts] (java.time.Instant/ofEpochMilli ts)))
+            (update :mulog/event-name (fn [en] (str (-> en name (str/replace #"-" " ") (capitalize-words)) " (" (-> en namespace) ")"))))))
 
-(defn custom-json-appender
-  [data]
-  (let [log-entry (-> data generate-log-entry generate-string (str "\n"))]
-    (spit "./logs/logs.json" log-entry :append true)))
+(def ^:private publishers-config [
+                                  {:type :console
+                                   :pretty? true
+                                   :transform console-log-transformer}
+                           
+                                  {:type :simple-file
+                                   :filename "./logs/log.mulog"}
+                                  
+                                  {:type :simple-file
+                                   :filename "./logs/errors.mulog"
+                                   :transform errors-filter}
+                                  
+                                  {:type :simple-file
+                                   :filename "./logs/publishers-errors.mulog"
+                                   :transform publisher-errors-filter}
+                                  
+                                  {:type :zipkin
+                                   :url "http://127.0.0.1:9411"
+                                   :max-items 5000
+                                   :publish-delay 5000}])
 
-;; (defn custom-edn-appender
-;;   [data]
-;;   (let [log-entry (-> data generate-log-entry prn-str)]
-;;     (spit "./logs/logs.edn" log-entry :append true)))
+(defn start-publishers!
+  []
+  (let [pinfo (get-project-info)]
+    (μ/set-global-context! {:group (:group pinfo)
+                            :app-name (:name pinfo)
+                            :version (:version pinfo)
+                            :env "local"
+                            :hostname (.getHostName (java.net.InetAddress/getLocalHost))})
+    (reset! publishers (mapv (fn [p]
+                               (let [f (μ/start-publisher! p)]
+                                 (μ/log ::publisher-started :type (:type p) :publisher-stop-fn f)
+                                 f))
+                             publishers-config))))
 
-(def original-output-fn (-> timbre/*config* :output-fn))
-
-(timbre/merge-config!
- {:appenders
-
-  {:custom-json-appender {:enabled? true
-                          :async? true
-                          :fn custom-json-appender}
-
-   ;; :custom-edn-appender {:enabled? true
-   ;;                       :fn custom-edn-appender}
-
-   :println {:enabled? true
-             :min-level :info
-             :output-fn (fn [data]
-                          (original-output-fn (update
-                                               data
-                                               :vargs
-                                               #(if (= :p (:msg-type data)) (take 1 %) %))))}}})
-
-(timbre/info "Logging initiated with Timbre" timbre/*config*)
+(defn stop-publishers!
+  []
+  (μ/log ::publishers-stop)
+  (Thread/sleep 5000)
+  (mapv (fn [f] (f)) @publishers))

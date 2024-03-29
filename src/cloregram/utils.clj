@@ -1,10 +1,11 @@
 (ns cloregram.utils
   (:require [cloregram.system.state :refer [bot]]
+            [com.brunobonacci.mulog :as μ]
             [clojure.java.io :as io]
             [clojure.edn :as edn]
             [clojure.string :as str]
             [resauce.core :as res]
-            [taoensso.timbre :as log]))
+            [clojure.tools.logging :as log]))
 
 (defn dbg
   ([x] (dbg nil x))
@@ -14,19 +15,17 @@
 
 (defn api-wrap-
   [api-f-sym bot & args]
-  (log/debug "API method calling" {:method api-f-sym
-                                   :arguments args})
-  (let [api-f (ns-resolve (find-ns 'telegrambot-lib.core) api-f-sym)
-        resp  (apply api-f bot args)
-        ok    (true? (:ok resp))]
-    (when (not ok)
-      (throw (ex-info "API response error" {:method api-f-sym
-                                            :arguments args
-                                            :response resp})))
-    (log/debug "Response is OK" {:method api-f-sym
-                                 :arguments args
-                                 :response resp})
-    (:result resp)))
+  (μ/trace ::telegram-api-call
+           {:pairs [:telegram-api-call/method api-f-sym :telegram-api-call/arguments (into () args)]
+            :capture (fn [resp] {:telegram-api-call/response resp})}
+           (let [api-f (ns-resolve (find-ns 'telegrambot-lib.core) api-f-sym)
+                 resp  (apply api-f bot args)
+                 ok    (true? (:ok resp))]
+             (when (not ok)
+               (throw (ex-info "API response error" {:method api-f-sym
+                                                     :arguments (into () args)
+                                                     :response resp})))
+             (:result resp))))
 
 (defn api-wrap
   [api-f-sym & args]

@@ -2,7 +2,8 @@
   (:require [cloregram.test.infrastructure.state :as state]
             [cloregram.test.infrastructure.client :as c]
             [cheshire.core :refer [parse-string]]
-            [taoensso.timbre :as log]))
+            [clojure.tools.logging :as log]
+            [com.brunobonacci.mulog :as μ]))
 
 
 (defn- get-user-info
@@ -86,22 +87,24 @@
 (defmethod handler :deleteMessage
   [msg]
   (log/info "Incoming :deleteMessage" {:message msg})
-  (swap! state/users (fn [users]
-                      (let [mid (:message_id msg)
-                            [user uid] (get-user-info users msg)]
-                        (when (not (contains? (:messages user) mid))
-                          (throw (ex-info "No message to delete for virtual user!"
-                                          {:message-id mid
-                                           :message msg
-                                           :virtual-user user})))
-                        (let [new-users (-> users
-                                            (update-in [uid :messages] dissoc mid)
-                                            (assoc-in [uid :waiting-for-response?] false))]
-                          (log/info "Message deleted" {:message msg
-                                                       :virtual-user (uid new-users)})
-                          new-users))))
-  {:status 200
-   :body {:ok true}})
+  (μ/trace ::delete-message [:params msg]
+           (swap! state/users (fn [users]
+                               (let [mid (:message_id msg)
+                                     [user uid] (get-user-info users msg)]
+                                 (when (not (contains? (:messages user) mid))
+                                   (throw (ex-info "No message to delete for virtual user!"
+                                                   {:message-id mid
+                                                    :message msg
+                                                    :virtual-user user})))
+                                 (let [new-users (-> users
+                                                     (update-in [uid :messages] dissoc mid)
+                                                     (assoc-in [uid :waiting-for-response?] false))]
+                                   (log/info "Message deleted" {:message msg
+                                                                :virtual-user (uid new-users)})
+                                   new-users))))
+           {:status 200
+            :body {:ok true
+                   :result true}}))
 
 (defmethod handler :sendDocument
   [msg]
@@ -122,7 +125,7 @@
                                            :virtual-user user})
             {:status 200
              :body {:ok true
-                    :result message}})))
+                    :result (update-in message [:document :tempfile] prn-str)}})))
 
 (defmethod handler :sendInvoice
   [msg]
