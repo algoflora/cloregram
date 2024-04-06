@@ -111,8 +111,12 @@
 
 (defmethod ig/init-key :bot/instance
   [_ {:keys [api-url token webhook-key https? ip port certificate]}]
-  (let [_config {:bot-token token}
-        config (merge _config (if (some? api-url) {:bot-api api-url} {}))
+  (let [μ-headers-fn #(let [ctx (μ/local-context)]
+                        {"mulog-pass-root-trace" (:mulog/root-trace ctx) 
+                         "mulog-pass-parent-trace" (:mulog/parent-trace ctx)}) 
+        _config {:bot-token token
+                 :headers μ-headers-fn}
+        config (merge _config (if (some? api-url) {:bot-api api-url}))
         bot (tbot/create config)
         schema (if https? "https" "http")]
     (utl/api-wrap- 'set-webhook bot (cond-> {:content-type :multipart

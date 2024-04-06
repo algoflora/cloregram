@@ -35,7 +35,8 @@
         wrap-multipart-params
         mw/wrap-exception
         json-reponse-body-middleware
-        wrap-tracking-events-virtual-tg-api-)))
+        wrap-tracking-events-virtual-tg-api-
+        mw/pass-mulog-trace)))
 
 (defn- create-files-route
   [path bot-token]
@@ -59,7 +60,8 @@
     (-> route
         wrap-keyword-params
         mw/wrap-exception
-        wrap-tracking-events-virtual-tg-api-)))
+        wrap-tracking-events-virtual-tg-api-
+        mw/pass-mulog-trace)))
 
 (defmethod ig/init-key :test/server
   [_ {:keys [url bot-token]}]

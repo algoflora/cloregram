@@ -1,6 +1,7 @@
 (ns cloregram.middleware
   (:require [clojure.string :as str]
-            [com.brunobonacci.mulog :as μ]))
+            [com.brunobonacci.mulog :as μ]
+            [com.brunobonacci.mulog.flakes :refer [read-method]]))
 
 (defn wrap-exception [handler]
   (fn [request]
@@ -20,7 +21,7 @@
   ([handler] (wrap-tracking-requests nil handler))
   ([prefix handler]
    (fn [req]
-     (μ/trace (keyword (str "::" prefix "tracking-http-request"))
+     (μ/trace (keyword (str *ns*) (str (name prefix) "tracking-http-request"))
        ;; add here all the key/value pairs for tracking event only
               {:pairs [:uri              (get req :uri)
                        :request-method   (get req :request-method)
@@ -32,14 +33,14 @@
        ;; call the request handler
        (handler req)))))
 
-;; (defn pass-mulog-trace
-;;   [handler]
-;;   (fn [req]
-;;     (let [ctx    (μ/local-context)
-;;           root   (get-in req [:headers "MULOG-PASS-ROOT-TRACE"])
-;;           parent (get-in req [:headers "MULOG-PASS-PARENT-TRACE"])
-;;           ctx#   (cond-> ctx
-;;                    (some? root)   (assoc :mulog/root-trace root)
-;;                    (some? parent) (assoc :mulog/parent-trace parent))]
-;;       (μ/with-context ctx#
-;;         (handler req)))))
+(defn pass-mulog-trace
+  [handler]
+  (fn [req]
+    (let [ctx    (μ/local-context)
+          root   (some-> req (get-in [:headers "mulog-pass-root-trace"]) read-method)
+          parent (some-> req (get-in [:headers "mulog-pass-parent-trace"]) read-method)
+          ctx#   (cond-> ctx
+                   (some? root)   (assoc :mulog/root-trace root)
+                   (some? parent) (assoc :mulog/parent-trace parent))]
+      (μ/with-context ctx#
+        (handler req)))))

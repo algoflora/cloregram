@@ -4,7 +4,7 @@
   :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"
             :url "https://www.eclipse.org/legal/epl-2.0/"}
   
-  :dependencies [[org.clojure/clojure "1.11.1"]
+  :dependencies [[org.clojure/clojure "1.11.2"]
                  [integrant "0.8.1"]
                  [com.brunobonacci/mulog "0.9.0"]
                  [com.brunobonacci/mulog-zipkin "0.9.0"]
@@ -13,7 +13,7 @@
                  [org.slf4j/slf4j-api "1.7.30"]
                  [ch.qos.logback/logback-classic "1.2.3"]
                  
-                 [telegrambot-lib "2.12.0"]
+                 [telegrambot-lib "2.13.0-SNAPSHOT"]
 
                  [http-kit "2.7.0"]
                  [ring/ring-jetty-adapter "1.9.2"]
