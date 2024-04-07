@@ -22,6 +22,9 @@
 (def ^:private wrap-tracking-events-virtual-tg-api-
   (partial mw/wrap-tracking-requests "virtual-tg-api-"))
 
+(def ^:private wrap-tracking-events-virtual-tg-files-
+  (partial mw/wrap-tracking-requests "virtual-tg-files-"))
+
 (defn- create-api-route
   [path bot-token]
   (let [api-path  (format "%s%s/:endpoint" path bot-token)]
@@ -30,6 +33,7 @@
                                                           :capture (fn [resp] {:api-request/response resp})}
                                            (handler (:params req))))))
     (-> route
+        mw/parse-json-for-multipart
         wrap-keyword-params
         wrap-json-params
         wrap-multipart-params
@@ -60,7 +64,7 @@
     (-> route
         wrap-keyword-params
         mw/wrap-exception
-        wrap-tracking-events-virtual-tg-api-
+        wrap-tracking-events-virtual-tg-files-
         mw/pass-mulog-trace)))
 
 (defmethod ig/init-key :test/server

@@ -109,12 +109,15 @@
   (.stop server)
   (log/info "Server shutted down"))
 
+(defn- μ-headers-fn
+  []
+  (let [ctx (μ/local-context)]
+    {"mulog-pass-root-trace" (:mulog/root-trace ctx) 
+     "mulog-pass-parent-trace" (:mulog/parent-trace ctx)}))
+
 (defmethod ig/init-key :bot/instance
   [_ {:keys [api-url token webhook-key https? ip port certificate]}]
-  (let [μ-headers-fn #(let [ctx (μ/local-context)]
-                        {"mulog-pass-root-trace" (:mulog/root-trace ctx) 
-                         "mulog-pass-parent-trace" (:mulog/parent-trace ctx)}) 
-        _config {:bot-token token
+  (let [_config {:bot-token token
                  :headers μ-headers-fn}
         config (merge _config (if (some? api-url) {:bot-api api-url}))
         bot (tbot/create config)
@@ -124,7 +127,7 @@
                                              :secret_token webhook-key}
                                       https? (assoc :certificate (clojure.java.io/file
                                                                   (or certificate "./ssl/cert.pem")))))
-    (log/info "Webhook is set" {:webhook-info (utl/api-wrap- 'get-webhook-info bot)})
+    (μ/log ::webhook-is-set :webhook-info (utl/api-wrap- 'get-webhook-info bot))
     bot))
 
 (defn- delete-directory-recursive

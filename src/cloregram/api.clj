@@ -9,6 +9,7 @@
             [org.httpkit.client :as http]
             [cheshire.core :refer [generate-string]]
             [telegrambot-lib.core :as tbot]
+            [clojure.walk :as walk]
             [clojure.tools.logging :as log]))
 
 (defn- check-opt
@@ -90,48 +91,92 @@
 
 (defmulti ^:private send-to-chat (fn [& args] (identity (first args))))
 
-(defmethod send-to-chat :message
-  [_ user text kbd optm]
-  (let [argm       (prepare-arguments-map {:text text} kbd optm user)
-        func-sym   (if (to-edit? optm user)
-                     'edit-message-text 'send-message) ;; TODO: Implement fallback for edit
-        new-msg    (utl/api-wrap func-sym argm)
-        new-msg-id (:message_id new-msg)]
-    (when (:temp optm)
-      (create-temp-delete-callback user new-msg))
-    (when (and (not (:temp optm)) (not= new-msg-id (:msg-id user)))
-      (u/set-msg-id user new-msg-id))
+(defn- create-media
+  [data]
+  {:pre? [(map? data)]}
+  {:caption (:caption data)
+   :media (:file data)})
+
+(defn- prepare-to-multipart
+  [args-map]
+  (let [files     (atom {})
+        args-map# (walk/postwalk
+                   (fn [x]
+                     (cond (instance? java.io.File x)
+                           (let [file-id (keyword (str "fid" (nano-id 10)))]
+                             (swap! files assoc file-id x)
+                             (str "attach://" (name file-id)))
+                           (number? x) (str x)
+                           :else x))
+                   (assoc args-map :content-type :multipart))]
+    (cond-> args-map#
+      (contains? args-map# :media)        (update :media generate-string)
+      (contains? args-map# :reply_markup) (update :reply_markup generate-string)
+      true (merge @files))))
+
+(defn- send-new-media-to-chat
+  [type args-map media]
+  (let [media-is-file? (instance? java.io.File (:media media))
+        method         (symbol (str "send-" (name type)))
+        args-map#      (cond-> (merge args-map media)
+                         true (dissoc :media)
+                         true (assoc type (:media media))
+                         media-is-file? (prepare-to-multipart))]
+    (utl/api-wrap method args-map#)))
+
+(defn- edit-media-in-chat
+  [type args-map media]
+  (let [media-is-file? (instance? java.io.File (:media media))
+        args-map#      (cond-> args-map
+                         true (assoc :media media)
+                         media-is-file? (prepare-to-multipart))]
+    (try (utl/api-wrap 'edit-message-media args-map#)
+         (catch clojure.lang.ExceptionInfo e
+           (send-new-media-to-chat type args-map media)))))
+
+(defn- send-media-to-chat
+  [type user data kbd optm]
+  (let [media    (create-media data)
+        args-map (prepare-arguments-map {} kbd optm user)
+        new-msg  (if (to-edit? optm user)
+                   (edit-media-in-chat type args-map media)
+                   (send-new-media-to-chat type args-map media))]
+    (create-temp-delete-callback user new-msg)
     (set-callbacks-message-id user new-msg)
     new-msg))
 
 (defmethod send-to-chat :photo
-  [_ user data kbd optm]
-  (let [user-mp (update user :user/id str)
-        argm (update (prepare-arguments-map {:content-type :multipart
-                                             :caption (:caption data)
-                                             :photo (-> data :path .toString java.io.File.)}
-                                            kbd optm user-mp)
-                     :reply_markup generate-string)
-        new-msg (utl/api-wrap 'send-photo argm)]))
+  [& args]
+  (apply send-media-to-chat args))
 
-(defmethod send-to-chat :file
-  [_ user data kbd optm]
-  (let [user-mp (update user :user/id str)
-        argm (update (prepare-arguments-map {:content-type :multipart
-                                             :caption (:caption data)
-                                             :document (-> data :path .toString java.io.File.)}
-                                            kbd optm user-mp)
-                     :reply_markup generate-string)
-        new-msg (utl/api-wrap 'send-document argm)]
-    (create-temp-delete-callback user new-msg)
-    (set-callbacks-message-id user new-msg)
-    new-msg))
+(defmethod send-to-chat :document
+  [& args]
+  (apply send-media-to-chat args))
 
 (defmethod send-to-chat :invoice
   [_ user data kbd optm]
   (let [argm (prepare-arguments-map data kbd optm user)
         new-msg (utl/api-wrap 'send-invoice argm)]
     (create-temp-delete-callback user new-msg)
+    (set-callbacks-message-id user new-msg)
+    new-msg))
+
+(defn- send-message-to-chat
+  [argm to-edit??]
+  (let [func-sym (if to-edit?? 'edit-message-text 'send-message)]
+    (try (utl/api-wrap func-sym argm)
+         (catch clojure.lang.ExceptionInfo e
+           (utl/api-wrap 'send-message argm)))))
+
+(defmethod send-to-chat :message
+  [_ user text kbd optm]
+  (let [argm       (prepare-arguments-map {:text text} kbd optm user)
+        new-msg    (send-message-to-chat argm (to-edit? optm user))
+        new-msg-id (:message_id new-msg)]
+    (when (:temp optm)
+      (create-temp-delete-callback user new-msg))
+    (when (and (not (:temp optm)) (not= new-msg-id (:msg-id user)))
+      (u/set-msg-id user new-msg-id))
     (set-callbacks-message-id user new-msg)
     new-msg))
 
@@ -161,7 +206,7 @@
 
 (defn send-photo
 
-  "Sends photo message with picture from `path` as a temporary message with caption `caption` and inline keyboard `kbd` to `user`.
+  "Sends photo message with picture from java.io.File in `file` as a temporary message with caption `caption` and inline keyboard `kbd` to `user`.
   Possible `opts`:
 
   | option      | description |
@@ -171,12 +216,12 @@
   
   {:added "0.9.1"}
 
-  [user path caption kbd & opts]
-  (apply prepare-and-send :photo user {:path path :caption caption} kbd :temp opts))
+  [user file caption kbd & opts]
+  (apply prepare-and-send :photo user {:file file :caption caption} kbd :temp opts))
 
 (defn send-document
 
-  "Sends file in `path` as a temporary message with caption `caption` and inline keyboard `kbd` to `user`.
+  "Sends java.io.File in `file` as a temporary message with caption `caption` and inline keyboard `kbd` to `user`.
   Possible `opts`:
 
   | option      | description | comment |
@@ -187,8 +232,8 @@
   {:added "0.4"
    :changed "0.9.0"}
 
-  [user path caption kbd & opts]
-  (apply prepare-and-send :file user {:path path :caption caption} kbd :temp opts))
+  [user file caption kbd & opts]
+  (apply prepare-and-send :document user {:file file :caption caption} kbd :temp opts))
 
 
 (defn send-invoice
@@ -231,7 +276,6 @@
         file (-> (nano-id) fs/temp-path .toFile)
         fos (java.io.FileOutputStream. file)]
     (try
-      (μ/log ::transfer-to :bis bis :fos fos)
       (.transferTo bis fos)
       (finally
         (.close fos)))

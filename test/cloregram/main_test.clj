@@ -1,5 +1,6 @@
 (ns cloregram.main-test
   (:require [clojure.test :refer :all]
+            [clojure.java.io :as io]
             [cloregram.handler]
             [cloregram.test-handlers]
             [cloregram.api :as api]
@@ -91,7 +92,7 @@
             content (nano-id 512)
             user (u/get-user-by-uid :testuser-1)]
         (spit path content)
-        (api/send-document (users/get-by-username (name :testuser-1)) path "Test Caption" [])
+        (api/send-document (users/get-by-username (name :testuser-1)) (io/file path) "Test Caption" [])
 
         (is (= 1 (u/count-temp-messages :testuser-1)))
         (-> (u/last-temp-message :testuser-1)

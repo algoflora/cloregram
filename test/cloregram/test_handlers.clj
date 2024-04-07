@@ -67,7 +67,7 @@
                               (clg/flip :horizontal)
                               (clg/flip :vertical)
                               (clgu/save (.toString path-out) :quality 1.0 ))
-                            #_(api/send-photo user path)))]
+                            (api/send-photo user (.toFile path-out) "Flipped!" [])))]
              (if photo
                (photo# user photo)
                (api/send-message user "Image expected!" [] :temp)))))

@@ -1,5 +1,6 @@
 (ns cloregram.middleware
   (:require [clojure.string :as str]
+            [cheshire.core :refer [parse-string]]
             [com.brunobonacci.mulog :as μ]
             [com.brunobonacci.mulog.flakes :refer [read-method]]))
 
@@ -22,16 +23,16 @@
   ([prefix handler]
    (fn [req]
      (μ/trace (keyword (str *ns*) (str (name prefix) "tracking-http-request"))
-       ;; add here all the key/value pairs for tracking event only
+              ;; add here all the key/value pairs for tracking event only
               {:pairs [:uri              (get req :uri)
                        :request-method   (get req :request-method)
                        :content-type     (get-in req [:headers "content-type"])
                        :content-encoding (get-in req [:headers "content-encoding"])]
-        ;; out of the response capture the http status code.
-        :capture (fn [{:keys [status]}] {:http-status status})}
-
-       ;; call the request handler
-       (handler req)))))
+               ;; out of the response capture the http status code.
+               :capture (fn [{:keys [status]}] {:http-status status})}
+              
+              ;; call the request handler
+              (handler req)))))
 
 (defn pass-mulog-trace
   [handler]
@@ -44,3 +45,18 @@
                    (some? parent) (assoc :mulog/parent-trace parent))]
       (μ/with-context ctx#
         (handler req)))))
+
+(defn parse-json-for-multipart
+  [handler]
+  (fn [req]
+    (cond-> req
+      (some-> req :params :reply_markup string?)
+      (update-in [:params :reply_markup] #(parse-string % true))
+
+      (some-> req :params :media string?)
+      (update-in [:params :media] #(parse-string % true))
+
+      (some-> req :params :chat_id string?)
+      (update-in [:params :chat_id] #(Integer/parseInt %))
+
+      true handler)))

@@ -7,10 +7,7 @@
             [cloregram.test-handlers]
             [cloregram.api :as api]
             [cloregram.users :as users]
-            [cloregram.test.infrastructure.users :as u]
-            [cloregram.test.infrastructure.client :as c]
-            [cloregram.test.infrastructure.inspector :as i]
-            [nano-id.core :refer [nano-id]]))
+            [cloregram.test.infrastructure.users :as u]))
 
 (use-fixtures :once
   fix/use-test-environment)

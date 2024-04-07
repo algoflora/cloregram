@@ -87,45 +87,61 @@
 (defmethod handler :deleteMessage
   [msg]
   (log/info "Incoming :deleteMessage" {:message msg})
-  (μ/trace ::delete-message [:params msg]
-           (swap! state/users (fn [users]
-                               (let [mid (:message_id msg)
-                                     [user uid] (get-user-info users msg)]
-                                 (when (not (contains? (:messages user) mid))
-                                   (throw (ex-info "No message to delete for virtual user!"
-                                                   {:message-id mid
-                                                    :message msg
-                                                    :virtual-user user})))
-                                 (let [new-users (-> users
-                                                     (update-in [uid :messages] dissoc mid)
-                                                     (assoc-in [uid :waiting-for-response?] false))]
-                                   (log/info "Message deleted" {:message msg
-                                                                :virtual-user (uid new-users)})
-                                   new-users))))
-           {:status 200
-            :body {:ok true
-                   :result true}}))
+  (swap! state/users (fn [users]
+                       (let [mid (:message_id msg)
+                             [user uid] (get-user-info users msg)]
+                         (when (not (contains? (:messages user) mid))
+                           (throw (ex-info "No message to delete for virtual user!"
+                                           {:message-id mid
+                                            :message msg
+                                            :virtual-user user})))
+                         (let [new-users (-> users
+                                             (update-in [uid :messages] dissoc mid)
+                                             (assoc-in [uid :waiting-for-response?] false))]
+                           (log/info "Message deleted" {:message msg
+                                                        :virtual-user (uid new-users)})
+                           new-users))))
+  {:status 200
+   :body {:ok true
+          :result true}})
+
+(defmethod handler :sendPhoto
+  [msg]
+  (μ/log ::sendPhoto :message msg)
+  (swap! state/users (fn [users]
+                       (let [[user uid] (get-user-info users msg)
+                             mid (inc (:msg-id user))]
+                         (-> users
+                             (assoc-in [uid :msg-id] mid)
+                             (assoc-in [uid :messages mid] (assoc msg :message_id mid))
+                             (assoc-in [uid :waiting-for-response?] false)))))
+  (let [[user _] (get-user-info msg)
+        message (-> user :messages (get (:msg-id user)))]
+    (μ/log ::photo-accepted {:message message
+                             :virtual-user user})
+    {:status 200
+     :body {:ok true
+            :result (let [file-id (subs (:photo message) 9)]
+                      (update message (keyword file-id) prn-str))}}))
 
 (defmethod handler :sendDocument
   [msg]
-  (let [msg (-> msg
-                (update :reply_markup #(parse-string % true))
-                (update :chat_id #(Integer/parseInt %)))]
-       (log/info "Incoming :sendDocument" {:message msg})
-       (swap! state/users (fn [users]
-                            (let [[user uid] (get-user-info users msg)
-                                  mid (inc (:msg-id user))]
-                                 (-> users
-                                     (assoc-in [uid :msg-id] mid)
-                                     (assoc-in [uid :messages mid] (assoc msg :message_id mid))
-                                     (assoc-in [uid :waiting-for-response?] false)))))
-       (let [[user _] (get-user-info msg)
-             message (-> user :messages (get (:msg-id user)))]
-            (log/info "Document accepted" {:message message
-                                           :virtual-user user})
-            {:status 200
-             :body {:ok true
-                    :result (update-in message [:document :tempfile] prn-str)}})))
+  (log/info "Incoming :sendDocument" {:message msg})
+  (swap! state/users (fn [users]
+                       (let [[user uid] (get-user-info users msg)
+                             mid (inc (:msg-id user))]
+                         (-> users
+                             (assoc-in [uid :msg-id] mid)
+                             (assoc-in [uid :messages mid] (assoc msg :message_id mid))
+                             (assoc-in [uid :waiting-for-response?] false)))))
+  (let [[user _] (get-user-info msg)
+        message (-> user :messages (get (:msg-id user)))]
+    (log/info "Document accepted" {:message message
+                                   :virtual-user user})
+    {:status 200
+     :body {:ok true
+            :result (let [file-id (subs (:document message) 9)]
+                      (update message (keyword file-id) prn-str))}}))
 
 (defmethod handler :sendInvoice
   [msg]
