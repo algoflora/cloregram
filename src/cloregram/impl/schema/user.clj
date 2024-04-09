@@ -1,4 +1,4 @@
-(ns cloregram.schema.user)
+(ns cloregram.impl.schema.user)
 
 (def user
   {:user/username {:db/valueType :db.type/string

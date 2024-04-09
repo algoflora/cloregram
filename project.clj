@@ -8,10 +8,7 @@
                  [integrant "0.8.1"]
                  [com.brunobonacci/mulog "0.9.0"]
                  [com.brunobonacci/mulog-zipkin "0.9.0"]
-                 [com.brunobonacci/mulog-elasticsearch "0.9.0"]
                  [com.brunobonacci/where "0.5.6"]
-                 [org.slf4j/slf4j-api "1.7.30"]
-                 [ch.qos.logback/logback-classic "1.2.3"]
                  
                  [telegrambot-lib "2.13.0-SNAPSHOT"]
 
@@ -22,7 +19,7 @@
                  [cheshire "5.11.0"]
                  [resauce "0.2.0"]
 
-                 [datalevin "0.9.3"]]
+                 [datalevin "0.9.4.1"]]
 
   :plugins [[lein-eftest "0.6.0"]]
 
@@ -31,15 +28,14 @@
   :target-path "target/%s"
 
   :jvm-opts ["--add-opens=java.base/java.nio=ALL-UNNAMED"
-             "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED"]
+           "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED"]
 
   :profiles {:testing-stuff {:dependencies [[eftest "0.6.0"]
-                                            [compojure "1.7.0"]
-                                            [ring/ring-json "0.5.1"]
-                                            [fivetonine/collage "0.3.0"]]
-                             :resource-paths ["test/resources"]}
-             :repl [:testing-stuff]
-             :test [:testing-stuff]
-             :uberjar {:aot :all
-                       :jvm-opts ["-Dclojure.compiler.direct-linking=true"]}})
-
+                                           [compojure "1.7.0"]
+                                           [ring/ring-json "0.5.1"]
+                                           [fivetonine/collage "0.3.0"]]
+                            :resource-paths ["test/resources"]}
+            :repl [:testing-stuff]
+            :test [:testing-stuff]
+            :uberjar {:aot :all
+                      :jvm-opts ["-Dclojure.compiler.direct-linking=true"]}})

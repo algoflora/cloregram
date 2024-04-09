@@ -2,13 +2,25 @@
   (:require [cloregram.utils :refer [get-project-info]]
             [com.brunobonacci.mulog :as μ]
             [where.core :refer [where]]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [clojure.java.io :as io]))
 
 (defonce ^:private publishers (atom nil))
 
 ;; (defn transform-add-timestamp
 ;;   [events]
 ;;   (map #(assoc % "@timestamp" (:mulog/timestamp %)) events))
+
+(def ^:private time-format (java.text.SimpleDateFormat. ))
+
+(defn- format-timestamp [timestamp]
+  (let [formatter (java.text.SimpleDateFormat. "yyyy-MM-dd HH:mm:ss.SSS")]
+    (.format formatter (java.util.Date. timestamp))))
+
+(def ^:private human-readable-time (partial map (fn [event]
+                                                  (let [timestamp (:mulog/timestamp event)
+                                                        readable-time (format-timestamp timestamp)]
+                                                    (assoc event :mulog/time readable-time)))))
 
 (def ^:private errors-filter (partial filter #(contains? % :exception)))
 
@@ -29,20 +41,24 @@
             (update :mulog/event-name (fn [en] (str (-> en name (str/replace #"-" " ") (capitalize-words)) " (" (-> en namespace) ")"))))))
 
 (def ^:private publishers-config [
-                                  {:type :console
+                                  #_{:type :console
                                    :pretty? true
                                    :transform console-log-transformer}
                            
                                   {:type :simple-file
                                    :filename "./logs/log.mulog"}
+
+                                  {:type :simple-file
+                                   :filename "./logs/last.mulog"
+                                   :transform human-readable-time}
                                   
                                   {:type :simple-file
                                    :filename "./logs/errors.mulog"
-                                   :transform errors-filter}
+                                   :transform (comp human-readable-time errors-filter)}
                                   
                                   {:type :simple-file
                                    :filename "./logs/publishers-errors.mulog"
-                                   :transform publisher-errors-filter}
+                                   :transform (comp human-readable-time publisher-errors-filter)}
                                   
                                   {:type :zipkin
                                    :url "http://127.0.0.1:9411"
@@ -52,6 +68,9 @@
 (defn start-publishers!
   []
   (let [pinfo (get-project-info)]
+    (io/delete-file "./logs/last.mulog" true)
+    (io/delete-file "./logs/errors.mulog" true)
+    (io/delete-file "./logs/publishers-errors.mulog" true)
     (μ/set-global-context! {:group (:group pinfo)
                             :app-name (:name pinfo)
                             :version (:version pinfo)

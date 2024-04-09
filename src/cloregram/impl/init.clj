@@ -1,19 +1,17 @@
-(ns cloregram.system.init
-  (:require [clojure.string :as str]
-            [integrant.core :as ig]
+(ns cloregram.impl.init
+  (:require [integrant.core :as ig]
             [cheshire.core :refer [parse-string]]
             [com.brunobonacci.mulog :as μ]
-            [clojure.tools.logging :as log]
             [nano-id.core :refer [nano-id]]
             [ring.adapter.jetty :refer [run-jetty]]
             [datalevin.core :as d]
             [clojure.java.io :as io]
-            [cloregram.db :as db]
             [telegrambot-lib.core :as tbot]
-            [cloregram.system.state :refer [system]]
-            [cloregram.handler :refer [main-handler]]
-            [cloregram.middleware :as mw]
-            [cloregram.utils :as utl]
+            [cloregram.impl.database :as db]
+            [cloregram.impl.state :refer [system]]
+            [cloregram.impl.handler :refer [main-handler]]
+            [cloregram.impl.middleware :as mw]
+            [cloregram.impl.api :refer [api-wrap-]]
             [cloregram.logging :refer [stop-publishers!]]))
 
 (defn startup
@@ -22,31 +20,29 @@
 
 (defn shutdown!
   []
-  (log/info "Gracefully shutting down...")
-  (ig/halt! @system)
-  (log/info "Everything finished. Good bye!")
+  (μ/trace ::sutting-down
+           (ig/halt! @system))
+  (println "Everything finished. Good bye!")
   (stop-publishers!)
   (shutdown-agents))
 
 (defmethod ig/init-key :bot/webhook-key
   [_ _]
-  (when-let [key (nano-id)]
-    (log/info "Webhook key created")
-    key))
+  (nano-id))
 
 (defmethod ig/init-key :bot/handler ; TODO: Check update_id
   [_ {:keys [webhook-key]}]
   (fn [req]
     (let [headers (:headers req)
           upd (-> req :body slurp (parse-string true))]
-      (μ/log ::incoming-update :update upd)
+      
       (if (or (= webhook-key (headers "X-Telegram-Bot-Api-Secret-Token"))
               (= webhook-key (headers (clojure.string/lower-case "X-Telegram-Bot-Api-Secret-Token"))))
-        (do (μ/trace ::main-handler [:update upd]
-                     (main-handler upd))
-            {:status 200
-             :headers {"Content-Type" "application/json"}
-             :body "OK"})
+        (μ/trace ::main-handler [:update upd]
+                 (main-handler upd)
+                 {:status 200
+                  :headers {"Content-Type" "application/json"}
+                  :body "OK"})
         {:status 403
          :body "Forbidden!"}))))
 
@@ -88,26 +84,23 @@
                                   :keystore (or (:keystore opts) "./ssl/keystore.jks")
                                   :key-password (or (:keystore-password opts) "cloregram.keystorepass")))))
 
-(def ^:private wrap-tracking-events-bot- (partial mw/wrap-tracking-requests "bot-"))
+(def ^:private wrap-tracking-events-bot (partial mw/wrap-tracking-requests "bot-"))
 
 (defmethod ig/init-key :bot/server
   [_ {:keys [options handler]}]
-  (try
-    (when-let [server (run-jetty (-> handler
-                                     mw/wrap-exception
-                                     wrap-tracking-events-bot-)
-                                 (adjust-opts options))]
-      (log/info "Webhook server started" {:server-options options
-                                          :server server})
-      server)
-    (catch Exception e
-      (log/error "Error starting webhook server!" {:error e})
-      (throw e))))
+  (let [opts (adjust-opts options)]
+    (μ/trace ::webhook-server-start
+             {:pairs [:webhook-server-start/options opts]
+              :capture (fn [server] {:webhook-server-start/server server})}
+             (run-jetty (-> handler
+                            mw/wrap-exception
+                            wrap-tracking-events-bot)
+                        opts))))
 
 (defmethod ig/halt-key! :bot/server
   [_ server]
-  (.stop server)
-  (log/info "Server shutted down"))
+  (μ/trace ::server-shutdown
+           (.stop server)))
 
 (defn- μ-headers-fn
   []
@@ -122,41 +115,41 @@
         config (merge _config (if (some? api-url) {:bot-api api-url}))
         bot (tbot/create config)
         schema (if https? "https" "http")]
-    (utl/api-wrap- 'set-webhook bot (cond-> {:content-type :multipart
-                                             :url (format "%s://%s:%d" schema ip port)
-                                             :secret_token webhook-key}
-                                      https? (assoc :certificate (clojure.java.io/file
-                                                                  (or certificate "./ssl/cert.pem")))))
-    (μ/log ::webhook-is-set :webhook-info (utl/api-wrap- 'get-webhook-info bot))
+    (api-wrap- 'set-webhook bot (cond-> {:content-type :multipart
+                                         :url (format "%s://%s:%d" schema ip port)
+                                         :secret_token webhook-key}
+                                  https? (assoc :certificate (clojure.java.io/file
+                                                              (or certificate "./ssl/cert.pem")))))
+    (μ/log ::webhook-is-set :webhook-info (api-wrap- 'get-webhook-info bot))
     bot))
 
-(defn- delete-directory-recursive
+(defn- del-dir-rec
   "Recursively delete a directory."
   [^java.io.File file]
   (when (.isDirectory file)
-    (run! delete-directory-recursive (.listFiles file)))
+    (run! del-dir-rec (.listFiles file)))
   (try (io/delete-file file)
        (catch Exception e (println (.getMessage e)))))
 
 (defmethod ig/init-key :db/connection
   [_ {:keys [uri clear?]}]
   (when clear?
-    (delete-directory-recursive (io/file uri)))
+    (del-dir-rec (io/file uri)))
   (let [options {:validate-data? true
                  :closed-schema? true}
-        schema (db/get-full-schema)
-        conn (d/get-conn uri schema options)]
-    (log/info "Datalevin database connection established" {:database-uri uri
-                                                           :database-schema (d/schema conn)
-                                                           :database-options (d/opts conn)})
-    conn))
+        schema (db/get-full-schema)]
+    (μ/trace ::database-connection
+             {:pairs [:database-connection/uri uri]
+              :capture (fn [c]
+                         {:database-connection/schema (d/schema c)
+                          :database-connection/oprions (d/opts c)})}
+             (d/get-conn uri schema options))))
 
 (defmethod ig/halt-key! :db/connection
   [_ conn]
-  (log/info "Releasing Datalevin database connection...")
   (d/close conn))
 
 (defmethod ig/init-key :project/config
   [_ config]
-  (log/info "Project config loaded" {:project-config config})
+  (μ/log ::project-config-loaded :project-config config)
   config)

@@ -1,38 +1,10 @@
 (ns cloregram.utils
-  (:require [cloregram.system.state :refer [bot]]
-            [com.brunobonacci.mulog :as μ]
-            [clojure.java.io :as io]
-            [clojure.edn :as edn]
-            [clojure.string :as str]
-            [resauce.core :as res]
-            [clojure.tools.logging :as log]))
-
-(defn dbg
-  ([x] (dbg nil x))
-  ([msg x]
-   (log/debug msg x)
-   x))
-
-(defn api-wrap-
-  [api-f-sym bot & args]
-  (μ/trace ::telegram-api-call
-           {:pairs [:telegram-api-call/method api-f-sym :telegram-api-call/arguments (into () args)]
-            :capture (fn [resp] {:telegram-api-call/response resp})}
-           (let [api-f (ns-resolve (find-ns 'telegrambot-lib.core) api-f-sym)
-                 resp  (apply api-f bot args)
-                 ok    (true? (:ok resp))]
-             (when (not ok)
-               (throw (ex-info "API response error" {:method api-f-sym
-                                                     :arguments (into () args)
-                                                     :response resp})))
-             (:result resp))))
-
-(defn api-wrap
-  [api-f-sym & args]
-  (apply api-wrap- api-f-sym (bot) args))
+  (:require [com.brunobonacci.mulog :as μ]))
 
 (defn deep-merge
+  
   "Recursively merges maps"
+
   [& maps]
   (letfn [(m [& xs]
             (if (some #(and (map? %) (not (record? %))) xs)
@@ -40,26 +12,17 @@
               (last xs)))]
     (reduce m maps)))
 
-(defn keys-hyphens->underscores ; NOT recursive!
-  [m]
-  (into {} (map (fn [[k v]] [(-> k name (.replace \- \_) keyword) v]) m)))
-
-(defn simplify-reply-markup
-  [reply-markup]
-  (vec (map #(vec (map :text %)) reply-markup)))
-
-(defn msg->str
-  [msg]
-  (let [msg (-> msg
-                (select-keys [:text :reply_markup])
-                (update :reply_markup simplify-reply-markup))]
-    (format "%s\t%s" (:text msg) (:reply_markup msg))))
-
 (defn username
+
+  "Helper to get human readable identificator of `user` even he don't have Telegram username"
+  
   [user]
   (or (:user/username user) (str "id" (:user/id user))))
 
 (defmacro get-project-info
+
+  "This macro expands in map with keys `group`, `name` and `version` of current project by information from project.clj"
+  
   []
   (let [[_ ga version] (read-string (slurp "project.clj"))
         [ns name version] [(namespace ga) (name ga) version]]
@@ -68,26 +31,26 @@
      :version version}))
 
 (defn resolver
+
+  "Resolves symbol to value if exists"
+
   [sym]
   (let [ns (-> sym namespace symbol)
         nm (-> sym name symbol)]
     (require ns)
     (if-let [resolved (ns-resolve ns nm)]
       resolved
-      (log/error "Callback not resolved" {:callback-symbol sym}))))
+      (μ/log ::symbol-not-resolved :symbol sym))))
 
-(defn- read-resource [resource-url]
-  (with-open [stream (io/input-stream resource-url)]
-    (-> stream
-        io/reader
-        java.io.PushbackReader. edn/read)))
-
-(defn read-resource-dir
-  [dir]
-  (when-let [resources (some-> dir io/resource res/url-dir)]
-    (->> resources
-         (filter #(str/ends-with? % ".edn"))
-         (mapcat read-resource))))
-
-
+(defn img-comparer
+  [img1 img2]
+  (let [h (.getHeight img1)
+        w (.getWidth img1)]
+    (loop [[x y] [0 0]]
+      (cond
+        (= y h) true
+        (not= (.getRGB img1 x y) (.getRGB img2 x y)) false
+        :else (let [x' (if (= (dec w) x) 0 (inc x))
+                    y' (if (= 0 x) (inc y) y)]
+                (recur [x' y']))))))
 

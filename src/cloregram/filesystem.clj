@@ -1,8 +1,6 @@
 (ns cloregram.filesystem
   (:require [cloregram.utils :refer [get-project-info]]))
 
-;; Public API
-
 (def temp-root
 
   "Returns common filesystem `java.nio.file.Path` object of unique root temp folder for this run: `/tmp/<project_group>/<project_name>/<project_version>/<millis_from_epoch>`. Redefine it if you need another folder or filesystem."

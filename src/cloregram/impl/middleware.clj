@@ -1,4 +1,4 @@
-(ns cloregram.middleware
+(ns cloregram.impl.middleware
   (:require [clojure.string :as str]
             [cheshire.core :refer [parse-string]]
             [com.brunobonacci.mulog :as μ]
@@ -22,16 +22,12 @@
   ([handler] (wrap-tracking-requests nil handler))
   ([prefix handler]
    (fn [req]
-     (μ/trace (keyword (str *ns*) (str (name prefix) "tracking-http-request"))
-              ;; add here all the key/value pairs for tracking event only
+     (μ/trace (keyword "cloregram.impl.middleware" (str (name prefix) "tracking-http-request"))
               {:pairs [:uri              (get req :uri)
                        :request-method   (get req :request-method)
                        :content-type     (get-in req [:headers "content-type"])
                        :content-encoding (get-in req [:headers "content-encoding"])]
-               ;; out of the response capture the http status code.
                :capture (fn [{:keys [status]}] {:http-status status})}
-              
-              ;; call the request handler
               (handler req)))))
 
 (defn pass-mulog-trace

@@ -2,20 +2,17 @@
   (:require [cloregram.logging :refer [start-publishers!]]
             [clojure.java.io :as io]
             [com.brunobonacci.mulog :as μ]
-            [cloregram.utils :as utl]
-            [clojure.tools.logging :as log]
             [integrant.core :as ig]
-            [cheshire.core :refer [generate-string]]
             [cloregram.utils :refer [deep-merge]]
-            [cloregram.system.init :refer [startup shutdown!]]
-            [cloregram.system.state :refer [system]])
+            [cloregram.impl.init :refer [startup shutdown!]]
+            [cloregram.impl.state :refer [system]]
+            [cloregram.impl.validation.core])
   (:gen-class))
 
 (Thread/setDefaultUncaughtExceptionHandler
  (reify Thread$UncaughtExceptionHandler
    (uncaughtException [_ thread ex]
-     (log/error "Uncaught Exception!" {:thread (.getName thread)
-                                       :exeption ex})
+     (μ/log ::uncaught-exception :exception ex :thread (.getName thread))
      (Thread. shutdown!)
      (throw ex))))
 
@@ -26,6 +23,15 @@
     {}))
 
 ;; Public API
+
+(defn config
+
+  "Returns value (or nil) from project config nested map, using chain of `keys`"
+
+  {:changed "0.9.1"}
+
+  [& keys]
+  (get-in (:project/config @system) keys))
 
 (defn run
 
