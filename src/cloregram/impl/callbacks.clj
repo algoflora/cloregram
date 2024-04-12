@@ -30,62 +30,45 @@
 
 (defn delete
   [user mid]
-  (let [to-retract (d/q '[:find ?cb
+  (let [db-ids-to-retract (d/q '[:find ?cb
                           :in $ ?uid ?mid
                           :where
                           [?cb :callback/message-id ?mid]
                           [?cb :callback/user [:user/id ?uid]]]
                         (db/db) (:user/id user) mid)]
-    (d/transact! (db/conn) (mapv #(vector :db/retractEntity (first %)) to-retract))
+    (d/transact! (db/conn) (mapv #(vector :db/retractEntity (first %)) cb-ids-to-retract))
     (μ/log ::callbacks-retracted
            :callbacks-retracted/message-id mid
            :callbacks-retracted/retracted-count (count to-retract)
-           :callbacks-retracted/to-retract to-retract
+           :callbacks-retracted/to-retract db-ids-to-retract
            :callbacks-retracted/callbacks-count (ffirst
                                                  (d/q '[:find (count ?cb)
-                                                        :where [?cb :callback/uuid]] (db/db)))
-           :callbacks-retracted/callbacks (d/q '[:find (pull ?cb [*])
-                                                 :where
-                                                 [?cb :callback/uuid]] (db/db)))))
+                                                        :where [?cb :callback/uuid]] (db/db))))))
 
 (defn set-new-message-ids
   [user mid uuids]
-  (let [explain (d/explain {:run? true}
-                           '[:find ?cb
-                             :in $ ?uid ?mid [?uuids ...]
-                             :where
-                             [?cb :callback/user [:user/id ?uid]]
-                             [?cb :callback/message-id ?mid]
-                             (not [?cb :callback/uuid ?uuids])]
-                           (db/db) (:user/id user) mid uuids)
-        callbacks  (d/q '[:find (pull ?cb [*])
-                                 :where
-                                 [?cb :callback/uuid]] (db/db))
-        to-retract (d/q '[:find ?cb
-                          :in $ ?uid ?mid [?uuids ...]
-                          :where
-                          [?cb :callback/user [:user/id ?uid]]
-                          [?cb :callback/message-id ?mid]
-                          (not [?cb :callback/uuid ?uuids])]
-                        (db/db) (:user/id user) mid uuids)]
-    (d/transact! (db/conn) (mapv #(vector :db/retractEntity (first %)) to-retract))
+  (let [uuids-to-retract (apply disj (set (mapv first (d/q '[:find ?uuid
+                                                       :in $ ?uid ?mid
+                                                       :where
+                                                       [?cb :callback/user [:user/id ?uid]]
+                                                       [?cb :callback/message-id ?mid]
+                                                       [?cb :callback/uuid ?uuid]
+                                                       #_(not [?cb :callback/uuid ?uuids])] ; TODO: Fix Datalevin with not and collections
+                                                     (db/db) (:user/id user) mid))) (set uuids))]
+    (d/transact! (db/conn) (mapv #(vector :db/retractEntity [:callback/uuid %]) uuids-to-retract))
     (d/transact! (db/conn) (mapv #(into {} [[:callback/uuid %] [:callback/message-id mid]]) uuids))
-    (μ/log ::callbacks-set-message-id
-           :callbacks-set-message-id/explain explain
-           :callbacks-set-message-id/uuids uuids
-           :callbacks-set-message-id/message-id mid
-           :callbacks-set-message-id/retracted-count (count to-retract)
-           :callbacks-set-message-id/to-retract to-retract
-           :callbacks-set-message-id/callbacks-count (ffirst
-                                                      (d/q '[:find (count ?cb)
-                                                             :where [?cb :callback/uuid]] (db/db)))
-           :callbacks-set-message-id/callbacks callbacks)))
+    (μ/log ::set-new-message-ids
+           :set-new-message-ids/user user
+           :set-new-message-ids/message-id mid
+           :set-new-message-ids/callback-uuids uuids
+           :set-new-message-ids/retracted-callbacks-uuids uuids-to-retract
+           :set-new-message-ids/final-callbacks-count (ffirst (d/q '[:find (count ?cb)
+                                                                     :where [?cb :callback/uuid]] (db/db))))))
 
 (defn- load-callback
   [user uuid]
   (let [callback (d/pull (db/db) '[* {:callback/user [*]}] [:callback/uuid uuid])]
-    (μ/log ::callback-loaded [:callback-loaded/uuid uuid
-                              :callback-loaded/data callback])
+    (μ/log ::callback-loaded :callback-loaded/callback callback)
     (when (not= (:user/id user) (-> callback :callback/user :user/id))
       (throw (ex-info "Wrong User attempt to load Callback!" {:user user :callback-data callback})))
     callback))

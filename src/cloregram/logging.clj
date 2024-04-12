@@ -22,6 +22,8 @@
                                                         readable-time (format-timestamp timestamp)]
                                                     (assoc event :mulog/time readable-time)))))
 
+(def ^:private events-filter (partial filter #(not (contains? % :mulog/duration))))
+                              
 (def ^:private errors-filter (partial filter #(contains? % :exception)))
 
 (def ^:private publisher-errors-filter (partial filter (where :mulog/event-name :in? [:mulog/publisher-error :myapp/invalid-json-value])))
@@ -51,6 +53,10 @@
                                   {:type :simple-file
                                    :filename "./logs/last.mulog"
                                    :transform human-readable-time}
+
+                                  {:type :simple-file
+                                   :filename "./logs/events.mulog"
+                                   :transform (comp human-readable-time events-filter)}
                                   
                                   {:type :simple-file
                                    :filename "./logs/errors.mulog"
@@ -69,6 +75,7 @@
   []
   (let [pinfo (get-project-info)]
     (io/delete-file "./logs/last.mulog" true)
+    (io/delete-file "./logs/events.mulog" true)
     (io/delete-file "./logs/errors.mulog" true)
     (io/delete-file "./logs/publishers-errors.mulog" true)
     (μ/set-global-context! {:group (:group pinfo)
