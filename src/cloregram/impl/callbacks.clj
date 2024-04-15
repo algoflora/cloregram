@@ -5,6 +5,11 @@
             [datalevin.core :as d]
             [clojure.edn :as edn]))
 
+(defn callbacks-count
+  []
+  (ffirst (d/q '[:find (count ?cb)
+                 :where [?cb :callback/uuid]] (db/db))))
+
 (defn ^java.util.UUID create
   ([user ^clojure.lang.Symbol f] (create user f nil))
   ([user ^clojure.lang.Symbol f args]
@@ -19,9 +24,7 @@
                                       :callback/user [:user/id (:user/id user)]}
                                (some? msg-id) (assoc :callback/message-id msg-id))])
      (μ/log ::callback-created
-            :callback-created/callbacks-count (ffirst
-                                               (d/q '[:find (count ?cb)
-                                                      :where [?cb :callback/uuid]] (db/db)))
+            :callback-created/callbacks-count (callbacks-count)
             :callback-created/callback (ffirst
                                         (d/q '[:find (pull ?cb [*])
                                                :in $ ?uuid
@@ -36,14 +39,12 @@
                           [?cb :callback/message-id ?mid]
                           [?cb :callback/user [:user/id ?uid]]]
                         (db/db) (:user/id user) mid)]
-    (d/transact! (db/conn) (mapv #(vector :db/retractEntity (first %)) cb-ids-to-retract))
+    (d/transact! (db/conn) (mapv #(vector :db/retractEntity (first %)) db-ids-to-retract))
     (μ/log ::callbacks-retracted
            :callbacks-retracted/message-id mid
-           :callbacks-retracted/retracted-count (count to-retract)
+           :callbacks-retracted/retracted-count (count db-ids-to-retract)
            :callbacks-retracted/to-retract db-ids-to-retract
-           :callbacks-retracted/callbacks-count (ffirst
-                                                 (d/q '[:find (count ?cb)
-                                                        :where [?cb :callback/uuid]] (db/db))))))
+           :callbacks-retracted/callbacks-count (callbacks-count))))
 
 (defn set-new-message-ids
   [user mid uuids]
@@ -62,8 +63,7 @@
            :set-new-message-ids/message-id mid
            :set-new-message-ids/callback-uuids uuids
            :set-new-message-ids/retracted-callbacks-uuids uuids-to-retract
-           :set-new-message-ids/final-callbacks-count (ffirst (d/q '[:find (count ?cb)
-                                                                     :where [?cb :callback/uuid]] (db/db))))))
+           :set-new-message-ids/final-callbacks-count (callbacks-count))))
 
 (defn- load-callback
   [user uuid]
