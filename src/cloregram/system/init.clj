@@ -108,6 +108,10 @@
     (log/info "Webhook is set" {:webhook-info (api-wrap tbot/get-webhook-info bot)})
     bot))
 
+(defmethod ig/init-key :bot/decorations
+  [_ decorations]
+  decorations)
+
 (defmethod ig/init-key :db/connection
   [_ {:keys [create? uri]}]
   (when create? (d/create-database uri))

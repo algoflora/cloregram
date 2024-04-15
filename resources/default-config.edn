@@ -27,4 +27,7 @@
                 ;; :certificate PUBLIC_KEY
                 }
 
+ :bot/decorations {:major {:text "123" :entities []}
+                   :minor {:text "" :entities []}}
+
  :project/config {}}

@@ -3,6 +3,7 @@
             [cloregram.utils :as utl]
             [cloregram.callbacks :as clb]
             [cloregram.users :as u]
+            [cloregram.system.state :refer [system]]
             [cheshire.core :refer [generate-string parse-string]]
             [telegrambot-lib.core :as tbot]
             [taoensso.timbre :as log]))
@@ -59,11 +60,23 @@
     (:markdown optm)     (assoc :parse_mode "Markdown")
     (to-edit? optm user) (assoc :message_id (:user/msg-id user))))
 
+(defn- prepare-text-data
+  [text optm]
+  (let [mode (if (true? (:temp optm)) :minor :major)]
+    {:text (str (-> @system :bot/decorations mode :text) text)
+     :entities (-> @system :bot/decorations mode :entities)}))
+
+(defn- prepare-caption-data
+  [caption optm]
+  (let [mode (if (true? (:temp optm)) :minor :major)]
+    {:caption (str (-> @system :bot/decorations mode :text) caption)
+     :caption_entities (-> @system :bot/decorations mode :entities)}))
+
 (defmulti ^:private send-to-chat (fn [& args] (identity (first args))))
 
 (defmethod send-to-chat :message
   [_ user text kbd optm]
-  (let [argm (prepare-arguments-map {:text text} kbd optm user)
+  (let [argm (prepare-arguments-map (prepare-text-data text optm) kbd optm user)
         func (if (to-edit? optm user)
                tbot/edit-message-text tbot/send-message)
         new-msg (utl/api-wrap func (bot) argm)
@@ -76,11 +89,12 @@
 (defmethod send-to-chat :file
   [_ user data kbd optm]
   (let [user-mp (update user :user/id str)
-        argm (update (prepare-arguments-map {:content-type :multipart
-                                             :caption (:caption data)
-                                             :document (-> data :path (java.io.File.))}
+        argm (-> (prepare-arguments-map (merge {:content-type :multipart
+                                                    :document (-> data :path (java.io.File.))}
+                                                   (prepare-caption-data (:caption data) optm))
                                             kbd optm user-mp)
-                     :reply_markup generate-string)
+                 (update :reply_markup generate-string)
+                 (update :caption_entities generate-string))
         new-msg (utl/api-wrap tbot/send-document (bot) argm)]
     (create-temp-delete-callback user new-msg)))
 
