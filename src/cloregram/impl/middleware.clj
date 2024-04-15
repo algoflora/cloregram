@@ -55,4 +55,7 @@
       (some-> req :params :chat_id string?)
       (update-in [:params :chat_id] #(Integer/parseInt %))
 
+      (some-> req :params :message_id string?)
+      (update-in [:params :message_id] #(Integer/parseInt %))
+
       true handler)))

@@ -28,7 +28,7 @@
   :target-path "target/%s"
 
   :jvm-opts ["--add-opens=java.base/java.nio=ALL-UNNAMED"
-           "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED"]
+             "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED"]
 
   :profiles {:testing-stuff {:dependencies [[eftest "0.6.0"]
                                            [compojure "1.7.0"]

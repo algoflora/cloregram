@@ -50,4 +50,13 @@
 
 
 
+(defn set-waiting-for-response
+
+  "Explicitly sets virtual user's with key `vuid` state to awaiting for response or not regarding to `waiting-for-response?`"
+
+  {:added "0.9.1"}
+
+  [vuid waiting-for-response?]
+  (impl/set-waiting-for-response vuid waiting-for-response?))
+
 

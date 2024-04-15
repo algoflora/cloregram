@@ -107,9 +107,10 @@
 (defmulti ^:private send-to-chat (fn [& args] (identity (first args))))
 
 (defn- create-media
-  [data]
+  [type data]
   {:pre? [(map? data)]}
-  {:caption (:caption data)
+  {:type (name type)
+   :caption (:caption data)
    :media (:file data)})
 
 (defn- prepare-to-multipart
@@ -151,7 +152,7 @@
 
 (defn- send-media-to-chat
   [type user data kbd optm]
-  (let [media    (create-media data)
+  (let [media    (create-media type data)
         args-map (prepare-arguments-map {} kbd optm user)
         new-msg  (if (to-edit? optm user)
                    (edit-media-in-chat type args-map media)

@@ -22,9 +22,9 @@
 
 (defn- process-temp-messages
   [f v-user]
-  (let [ msg-id (:main-msg-id v-user)
+  (let [msg-id (:main-msg-id v-user)
         msgs (-> v-user :messages (dissoc msg-id))
-        msgs# (filter #(not (contains? (second %) :silent)) msgs)]
+        msgs# (into {} (filter #(not (contains? (val %) :silent)) msgs))]
     (f msgs#)))
 
 (defn count-temp-messages
@@ -33,7 +33,7 @@
 
 (defn last-temp-message
   [v-user]
-  (process-temp-messages #(some-> % last val) v-user))
+  (process-temp-messages #(% (apply max (keys %))) v-user))
 
 (defn get-response-or-current
   [vuid func-symbol timeout]
@@ -70,3 +70,7 @@
     (μ/log ::add-virtual-user
            :add-virtual-user/virtual-user (vuid @v-users)
            :add-virtual-user/virtual-users-count (count @v-users))))
+
+(defn set-waiting-for-response
+  [vuid waiting-for-response?]
+  (swap! v-users #(assoc-in % [vuid :waiting-for-response?] waiting-for-response?)))

@@ -55,25 +55,68 @@
   (μ/trace ::editMessageText {:pairs [:editMessageText/message msg]
                               :capture (fn [resp] {:editMessageText/response resp})}
            (swap! state/v-users (fn [v-users]
-                                (let [mid (:message_id msg)
-                                      [v-user vuid] (get-v-user-info v-users msg)]
-                                  (when (not (contains? (:messages v-user) (:message_id msg)))
-                                    (throw (ex-info "No message to edit for user!"
-                                                    {:virtual-user v-user
-                                                     :message-id (:message_id msg)
-                                                     :message msg})))
-                                  (cond-> v-users
-                                    true (assoc-in [vuid :messages mid :text] (:text msg))
-                           
-                                    (contains? msg :reply_markup)
-                                    (assoc-in [vuid :messages mid :reply_markup] (:reply_markup msg))
-                           
-                                    true (assoc-in [vuid :waiting-for-response?] false)))))
+                                  (let [mid (:message_id msg)
+                                        [v-user vuid] (get-v-user-info v-users msg)]
+                                    (when (not (contains? (:messages v-user) (:message_id msg)))
+                                      (throw (ex-info "No message to edit for user!"
+                                                      {:virtual-user v-user
+                                                       :message-id (:message_id msg)
+                                                       :message msg})))
+                                    (cond-> v-users
+                                      true (assoc-in [vuid :messages mid :text] (:text msg))
+
+                                      (contains? msg :reply_markup)
+                                      (assoc-in [vuid :messages mid :reply_markup] (:reply_markup msg))
+
+                                      true (assoc-in [vuid :waiting-for-response?] false)))))
            (let [[v-user _] (get-v-user-info msg)
                  message (-> v-user :messages (get (:message_id msg)))]
              {:status 200
               :body {:ok true
                      :result message}})))
+
+(defmethod handler :editMessageMedia
+  [msg]
+  (μ/trace ::editMessageMedia {:pairs [:editMessageMedia/message msg]
+                               :capture (fn [resp] {:editMessageMedia/response resp})}
+           (swap! state/v-users
+                  (fn [v-users]
+                    (let [mid (:message_id msg)
+                          [v-user vuid] (get-v-user-info v-users msg)
+                          _  (when (not (contains? (:messages v-user) mid))
+                               (throw (ex-info "No message to edit for virtual user!"
+                                               {:message-id mid
+                                                :message msg
+                                                :virtual-user v-user})))
+                          message (-> v-user :messages (get mid))
+                          current-media-type (some #{:photo
+                                                     :video
+                                                     :audio
+                                                     :animation
+                                                     :document} (keys message))
+                          current-media-id (keyword (subs (:photo message) 9))
+                          new-caption (-> msg :media :caption)
+                          new-media-type (-> msg :media :type keyword)
+                          new-media-uri (-> msg :media :media)
+                          new-media-id (keyword (subs new-media-uri 9))
+                          new-media (new-media-id msg)]
+                      (cond-> v-users
+                        true (update-in [vuid :messages mid] #(-> %
+                                                                  (dissoc current-media-id)
+                                                                  (dissoc current-media-type)
+                                                                  (assoc new-media-type new-media-uri)
+                                                                  (assoc new-media-id new-media)))
+
+                        (some? new-caption) (assoc-in [vuid :messages mid :caption] new-caption)
+                        (contains? msg :reply_markup)
+                        (assoc-in [vuid :messages mid :reply_markup] (:reply_markup msg))
+                        true (assoc-in [vuid :waiting-for-response?] false)))))
+            (let [[v-user _] (get-v-user-info msg)
+                  message (-> v-user :messages (get (:message_id msg)))]
+              {:status 200
+               :body {:ok true
+                      :result (let [file-id (subs ((-> msg :media :type keyword) message) 9)]
+                                (update message (keyword file-id) prn-str))}})))
 
 (defmethod handler :deleteMessage
   [msg]
