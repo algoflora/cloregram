@@ -1,19 +1,19 @@
 (ns cloregram.core
-  (:require [clojure.java.io :as io]
-            [taoensso.timbre :as log]
+  (:require [cloregram.logging :refer [start-publishers!]]
+            [clojure.java.io :as io]
+            [com.brunobonacci.mulog :as μ]
             [integrant.core :as ig]
-            [cloregram.logging]
-            [cloregram.utils :as utl]
             [cloregram.utils :refer [deep-merge]]
-            [cloregram.system.init :refer [startup shutdown!]]
-            [cloregram.db :as db])
+            [cloregram.impl.init :refer [startup shutdown!]]
+            [cloregram.impl.state :refer [system]]
+            [cloregram.impl.validation.core])
   (:gen-class))
 
 (Thread/setDefaultUncaughtExceptionHandler
  (reify Thread$UncaughtExceptionHandler
    (uncaughtException [_ thread ex]
-     (log/error "Uncaught Exception!" {:thread (.getName thread)
-                                       :exeption ex})
+     (μ/log ::uncaught-exception :exception ex :thread (.getName thread))
+     (Thread. shutdown!)
      (throw ex))))
 
 (defn- get-conf
@@ -22,25 +22,36 @@
     (-> cfg slurp ig/read-string)
     {}))
 
+;; Public API
+
+(defn config
+
+  "Returns value (or nil) from project config nested map, using chain of `keys`"
+
+  {:changed "0.9.1"}
+
+  [& keys]
+  (get-in (:project/config @system) keys))
+
 (defn run
 
   "Main function. Configs used overriding each other:
 
-  - default config of cloregram framework
-  - config from config.edn resource of project
-  - config from .edn files or resources provided as arguments
-
-  Detailed config reference will be provided later."
+  - default config of Cloregram framework
+  - config from `config.dev.edn`, `config.test.edn` or `config.prod.edn` resource of project depending of current Leiningen profile
+  - EDN-serialised configs from `java.io.File` files or `java.newt.URL` resources provided as arguments"
   
   [& args]
-  (log/debug "Starting \"run\" function..." {:run-arguments args})
-  (let [config-default    (-> "default-config.edn" io/resource get-conf)
-        project-conf-path (System/getProperty "config.path" "config.prod.edn")
-        config-project    (-> project-conf-path io/resource get-conf)
-        config-args       (map get-conf args)
-        config            (apply deep-merge config-default config-project config-args)]
-    (log/info "Config loaded" {:config config})
-    (.addShutdownHook (Runtime/getRuntime) (Thread. shutdown!))
-    (startup config)
-    (db/update-schema)
-    (log/info "System initialized" {:system @cloregram.system.state/system})))
+  (μ/log ::started)
+  (start-publishers!)
+  (μ/trace ::run [:run-arguments args]
+           (let [config-default    (-> "default-config.edn" io/resource get-conf)
+                 project-conf-path (System/getProperty "config.path" "config.prod.edn")
+                 config-project    (-> project-conf-path io/resource get-conf)
+                 config-args       (map get-conf args)
+                 config            (apply deep-merge config-default config-project config-args)]
+             (μ/log ::config-loaded :config config)
+             (.addShutdownHook (Runtime/getRuntime) (Thread. shutdown!))
+             (μ/trace ::startup []
+                      (startup config))
+             (μ/log ::system-initialized))))

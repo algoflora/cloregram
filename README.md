@@ -1,6 +1,6 @@
 # algoflora/cloregram
 
-**[Clojure](https://clojure.org) and [Datomic](https://www.datomic.com) framework for making complex Telegram Bots/Applications**
+**[Clojure](https://clojure.org) and [Datalevin](https://github.com/juji-io/datalevin) framework for making complex Telegram Bots/Applications**
 
 ## Table of Contents
 
@@ -12,8 +12,8 @@
   - [Keyboard](#keyboard)
   - [Handlers](#handlers)
   - [Payments](#payments)
-  - [Interacting Datomic database](#interacting-datomic-database)
-  - [Datomic schema and initial data](#datomic-schema-and-initial-data)
+  - [Interacting Datalevin database](#interacting-datalevin-database)
+  - [Datalevin schema and initial data](#datalevin-schema-and-initial-data)
 - [Testing](#testing)
 - [Logging](#logging)
 - [Configuration](#configuration)
@@ -22,13 +22,14 @@
   - [Starting your bot](#starting-your-bot)
   - [Obtaining certificates](#obtaining-certificates)
 - [Further development and bugfixing](#further-development-and-bugfixing)
+- [Roadmap](#roadmap)
 - [License](#license)
 
 ## Idea
  
 Cloregram has several main ideas:
 1. **Main and temporal messages** - there is one main actual message that mostly reacts and interacting with user. For certain cases can be used such a "temporal" messages with button to delete them. Temporal messages appear with notification, when main one is changing smoothly.
-2. **Stateless approach** - actually not completely stateless, but Cloregram does not save exact user state. Instead, each button points to unique Callback entity with user ref, function symbol and arguments in [EDN](https://github.com/edn-format/edn) notation saved in [Datomic](https://www.datomic.com). Only interaction with user input (text/media etc) needs to change user state. This approach allows to describe more robust and predictible bot behaviour.
+2. **Stateless approach** - actually not completely stateless, but Cloregram does not save exact user state. Instead, each button points to unique Callback entity with user ref, function symbol and [EDN](https://github.com/edn-format/edn)-serialised arguments saved in [Datalevin](https://github.com/juji-io/datalevin). Only interaction with user input (text/media etc) needs to change user state. This approach allows to describe more robust and predictible bot behaviour.
 3. **Virtual users testing** - Cloregram comes with ready-made integration testing framework. It mocks Telegram API server to allow developer describe users behaviour and test bot outcome in very convenient and flexible way.
 
 ## Installation
@@ -62,7 +63,7 @@ Every user interacting with the bot is recorded in the database. User entity has
 
 ### API
 
-Public API functions to interact with user are located in `cloregram.api` namespace. For now, support for media, locations, and many other features is missing. Framework is still in active development.
+Public API functions to interact with user are located in `cloregram.api` namespace. For now, support of many features like locations etc is missing. Support of media is very limited. Framework is still in active development.
 
 Example usage:
 ```clojure
@@ -118,9 +119,7 @@ Look at extended example that will increment or decrement number value depending
 
 ```clojure
 (ns my-cloregram-bot.handler
-  (:require [cloregram.api :as api]
-            [cloregram.utils :as utl]
-            [clojure.string :as str]))
+  (:require [cloregram.api :as api]))
 
 (defn common
   [{:keys [user]}]
@@ -146,17 +145,17 @@ Note that in this example any input except for button clicks will call `common` 
 
 To make user pay for something use API function `cloregram.api/send-invoice`. When user succesfully paid, payment handler is called. Payment handler have to be located in `my-cloregram-bot.handler/payment` function. This function take parameters map with keys [:user](#user) and [:payment](https://core.telegram.org/bots/api#successfulpayment). Use user data and `:invoice_payload` field in payment map to determine further behaviour.
 
-### Interacting Datomic database
+### Interacting Datalevin database
 
 Namespace `cloregram.db` provides functions for working with database:
 | Call | Description | Comment |
 |------|-------------|---------|
-| `(cloregram.db/conn)` | Returns Datomic connection | Look at [Datomic transactions](https://docs.datomic.com/pro/transactions/transactions.html) for details
-| `(cloregram.db/db)` | Returns database structure for queries, pulls etc | Look at [Datomic queries](https://docs.datomic.com/pro/query/query-executing.html) for details
+| `(cloregram.db/conn)` | Returns Datalevin connection | Look at [Datalevin Datalog store example](https://github.com/juji-io/datalevin/blob/master/README.md#use-as-a-datalog-store) for details
+| `(cloregram.db/db)` | Returns database structure for queries, pulls etc | Look at [Datalevin Datalog store example](https://github.com/juji-io/datalevin/blob/master/README.md#use-as-a-datalog-store) for details
 
-### Datomic schema and initial data
+### Datalevin schema and initial data
 
-Also `cloregram.db` namespace has two useful functions to keep the [schema](https://docs.datomic.com/pro/schema/schema.html) up to date and to load initial data:
+Also `cloregram.db` namespace has two useful functions to keep the [schema](https://github.com/juji-io/datalevin/blob/master/README.md#use-as-a-datalog-store) up to date and to load initial data:
 | Call | Description | Comment |
 |------|-------------|---------|
 | `(cloregram.db/update-schema)` | Wriring to database internal Cloregram schema ([User](#user) and Callback entities) and all entities from project's `resources/schema` folder. Schema entities data have to be located in **.edn** files. For conviency good to have different files for each entity. Nested folders are supported. | Take attention that this function is automatically launching every application startup. So kindly use `resources/schema` folder only for schema entities, but not for data. Otherwise data will be rewrited every startup even if it was changed by application. One more problem is that for now `update-schema` not removing entities attributes that are not in schema any more - ([Issue #6](https://github.com/algoflora/cloregram/issues/6)).
@@ -164,20 +163,20 @@ Also `cloregram.db` namespace has two useful functions to keep the [schema](http
 
 ## Testing
 
-Cloregram has powerful integration testing suite. Main idea is to simulate behaviour of users with virtual ones and check bot output. This approach in the ideal case allows to test all scenarios, involving any number of virtual users.
+Cloregram has powerful integration testing suite in `cloregram.validation` namespace. Main idea is to simulate behaviour of users with virtual ones and check bot output. This approach in the ideal case allows to test all scenarios, involving any number of virtual users.
 
 Framework has useful fixtures to prepare testing environment and load [initial data](#schema-and-initial-data):
 ```clojure
 (ns my-cloregram-bot.core-test
   (:require [clojure.test :refer :all]
-            [cloregram.test.fixtures :as fix]))
+            [cloregram.validation.fixtures :as fix]))
 
 (use-fixtures :once fix/use-test-environment fix/load-initial-data)
 ```
 
-The `cloregram.test.infrastructure.users` namespace is responsible for working with virtual users:
+The `cloregram.validation.users` namespace is responsible for working with virtual users:
 ```clojure
-(require '[cloregram.test.infrastructure.users :as u])
+(require '[cloregram.validation.users :as u])
 
 (u/add :user-1) ; creates virtual user with username "user-1"
 (u/add :user-2) ; creates virtual user with username "user-2"
@@ -187,15 +186,16 @@ The `cloregram.test.infrastructure.users` namespace is responsible for working w
 (u/count-temp-messages :user-2) ; => 0
 ```
 
-The `cloregram.test.infrastructure.client` namespace contains functions for interaction with bot by virtual users:
+The `cloregram.validation.client` namespace contains functions for interaction with bot by virtual users:
 ```clojure
-(require '[cloregram.test.infrastructure.client :as c])
+(require '[cloregram.validation.client :as c])
 
 (c/send-text :user-1 "Hello, bot!") ; sends to bot the text message "Hello, bot!" by virtual user "user-1"
 ```
 Also in this namespace are functions: 
-- `press-btn` to simulate clicking button in incoming message
+- `click-btn` to simulate clicking button in incoming message
 - `pay-invoice` to simulate clicking Pay button in incoming invoice
+- `send-photo` to send to bot image from resources
 - `send-message` to send more generic messages, not for common use cases
 
 The `cloregram.test.infrastructure.inspector` namespace contains functions to check contents of incoming messages:
@@ -206,7 +206,8 @@ The `cloregram.test.infrastructure.inspector` namespace contains functions to ch
 
 (i/check-text msg "Hello from bot!") ; asserts message's text
 (i/check-btns msg [["To Main Menu"]] ; asserts keyboard layout
-(i/check-document "Caption" contents) ; asserts incoming document caption and contents
+(i/check-document msg "Caption" contents) ; asserts incoming document caption and contents
+(i/check-photo msg "Photo caption" resource) ; asserts incoming photo caption and equality of image to certain resource
 (i/check-invoice msg expected-invoice-data) ; asserts incoming invoice
 ```
 
@@ -214,10 +215,10 @@ Common test workflow can be like following:
 ```clojure
 (ns my-cloregram-bot.core-test
   (:require [clojure.test :refer :all]
-            [cloregram.test.fixtures :as fix]
-            [cloregram.test.infrastructure.users :as u]
-            [cloregram.test.infrastructure.client :as c]
-            [cloregram.test.infrastructure.inspector :as i]))
+            [cloregram.validation.fixtures :as fix]
+            [cloregram.validation.users :as u]
+            [cloregram.validation.client :as c]
+            [cloregram.validation.inspector :as i]))
 
 (use-fixtures :once fix/use-test-environment)
 
@@ -229,15 +230,15 @@ Common test workflow can be like following:
     (-> (u/main-message :testuser-1)
         (i/check-text "Hello, testuser-1! Initial number is 0.")
         (i/check-btns [["+" "-"]])
-        (c/press-btn :testuser-1 "+"))
+        (c/click-btn :testuser-1 "+"))
     (-> (u/main-message :testuser-1)
         (i/check-text "Number was incremented: 1")
         (i/check-btns [["+" "-"]])
-        (c/press-btn :testuser-1 "+"))
+        (c/click-btn :testuser-1 "+"))
     (-> (u/main-message :testuser-1)
         (i/check-text "Number was incremented: 2")
         (i/check-btns [["+" "-"]])
-        (c/press-btn :testuser-1 "-"))
+        (c/click-btn :testuser-1 "-"))
     (-> (u/main-message :testuser-1)
         (i/check-text "Number was decremented: 1"))))
 ```
@@ -246,11 +247,14 @@ Cloregram is already configurated to use for testing purposes [weavejester/eftes
 
 ## Logging
 
-For logging Cloregram using `com.amperity/dialog` library. Config is in file **resources/dialog.edn**.
+For logging Cloregram using [μ/log](https://github.com/BrunoBonacci/mulog) library.
 
-Out of the box it displays logs in console and record them to **logs/logs.json** file. This configuration works well with such [logs monitoring suite](https://github.com/algoflora/logging-system-docker).
-
-Currently there are little problems ([Issue #8](https://github.com/algoflora/cloregram/issues/8)) with logs consistency in console and in JSON in some cases like tests crash with uncaught exception. But mostly such logging configuration presents convienent tool for monitoring and debugging. 
+Out of the box it write all logs to **logs/logs.mulog** file.
+Also: 
+- **logs/last.mulog** - all logs of last run. Cleans at startup.
+- **logs/events.mulog** - logs of last run events. No traces. Cleans at startup.
+- **logs/errors.mulog** - errors of last run. Cleans on startup.
+- **logs/publishers-errors.mulog** - errors in μ/log publishers. Cleans at startup.
 
 ## Configuration
 
@@ -267,8 +271,8 @@ You have to create in `resources` folder file `config.prod.edn` for production d
 | `:bot/server -> :options -> :keystore` | Keystore path for SSL | "./ssl/keystore.jks" | Look [Obtaining certificates](#obtaining-certificates) for details |
 | `:bot/server -> :options -> :keystore-password` | Password for SSL keystore | "cloregram.keystorepass" | Look [Obtaining certificates](#obtaining-certificates) for details |
 | `:bot/instance -> :certificate` | Path to PEM certificate | "./ssl/cert.pem" | Look [Obtaining certificates](#obtaining-certificates) for details |
-| `:db/connection -> :uri` | Datomic database URI | | In tests `datomic:mem://test` is used. In production something like `datomic:sql://127.0.0.1:4334/my-cloregram-bot` |
-| `:db/connection -> :create?` | Indicates if need to create new database | false | Mostly for testing purposes |
+| `:db/connection -> :uri` | Datalevin database URI | | In tests `/tmp/cloregram-datalevin` is used. |
+| `:db/connection -> :clear?` | Clear the database on startup? | `false` | In tests value is `true` to clear temporal database for each run. |
 | `:project/config` | Map of project specific config | `{}` | Values from this map could be accessed with hekp of function `(cloregram.system.state/config :key :nested-key ...)` |
 
 ## Deploy
@@ -281,54 +285,6 @@ On your server install required JAVA package:
 ```
 sudo apt update && sudo apt install -y default-jre-headless
 ```
-
-Obtain and Datomic transactor:
-```
-cd ~
-wget https://datomic-pro-downloads.s3.amazonaws.com/1.0.7075/datomic-pro-1.0.7075.zip
-unzip -d datomic datomic-pro-1.0.7075.zip
-cd datomic
-cp config/samples/dev-transactor-template.properties config/dev-transactor-template.properties
-```
-
-Run transactor:
-```
-bin/transactor -Ddatomic.printConnectionInfo=true config/dev-transactor-template.properties
-```
-In production, a more complicated setup will eventually be necessary. Please look on [Datomic documentation](https://docs.datomic.com/pro/).
-
-**Or you can start Datomic transactor as systemd service**
-
-Use editor to create service file `/etc/systemd/system/datomic-transactor.service`:
-```
-[Unit]
-Description=Datomic Transactor Service
-After=network.target
-
-[Service]
-User=my-username
-ExecStart=/home/my-username/datomic/bin/transactor -Ddatomic.printConnectionInfo=true /home/my-username/datomic/config/datomic-transactor.properties
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Then start service, enable it on startup and check health:
-```
-sudo systemctl start datomic-transactor.service
-sudo systemctl enable datomic-transactor.service
-sudo systemctl status datomic-transactor.service
-```
-
-If the config .properties file is updated, restart the service::
-```
-sudo systemctl restart datomic-transactor.service
-```
-
-**Now you have to create database**
-
-Folow instructions [here](https://docs.datomic.com/pro/getting-started/connect-to-a-database.html).
 
 ### Starting your bot
 
@@ -388,7 +344,7 @@ To ensure the correct operation of bot webhooks, you must prepare your SSL certi
 
 - In deploy folder create **ssl** folder: `mkdir ssl`
 - Jump inside it: `cd ssl`
-- Create certificate and private key. Fill in Country, State/Province, Locality and Organisation as you see fit. **CN** field is for IP-address or domain where bot is deploying. `openssl req -newkey rsa:2048 -sha256 -nodes -keyout private.key -x509 -days 365 -out cert.pem -subj "/C=LK/ST=Southern Province/L=Kathaluwa/O=Weedbreed/CN=127.1.2.3"`
+- Create certificate and private key. Fill in Country, State/Province, Locality and Organisation as you see fit. **CN** field is for IP-address or domain where bot is deploying. `openssl req -newkey rsa:2048 -sha256 -nodes -keyout private.key -x509 -days 365 -out cert.pem -subj "/C=LK/ST=Southern Province/L=Kathaluwa/O=Algoflora/CN=127.1.2.3"`
 - Obtain PKCS12 certificate from our keys: `openssl pkcs12 -export -in cert.pem -inkey private.key -out certificate.p12 -name "certificate"` It will ask you to come up with a password. It will be needed in next step
 - Create JKS keystore: `keytool -importkeystore -srckeystore certificate.p12 -srcstoretype pkcs12 -destkeystore keystore.jks` At first you will be asked about new keystore password. By default Cloregram using **cloregram.keystorepass**. Next step you have to enter password from previous step
 - Now you can delete **certificate.p12** and **private.key**: `rm certificate.p12 private.key`
@@ -398,6 +354,14 @@ Files **cert.pem** and **keystore.jks** as well as **ssl** folder can be differe
 ## Further development and bugfixing
 
 The process of developing the framework depends on the needs of specific projects and/or the author's inspiration. Take a look on [Issues](https://github.com/algoflora/cloregram/issues) page and feel free to suggest something there.
+
+## Roadmap
+
+* write spec and unit tests
+* add opportunity to select database in config (Datalevin/Datomic)
+* enhance and expand media support
+* add flexible logging configuration
+* enhance payment support
 
 ## License
 
