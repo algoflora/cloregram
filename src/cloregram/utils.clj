@@ -24,7 +24,7 @@
   "This macro expands in map with keys `group`, `name` and `version` of current project by information from project.clj"
   
   []
-  (let [[_ ga version] (read-string (try (slurp "project.clj") (catch Exception e "")))
+  (let [[_ ga version] (read-string (try (slurp "project.clj") (catch Exception e "[]")))
         [ns name version] [(namespace ga) (name ga) version]]
     {:group ns
      :name name
