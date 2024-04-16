@@ -22,6 +22,7 @@
   - [Starting your bot](#starting-your-bot)
   - [Obtaining certificates](#obtaining-certificates)
 - [Further development and bugfixing](#further-development-and-bugfixing)
+- [Roadmap](#roadmap)
 - [License](#license)
 
 ## Idea
