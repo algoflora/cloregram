@@ -1,85 +1,96 @@
 (ns cloregram.logging
-  (:require [clojure.string :as str]
-            [clojure.walk :as walk]
-            [taoensso.timbre :as timbre]
-            [taoensso.timbre.appenders.core :refer [println-appender]]
-            [cheshire.core :refer [generate-string]]
-            [cheshire.generate :refer [add-encoder]]
-            [cloregram.utils :as utl]))
+  (:require [cloregram.utils :refer [get-project-info]]
+            [com.brunobonacci.mulog :as μ]
+            [where.core :refer [where]]
+            [clojure.string :as str]
+            [clojure.java.io :as io]))
 
-(add-encoder Object (fn [obj jsonGenerator] (.writeString jsonGenerator (prn-str obj))))
+(defonce ^:private publishers (atom nil))
 
-(defn- my-keywordize-keys
-  [m]
-  (let [f (fn [[k v]] (if (string? k)
-                        [(-> k
-                             (str/lower-case)
-                             (str/replace " " "-")
-                             (keyword))
-                         v]
-                        [k v]))]
-    ;; only apply to maps
-    (walk/postwalk (fn [x] (if (map? x) (into {} (map f x)) x)) m)))
+;; (defn transform-add-timestamp
+;;   [events]
+;;   (map #(assoc % "@timestamp" (:mulog/timestamp %)) events))
 
-(defn- transform-additional-data
-  [ad]
-  (cond
-    (map? ad) ad
+(def ^:private time-format (java.text.SimpleDateFormat. ))
 
-    (and (coll? ad) (<= 1 (count ad)))
-    (transform-additional-data (first ad))
+(defn- format-timestamp [timestamp]
+  (let [formatter (java.text.SimpleDateFormat. "yyyy-MM-dd HH:mm:ss.SSS")]
+    (.format formatter (java.util.Date. timestamp))))
 
-    (seq? ad) (vec ad)
-    (some? ad) ad
-    :else nil))
+(def ^:private human-readable-time (partial map (fn [event]
+                                                  (let [timestamp (:mulog/timestamp event)
+                                                        readable-time (format-timestamp timestamp)]
+                                                    (assoc event :mulog/time readable-time)))))
 
-(defn- generate-log-entry
-  [data]
-  (let [{:keys [msg-type level ?err ?file ?line ?ns-str msg_ instant vargs hostname_]} data
-        is-p? (= :p msg-type)
-        message (if is-p? (first vargs) @msg_)
-        additional-data (when is-p? (-> vargs next transform-additional-data my-keywordize-keys))]
-    (-> (utl/get-project-info)
-        (merge {:time    instant
-                :host    @hostname_
-                :file    ?file
-                :line    ?line
-                :logger  ?ns-str
-                :level   (name level)
-                :message (cond-> {:message message
-                                  :data additional-data}
-                           (some? ?err) (assoc :error ?err)
-                           true generate-string)})
-        (my-keywordize-keys))))
+(def ^:private events-filter (partial filter #(not (contains? % :mulog/duration))))
+                              
+(def ^:private errors-filter (partial filter #(contains? % :exception)))
 
-(defn custom-json-appender
-  [data]
-  (future
-    (let [log-entry (-> data generate-log-entry generate-string (str "\n"))]
-      (spit "./logs/logs.json" log-entry :append true))))
+(def ^:private publisher-errors-filter (partial filter (where :mulog/event-name :in? [:mulog/publisher-error :myapp/invalid-json-value])))
 
-;; (defn custom-edn-appender
-;;   [data]
-;;   (let [log-entry (-> data generate-log-entry prn-str)]
-;;     (spit "./logs/logs.edn" log-entry :append true)))
+(defn- capitalize-words 
+  "Capitalize every word in a string"
+  [s]
+  (->> (str/split (str s) #"\b") 
+       (map str/capitalize)
+       str/join))
 
-(def original-output-fn (-> timbre/*config* :output-fn))
+(def ^:private console-log-transformer
+  (partial
+   map #(-> %
+            (select-keys [:mulog/timestamp :mulog/event-name :exception])
+            (update :mulog/timestamp (fn [ts] (java.time.Instant/ofEpochMilli ts)))
+            (update :mulog/event-name (fn [en] (str (-> en name (str/replace #"-" " ") (capitalize-words)) " (" (-> en namespace) ")"))))))
 
-(timbre/merge-config!
- {:appenders
+(def ^:private publishers-config [
+                                  #_{:type :console
+                                   :pretty? true
+                                   :transform console-log-transformer}
+                           
+                                  {:type :simple-file
+                                   :filename "./logs/log.mulog"}
 
-  {:custom-json-appender {:enabled? true
-                          :fn custom-json-appender}
+                                  {:type :simple-file
+                                   :filename "./logs/last.mulog"
+                                   :transform human-readable-time}
 
-   ;; :custom-edn-appender {:enabled? true
-   ;;                       :fn custom-edn-appender}
+                                  {:type :simple-file
+                                   :filename "./logs/events.mulog"
+                                   :transform (comp human-readable-time events-filter)}
+                                  
+                                  {:type :simple-file
+                                   :filename "./logs/errors.mulog"
+                                   :transform (comp human-readable-time errors-filter)}
+                                  
+                                  {:type :simple-file
+                                   :filename "./logs/publishers-errors.mulog"
+                                   :transform (comp human-readable-time publisher-errors-filter)}
+                                  
+                                  {:type :zipkin
+                                   :url "http://127.0.0.1:9411"
+                                   :max-items 5000
+                                   :publish-delay 5000}])
 
-   :println {:enabled? true
-             :min-level :warn
-             :output-fn (fn [data]
-                          (original-output-fn (update
-                                               data
-                                               :vargs
-                                               #(if (= :p (:msg-type data)) (take 1 %) %))))}}})
+(defn start-publishers!
+  []
+  (let [pinfo (get-project-info)]
+    (io/delete-file "./logs/last.mulog" true)
+    (io/delete-file "./logs/events.mulog" true)
+    (io/delete-file "./logs/errors.mulog" true)
+    (io/delete-file "./logs/publishers-errors.mulog" true)
+    (μ/set-global-context! {:group (:group pinfo)
+                            :app-name (:name pinfo)
+                            :version (:version pinfo)
+                            :env "local"
+                            :hostname (.getHostName (java.net.InetAddress/getLocalHost))})
+    (reset! publishers (mapv (fn [p]
+                               (let [f (μ/start-publisher! p)]
+                                 (μ/log ::publisher-started :type (:type p) :publisher-stop-fn f)
+                                 f))
+                             publishers-config))))
 
-(timbre/info "Logging initiated with Timbre" timbre/*config*)
+(defn stop-publishers!
+  []
+  (μ/log ::publishers-stop)
+  (Thread/sleep 5000)
+  (mapv (fn [f] (f)) @publishers))
