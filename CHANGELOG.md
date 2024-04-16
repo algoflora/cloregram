@@ -1,9 +1,14 @@
-## 0.9.1 - 
-* Changed datatabase to [Datalevin](https://github.com/juji-io/datalevin). Unexpectedly solved [<Issue #4>](https://github.com/algoflora/cloregram/issues/4)
+## 0.9.1 - 2024-04-16
+* Changed datatabase to [Datalevin](https://github.com/juji-io/datalevin). Unexpectedly solved [<Issue #4>](#4)
+* Major refactoring of functions and namespaces structure. [<Issue #11>](#11)
+* Changed logging infrastructure to use [μ/log](https://github.com/BrunoBonacci/mulog?tab=readme-ov-file)
+* Added fallback for message edit failure. [<Issue #15>](#15)
+* Added limited media support. [<Issue #9>](#9)
+* Added unnecessary callbacks cleaning logic. [<Issue #14>](#14)
 
 ## 0.9.0 - 2024-03-16
-* Changed logging library. Using [taoensso.timbre](https://github.com/taoensso/timbre) from now [<Issue #8>](https://github.com/algoflora/cloregram/issues/8)
-* Changed logging structures [<Issue #8>](https://github.com/algoflora/cloregram/issues/8)
+* Changed logging library. Using [taoensso.timbre](https://github.com/taoensso/timbre) from now [<Issue #8>](#8)
+* Changed logging structures [<Issue #8>](#8)
 * Minor refactorings
 
 ## 0.8.1 - 2024-03-08
