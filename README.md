@@ -51,6 +51,7 @@ lein eftest
 ### User
 
 Every user interacting with the bot is recorded in the database. User entity has following fields:
+
 | Key | Description | Required? | Unique? |
 |-------|-------|-------|------|
 | `:user/username` | username of user in Telegram | | ☑️ (if exists) |
@@ -148,6 +149,7 @@ To make user pay for something use API function `cloregram.api/send-invoice`. Wh
 ### Interacting Datalevin database
 
 Namespace `cloregram.db` provides functions for working with database:
+
 | Call | Description | Comment |
 |------|-------------|---------|
 | `(cloregram.db/conn)` | Returns Datalevin connection | Look at [Datalevin Datalog store example](https://github.com/juji-io/datalevin/blob/master/README.md#use-as-a-datalog-store) for details
@@ -156,6 +158,7 @@ Namespace `cloregram.db` provides functions for working with database:
 ### Datalevin schema and initial data
 
 Also `cloregram.db` namespace has two useful functions to keep the [schema](https://github.com/juji-io/datalevin/blob/master/README.md#use-as-a-datalog-store) up to date and to load initial data:
+
 | Call | Description | Comment |
 |------|-------------|---------|
 | `(cloregram.db/update-schema)` | Wriring to database internal Cloregram schema ([User](#user) and Callback entities) and all entities from project's `resources/schema` folder. Schema entities data have to be located in **.edn** files. For conviency good to have different files for each entity. Nested folders are supported. | Take attention that this function is automatically launching every application startup. So kindly use `resources/schema` folder only for schema entities, but not for data. Otherwise data will be rewrited every startup even if it was changed by application. One more problem is that for now `update-schema` not removing entities attributes that are not in schema any more - ([Issue #6](https://github.com/algoflora/cloregram/issues/6)).
