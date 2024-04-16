@@ -25,7 +25,7 @@
   
   []
   (let [[_ ga version] (read-string (try (slurp "project.clj") (catch Exception e "[]")))
-        [ns name version] [(namespace ga) (name ga) version]]
+        [ns name version] (try [(namespace ga) (name ga) version] (catch Exception e []))]
     {:group ns
      :name name
      :version version}))
