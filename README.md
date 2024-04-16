@@ -62,7 +62,7 @@ Every user interacting with the bot is recorded in the database. User entity has
 
 ### API
 
-Public API functions to interact with user are located in `cloregram.api` namespace. For now, support for media, locations, and many other features is missing. Framework is still in active development.
+Public API functions to interact with user are located in `cloregram.api` namespace. For now, support of many features like locations etc is missing. Support of media is very limited. Framework is still in active development.
 
 Example usage:
 ```clojure
@@ -118,9 +118,7 @@ Look at extended example that will increment or decrement number value depending
 
 ```clojure
 (ns my-cloregram-bot.handler
-  (:require [cloregram.api :as api]
-            [cloregram.utils :as utl]
-            [clojure.string :as str]))
+  (:require [cloregram.api :as api]))
 
 (defn common
   [{:keys [user]}]
@@ -164,20 +162,20 @@ Also `cloregram.db` namespace has two useful functions to keep the [schema](http
 
 ## Testing
 
-Cloregram has powerful integration testing suite. Main idea is to simulate behaviour of users with virtual ones and check bot output. This approach in the ideal case allows to test all scenarios, involving any number of virtual users.
+Cloregram has powerful integration testing suite in `cloregram.validation` namespace. Main idea is to simulate behaviour of users with virtual ones and check bot output. This approach in the ideal case allows to test all scenarios, involving any number of virtual users.
 
 Framework has useful fixtures to prepare testing environment and load [initial data](#schema-and-initial-data):
 ```clojure
 (ns my-cloregram-bot.core-test
   (:require [clojure.test :refer :all]
-            [cloregram.test.fixtures :as fix]))
+            [cloregram.validation.fixtures :as fix]))
 
 (use-fixtures :once fix/use-test-environment fix/load-initial-data)
 ```
 
-The `cloregram.test.infrastructure.users` namespace is responsible for working with virtual users:
+The `cloregram.validation.users` namespace is responsible for working with virtual users:
 ```clojure
-(require '[cloregram.test.infrastructure.users :as u])
+(require '[cloregram.validation.users :as u])
 
 (u/add :user-1) ; creates virtual user with username "user-1"
 (u/add :user-2) ; creates virtual user with username "user-2"
@@ -187,15 +185,16 @@ The `cloregram.test.infrastructure.users` namespace is responsible for working w
 (u/count-temp-messages :user-2) ; => 0
 ```
 
-The `cloregram.test.infrastructure.client` namespace contains functions for interaction with bot by virtual users:
+The `cloregram.validation.client` namespace contains functions for interaction with bot by virtual users:
 ```clojure
-(require '[cloregram.test.infrastructure.client :as c])
+(require '[cloregram.validation.client :as c])
 
 (c/send-text :user-1 "Hello, bot!") ; sends to bot the text message "Hello, bot!" by virtual user "user-1"
 ```
 Also in this namespace are functions: 
 - `click-btn` to simulate clicking button in incoming message
 - `pay-invoice` to simulate clicking Pay button in incoming invoice
+- `send-photo` to send to bot image from resources
 - `send-message` to send more generic messages, not for common use cases
 
 The `cloregram.test.infrastructure.inspector` namespace contains functions to check contents of incoming messages:
@@ -206,7 +205,8 @@ The `cloregram.test.infrastructure.inspector` namespace contains functions to ch
 
 (i/check-text msg "Hello from bot!") ; asserts message's text
 (i/check-btns msg [["To Main Menu"]] ; asserts keyboard layout
-(i/check-document "Caption" contents) ; asserts incoming document caption and contents
+(i/check-document msg "Caption" contents) ; asserts incoming document caption and contents
+(i/check-photo msg "Photo caption" resource) ; asserts incoming photo caption and equality of image to certain resource
 (i/check-invoice msg expected-invoice-data) ; asserts incoming invoice
 ```
 
@@ -214,10 +214,10 @@ Common test workflow can be like following:
 ```clojure
 (ns my-cloregram-bot.core-test
   (:require [clojure.test :refer :all]
-            [cloregram.test.fixtures :as fix]
-            [cloregram.test.infrastructure.users :as u]
-            [cloregram.test.infrastructure.client :as c]
-            [cloregram.test.infrastructure.inspector :as i]))
+            [cloregram.validation.fixtures :as fix]
+            [cloregram.validation.users :as u]
+            [cloregram.validation.client :as c]
+            [cloregram.validation.inspector :as i]))
 
 (use-fixtures :once fix/use-test-environment)
 
@@ -246,11 +246,14 @@ Cloregram is already configurated to use for testing purposes [weavejester/eftes
 
 ## Logging
 
-For logging Cloregram using [taoensso/timbre](https://github.com/taoensso/timbre/tree/master/src/taoensso) library.
+For logging Cloregram using [μ/log](https://github.com/BrunoBonacci/mulog) library.
 
-Out of the box it displays logs in console and record them to **logs/logs.json** file.
-
-Currently there are little problems ([Issue #8](https://github.com/algoflora/cloregram/issues/8)) with logs consistency in console and in JSON in some cases like tests crash with uncaught exception. But mostly such logging configuration presents convienent tool for monitoring and debugging. 
+Out of the box it write all logs to **logs/logs.mulog** file.
+Also: 
+- **logs/last.mulog** - all logs of last run. Cleans at startup.
+- **logs/events.mulog** - logs of last run events. No traces. Cleans at startup.
+- **logs/errors.mulog** - errors of last run. Cleans on startup.
+- **logs/publishers-errors.mulog** - errors in μ/log publishers. Cleans at startup.
 
 ## Configuration
 
@@ -267,7 +270,8 @@ You have to create in `resources` folder file `config.prod.edn` for production d
 | `:bot/server -> :options -> :keystore` | Keystore path for SSL | "./ssl/keystore.jks" | Look [Obtaining certificates](#obtaining-certificates) for details |
 | `:bot/server -> :options -> :keystore-password` | Password for SSL keystore | "cloregram.keystorepass" | Look [Obtaining certificates](#obtaining-certificates) for details |
 | `:bot/instance -> :certificate` | Path to PEM certificate | "./ssl/cert.pem" | Look [Obtaining certificates](#obtaining-certificates) for details |
-| `:db/connection -> :uri` | Datalevin database URI | | In tests `datomic:mem://test` is used. In production something like `datomic:sql://127.0.0.1:4334/my-cloregram-bot` |
+| `:db/connection -> :uri` | Datalevin database URI | | In tests `/tmp/cloregram-datalevin` is used. |
+| `:db/connection -> :clear?` | Clear the database on startup? | `false` | In tests value is `true` to clear temporal database for each run. |
 | `:project/config` | Map of project specific config | `{}` | Values from this map could be accessed with hekp of function `(cloregram.system.state/config :key :nested-key ...)` |
 
 ## Deploy
@@ -339,7 +343,7 @@ To ensure the correct operation of bot webhooks, you must prepare your SSL certi
 
 - In deploy folder create **ssl** folder: `mkdir ssl`
 - Jump inside it: `cd ssl`
-- Create certificate and private key. Fill in Country, State/Province, Locality and Organisation as you see fit. **CN** field is for IP-address or domain where bot is deploying. `openssl req -newkey rsa:2048 -sha256 -nodes -keyout private.key -x509 -days 365 -out cert.pem -subj "/C=LK/ST=Southern Province/L=Kathaluwa/O=Weedbreed/CN=127.1.2.3"`
+- Create certificate and private key. Fill in Country, State/Province, Locality and Organisation as you see fit. **CN** field is for IP-address or domain where bot is deploying. `openssl req -newkey rsa:2048 -sha256 -nodes -keyout private.key -x509 -days 365 -out cert.pem -subj "/C=LK/ST=Southern Province/L=Kathaluwa/O=Algoflora/CN=127.1.2.3"`
 - Obtain PKCS12 certificate from our keys: `openssl pkcs12 -export -in cert.pem -inkey private.key -out certificate.p12 -name "certificate"` It will ask you to come up with a password. It will be needed in next step
 - Create JKS keystore: `keytool -importkeystore -srckeystore certificate.p12 -srcstoretype pkcs12 -destkeystore keystore.jks` At first you will be asked about new keystore password. By default Cloregram using **cloregram.keystorepass**. Next step you have to enter password from previous step
 - Now you can delete **certificate.p12** and **private.key**: `rm certificate.p12 private.key`
@@ -349,6 +353,13 @@ Files **cert.pem** and **keystore.jks** as well as **ssl** folder can be differe
 ## Further development and bugfixing
 
 The process of developing the framework depends on the needs of specific projects and/or the author's inspiration. Take a look on [Issues](https://github.com/algoflora/cloregram/issues) page and feel free to suggest something there.
+
+## Roadmap
+
+* write spec and unit tests
+* enhance and expand media support
+* add flexible logging configuration
+* enhance payment support
 
 ## License
 
