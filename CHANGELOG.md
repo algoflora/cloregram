@@ -1,3 +1,6 @@
+## 0.10.1.1 - 2024-04-18
+* Fixed some mistakes in documentation
+
 ## 0.10.1 - 2024-04-17
 * Moved internal implementation of working with Users from `cloregram.users` namespace
 

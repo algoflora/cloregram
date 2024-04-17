@@ -148,12 +148,12 @@ To make user pay for something use API function `cloregram.api/send-invoice`. Wh
 
 ### Interacting Datalevin database
 
-Namespace `cloregram.db` provides functions for working with database:
+Namespace `cloregram.database` provides functions for working with database:
 
 | Call | Description | Comment |
 |------|-------------|---------|
-| `(cloregram.db/conn)` | Returns Datalevin connection | Look at [Datalevin Datalog store example](https://github.com/juji-io/datalevin/blob/master/README.md#use-as-a-datalog-store) for details
-| `(cloregram.db/db)` | Returns database structure for queries, pulls etc | Look at [Datalevin Datalog store example](https://github.com/juji-io/datalevin/blob/master/README.md#use-as-a-datalog-store) for details
+| `(cloregram.database/conn)` | Returns Datalevin connection | Look at [Datalevin Datalog store example](https://github.com/juji-io/datalevin/blob/master/README.md#use-as-a-datalog-store) for details
+| `(cloregram.database/db)` | Returns database structure for queries, pulls etc | Look at [Datalevin Datalog store example](https://github.com/juji-io/datalevin/blob/master/README.md#use-as-a-datalog-store) for details
 
 ### Datalevin schema and initial data
 
