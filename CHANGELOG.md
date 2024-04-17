@@ -1,18 +1,21 @@
+## 0.10.1 - 2024-04-17
+* Moved internal implementation of working with Users from `cloregram.users` namespace
+
 ## 0.10.0 - 2024-04-17
 * Added instructions to not put in cljdocs enything except public API
 * It's a milestone. I just wanted beautiful version number :)
 
 ## 0.9.1 - 2024-04-16
-* Changed datatabase to [Datalevin](https://github.com/juji-io/datalevin). Unexpectedly solved [<Issue #4>](#4)
-* Major refactoring of functions and namespaces structure. [<Issue #11>](#11)
+* Changed datatabase to [Datalevin](https://github.com/juji-io/datalevin). Unexpectedly solved [<Issue #4>](https://github.com/algoflora/cloregram/issues/4)
+* Major refactoring of functions and namespaces structure. [<Issue #11>](https://github.com/algoflora/cloregram/issues/11)
 * Changed logging infrastructure to use [μ/log](https://github.com/BrunoBonacci/mulog?tab=readme-ov-file)
-* Added fallback for message edit failure. [<Issue #15>](#15)
-* Added limited media support. [<Issue #9>](#9)
-* Added unnecessary callbacks cleaning logic. [<Issue #14>](#14)
+* Added fallback for message edit failure. [<Issue #15>](https://github.com/algoflora/cloregram/issues/15)
+* Added limited media support. [<Issue #9>](https://github.com/algoflora/cloregram/issues/9)
+* Added unnecessary callbacks cleaning logic. [<Issue #14>](https://github.com/algoflora/cloregram/issues/14)
 
 ## 0.9.0 - 2024-03-16
-* Changed logging library. Using [taoensso.timbre](https://github.com/taoensso/timbre) from now [<Issue #8>](#8)
-* Changed logging structures [<Issue #8>](#8)
+* Changed logging library. Using [taoensso.timbre](https://github.com/taoensso/timbre) from now [<Issue #8>](https://github.com/algoflora/cloregram/issues/8)
+* Changed logging structures [<Issue #8>](https://github.com/algoflora/cloregram/issues/8)
 * Minor refactorings
 
 ## 0.8.1 - 2024-03-08

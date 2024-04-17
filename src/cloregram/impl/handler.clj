@@ -2,7 +2,7 @@
   (:require [cloregram.impl.state :refer [system]]
             [cloregram.impl.api :refer [api-wrap]]
             [cloregram.impl.callbacks :as clb]
-            [cloregram.users :as u]
+            [cloregram.impl.users :as u]
             [cloregram.utils :as utl]
             [com.brunobonacci.mulog :as μ]
             [clojure.string :as str]

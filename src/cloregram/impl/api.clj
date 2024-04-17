@@ -1,7 +1,7 @@
 (ns ^:no-doc cloregram.impl.api
   (:require [cloregram.impl.state :refer [bot system]]
             [cloregram.impl.callbacks :as clb]
-            [cloregram.users :as u]
+            [cloregram.impl.users :as u]
             [cloregram.filesystem :as fs]
             [nano-id.core :refer [nano-id]]
             [cheshire.core :refer [generate-string]]
