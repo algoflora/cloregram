@@ -1,3 +1,7 @@
+## 0.10.0 - 2024-04-17
+* Added instructions to not put in cljdocs enything except public API
+* It's a milestone. I just wanted beautiful version number :)
+
 ## 0.9.1 - 2024-04-16
 * Changed datatabase to [Datalevin](https://github.com/juji-io/datalevin). Unexpectedly solved [<Issue #4>](#4)
 * Major refactoring of functions and namespaces structure. [<Issue #11>](#11)
