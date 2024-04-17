@@ -1,4 +1,4 @@
-(ns cloregram.impl.validation.users
+(ns ^:no-doc cloregram.impl.validation.users
   (:require [com.brunobonacci.mulog :as μ]
             [cloregram.impl.validation.state :refer [v-users]]))
 

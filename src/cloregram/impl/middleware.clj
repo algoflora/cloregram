@@ -1,4 +1,4 @@
-(ns cloregram.impl.middleware
+(ns ^:no-doc cloregram.impl.middleware
   (:require [clojure.string :as str]
             [cheshire.core :refer [parse-string]]
             [com.brunobonacci.mulog :as μ]

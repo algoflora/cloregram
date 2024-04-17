@@ -1,4 +1,4 @@
-(ns cloregram.impl.validation.state)
+(ns ^:no-doc cloregram.impl.validation.state)
 
 (defonce webhook-address (atom nil))
 

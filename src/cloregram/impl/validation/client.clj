@@ -1,4 +1,4 @@
-(ns cloregram.impl.validation.client
+(ns ^:no-doc cloregram.impl.validation.client
   (:require [cloregram.validation.users :as vu]
             [cloregram.impl.validation.state :as state]
             [com.brunobonacci.mulog :as μ]

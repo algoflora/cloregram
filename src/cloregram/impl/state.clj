@@ -1,4 +1,4 @@
-(ns cloregram.impl.state)
+(ns ^:no-doc cloregram.impl.state)
 
 (defonce system (atom nil))
 

@@ -1,4 +1,4 @@
-(ns cloregram.impl.callbacks
+(ns ^:no-doc cloregram.impl.callbacks
   (:require [com.brunobonacci.mulog :as μ]
             [cloregram.database :as db]
             [cloregram.utils :as utl]

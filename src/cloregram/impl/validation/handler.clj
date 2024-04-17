@@ -1,4 +1,4 @@
-(ns cloregram.impl.validation.handler
+(ns ^:no-doc cloregram.impl.validation.handler
   (:require [cloregram.impl.validation.state :as state]
             [cloregram.validation.client :as c]
             [cheshire.core :refer [parse-string]]

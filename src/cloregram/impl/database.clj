@@ -1,4 +1,4 @@
-(ns cloregram.impl.database
+(ns ^:no-doc cloregram.impl.database
   (:require [clojure.java.io :as io]
             [clojure.edn :as edn]
             [clojure.string :as str]

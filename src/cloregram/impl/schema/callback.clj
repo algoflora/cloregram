@@ -1,4 +1,4 @@
-(ns cloregram.impl.schema.callback)
+(ns ^:no-doc cloregram.impl.schema.callback)
 
 (def callback 
   {:callback/uuid {:db/valueType :db.type/uuid

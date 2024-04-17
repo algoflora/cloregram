@@ -1,4 +1,4 @@
-(ns cloregram.impl.handler
+(ns ^:no-doc cloregram.impl.handler
   (:require [cloregram.impl.state :refer [system]]
             [cloregram.impl.api :refer [api-wrap]]
             [cloregram.impl.callbacks :as clb]

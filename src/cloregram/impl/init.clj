@@ -1,4 +1,4 @@
-(ns cloregram.impl.init
+(ns ^:no-doc cloregram.impl.init
   (:require [integrant.core :as ig]
             [cheshire.core :refer [parse-string]]
             [com.brunobonacci.mulog :as μ]
