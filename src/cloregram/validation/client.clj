@@ -4,9 +4,9 @@
 
 (defn send-message
 
-  "Simulate sending raw message represented in `data` by virtual user with username `vuid`. In most cases you don't need this function. Use it only if you definitely know what you are doing. Optionaly use `:silent` option to not save message in virtual user's state"
+  "Simulate sending raw message represented in `data` by virtual user with username `vuid`. In most cases you don't need this function. Use it only if you definitely know what you are doing. Optionaly use `:silent` option to not save message in virtual user's state. Returns `vuid`."
 
-  {:changed "0.9.1"}
+  {:changed "0.10.2"}
 
   [vuid data & opts]
   (μ/trace ::simulate-raw-message
@@ -17,9 +17,9 @@
 
 (defn send-text
 
-  "Simulate sending `text` by virtual user with username `vuid`. Optionaly `entities` array can be provided for formatting message"
+  "Simulate sending `text` by virtual user with username `vuid`. Optionaly `entities` array can be provided for formatting message. Returns `vuid`."
 
-  {:changed "0.9.1"}
+  {:changed "0.10.2"}
 
   ([vuid text] (send-text vuid text []))
   ([vuid text entities]
@@ -30,9 +30,10 @@
 
 (defn send-photo
 
-  "Simulate sending photo with optional `caption` from resource `path` by virtual user with username `vuid`. Optionaly `entities` array can be provided for formatting caption"
+  "Simulate sending photo with optional `caption` from resource `path` by virtual user with username `vuid`. Optionaly `entities` array can be provided for formatting caption. Returns `vuid`."
 
-  {:added "0.9.1"}
+  {:added "0.9.1"
+   :changed "0.10.2"}
 
   ([vuid path] (send-photo vuid nil path))
   ([vuid caption path] (send-photo vuid caption [] path))

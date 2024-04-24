@@ -1,3 +1,7 @@
+## 0.10.2 - 2024-04-24
+* Added returning of `vuid` to `cloregram.validation.client` messages sending functions
+* Changed [Datalevin](https://github.com/juji-io/datalevin) version to `0.9.5`
+
 ## 0.10.1.1 - 2024-04-18
 * Fixed some mistakes in documentation
 
