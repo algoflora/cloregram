@@ -1,4 +1,4 @@
-(defproject io.github.algoflora/cloregram "0.10.2"
+(defproject io.github.algoflora/cloregram "0.10.3"
   :description "Clojure framework for making complex Telegram Bots/Applications"
   ;:url "https://cloregram.io"
   :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"

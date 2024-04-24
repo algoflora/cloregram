@@ -84,6 +84,7 @@
   (let [cbq (:callback_query upd)
         cb-uuid (-> cbq :data java.util.UUID/fromString)
         user (u/load-or-create (:from cbq))]
+    (check-handler! user)
     (μ/trace ::handling-callback-query
              {:pairs [:handling-callback-query/callback-query cbq
                       :handling-callback-query/user user]

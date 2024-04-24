@@ -1,3 +1,7 @@
+## 0.10.3 - 2024-04-25
+* Added forgotten file `src/cloregram/impl/users.clj` (facepalm...)
+* Fixed bug about not restoring user's handler on callbackmquery processing
+
 ## 0.10.2 - 2024-04-24
 * Added returning of `vuid` to `cloregram.validation.client` messages sending functions
 * Changed [Datalevin](https://github.com/juji-io/datalevin) version to `0.9.5`
