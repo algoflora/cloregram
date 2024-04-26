@@ -221,3 +221,9 @@
       (finally
         (.close fos)))
     file))
+
+(defn delete-message
+  [user mid]
+  (api-wrap 'delete-message {:chat_id (:user/id user)
+                             :message_id mid})
+  (clb/delete user mid))

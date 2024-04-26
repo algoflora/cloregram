@@ -2,6 +2,15 @@
   (:require [cloregram.impl.api :as impl]
             [com.brunobonacci.mulog :as μ]))
 
+(defn delete-message
+
+  "Delete message with ID `mid` for `user`"
+
+  {:added "0.11.0"}
+
+  [user mid]
+  (impl/delete-message user mid))
+
 (defn send-message
 
   "Sends text message with content `text` and inline keyboard `kbd` to `user`.

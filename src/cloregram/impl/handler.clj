@@ -8,11 +8,8 @@
             [clojure.string :as str]
             [clojure.edn :as edn]))
 
-(defn delete-message
-  [{:keys [mid user]}]
-  (api-wrap 'delete-message {:chat_id (:user/id user)
-                             :message_id mid})
-  (clb/delete user mid))
+(def ^:dynamic *current-user* nil)
+(def ^:dynamic *from-message-id* nil)
 
 (defmulti main-handler #(some #{:message :callback_query :pre_checkout_query} (keys %)))
 
@@ -38,20 +35,20 @@
       (u/set-handler user common-handler nil))))
 
 (defmethod handle :default
-  [user msg]
-  (let [handler (-> user :user/handler-function utl/resolver)
-        args (-> user :user/handler-arguments (assoc :user user :message msg))]
-    (check-handler! user)
+  [msg]
+  (let [handler (-> *current-user* :user/handler-function utl/resolver)
+        args (-> *current-user* :user/handler-arguments (assoc :message msg))]
+    (check-handler! *current-user*)
     (μ/trace ::handler-default
-             {:pairs [:handler-default/function (:handler-function user)
+             {:pairs [:handler-default/function (:handler-function *current-user*)
                       :handler-default/arguments args]
               :capture (fn [resp] {:handler-default/response resp})}
              (handler args))
-    (delete-message {:user user
+    (delete-message {:user *current-user*
                      :mid (:message_id msg)})))
 
 (defmethod handle :payment
-  [user msg]
+  [msg]
   (let [payment-handler-symbol-fallback 'cloregram.handler/payment
         payment-handler-symbol-project  (->> (utl/get-project-info)
                                              :name
@@ -76,7 +73,8 @@
           user (u/load-or-create (:from msg))]
       (if (and (= "/start" (:text msg)) (some? (:user/msg-id user)) (not= 0 (:user/msg-id user)))
         (reset user upd)
-        (handle user msg)))
+        (binding [*current-user* user]
+          (handle msg))))
     (μ/log ::non-private-chat-update-warning :non-private-chat-update-warning/update upd)))
 
 (defmethod main-handler :callback_query
@@ -89,7 +87,9 @@
              {:pairs [:handling-callback-query/callback-query cbq
                       :handling-callback-query/user user]
               :capture (fn [resp] {:handling-callback-query/response resp})}
-             (clb/call user cb-uuid))))
+             (binding [*current-user* user
+                       *from-message-id* (-> cbq :message :message_id)]
+               (clb/call cb-uuid)))))
 
 (defmethod main-handler :pre_checkout_query
   [upd]

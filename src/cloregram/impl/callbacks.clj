@@ -15,14 +15,11 @@
   ([user ^clojure.lang.Symbol f args]
    (create (java.util.UUID/randomUUID) user f args))
   ([^java.util.UUID uuid user ^clojure.lang.Symbol f args]
-   (create uuid nil user f args))
-  ([^java.util.UUID uuid msg-id user ^clojure.lang.Symbol f args]
    (let [args (or args {})]
      (d/transact! (db/conn) [(cond-> {:callback/uuid uuid
                                       :callback/function f
                                       :callback/arguments args
-                                      :callback/user [:user/id (:user/id user)]}
-                               (some? msg-id) (assoc :callback/message-id msg-id))])
+                                      :callback/user [:user/id (:user/id user)]})])
      (μ/log ::callback-created
             :callback-created/callbacks-count (callbacks-count)
             :callback-created/callback (ffirst
@@ -47,7 +44,7 @@
            :callbacks-retracted/callbacks-count (callbacks-count))))
 
 (defn set-new-message-ids
-  [user mid uuids]
+  [mid uuids]
   (let [uuids-to-retract (apply disj (set (mapv first (d/q '[:find ?uuid
                                                        :in $ ?uid ?mid
                                                        :where
@@ -55,28 +52,28 @@
                                                        [?cb :callback/message-id ?mid]
                                                        [?cb :callback/uuid ?uuid]
                                                        #_(not [?cb :callback/uuid ?uuids])] ; TODO: Fix Datalevin with not and collections
-                                                     (db/db) (:user/id user) mid))) (set uuids))]
+                                                     (db/db) (:user/id *current-user*) mid))) (set uuids))]
     (d/transact! (db/conn) (mapv #(vector :db/retractEntity [:callback/uuid %]) uuids-to-retract))
     (d/transact! (db/conn) (mapv #(into {} [[:callback/uuid %] [:callback/message-id mid]]) uuids))
     (μ/log ::set-new-message-ids
-           :set-new-message-ids/user user
+           :set-new-message-ids/user *current-user*
            :set-new-message-ids/message-id mid
            :set-new-message-ids/callback-uuids uuids
            :set-new-message-ids/retracted-callbacks-uuids uuids-to-retract
            :set-new-message-ids/final-callbacks-count (callbacks-count))))
 
 (defn- load-callback
-  [user uuid]
+  [uuid]
   (let [callback (d/pull (db/db) '[* {:callback/user [*]}] [:callback/uuid uuid])]
     (μ/log ::callback-loaded :callback-loaded/callback callback)
-    (when (not= (:user/id user) (-> callback :callback/user :user/id))
-      (throw (ex-info "Wrong User attempt to load Callback!" {:user user :callback-data callback})))
+    (when (not= (:user/id *current-user*) (-> callback :callback/user :user/id))
+      (throw (ex-info "Wrong User attempt to load Callback!" {:user *current-user* :callback-data callback})))
     callback))
 
 (defn call
-  [user ^java.util.UUID uuid]
-  (let [callback (load-callback user uuid)
+  [mid ^java.util.UUID uuid]
+  (let [callback (load-callback uuid)
         func (:callback/function callback)
-        args (-> callback :callback/arguments (assoc :user user))]
-    (μ/trace ::callback-call [:user-username (utl/username user) :function func :arguments args]
+        args (-> callback :callback/arguments (assoc :mid mid))]
+    (μ/trace ::callback-call [:user-username (utl/username *current-user*) :function func :arguments args]
              ((utl/resolver func) args))))

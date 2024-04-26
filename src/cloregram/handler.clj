@@ -2,12 +2,15 @@
   (:require [cloregram.impl.handler :as impl]
             [cloregram.api :refer [send-message]]))
 
-(defn delete-message
+(defn delete-this-message
 
-  "Handler to delte message. Deletes the message with ID `mid` of `user`. Cleanups callbacks"
+  "Handler to delete message. Deletes the message with ID `mid` of `user`. Cleanups callbacks"
+
+  {:pre [(number? *from-message-id*)
+         (map? *current-user*)]}
   
-  [{:keys [mid user] :as params}]
-  (impl/delete-message params))
+  [_]
+  (impl/delete-message {:mid *from-message-id* :user *current-user*}))
 
 (defn common
 
