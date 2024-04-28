@@ -123,6 +123,10 @@
     (μ/log ::webhook-is-set :webhook-info (api-wrap- 'get-webhook-info bot))
     bot))
 
+(defmethod ig/init-key :bot/default-language-code
+  [_ dlc]
+  dlc)
+
 (defn- del-dir-rec
   "Recursively delete a directory."
   [^java.io.File file]

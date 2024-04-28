@@ -2,6 +2,7 @@
   (:require [com.brunobonacci.mulog :as μ]
             [cloregram.database :as db]
             [cloregram.utils :as utl]
+            [cloregram.dynamic :refer :all]
             [datalevin.core :as d]
             [clojure.edn :as edn]))
 
@@ -15,14 +16,11 @@
   ([user ^clojure.lang.Symbol f args]
    (create (java.util.UUID/randomUUID) user f args))
   ([^java.util.UUID uuid user ^clojure.lang.Symbol f args]
-   (create uuid nil user f args))
-  ([^java.util.UUID uuid msg-id user ^clojure.lang.Symbol f args]
    (let [args (or args {})]
      (d/transact! (db/conn) [(cond-> {:callback/uuid uuid
                                       :callback/function f
                                       :callback/arguments args
-                                      :callback/user [:user/id (:user/id user)]}
-                               (some? msg-id) (assoc :callback/message-id msg-id))])
+                                      :callback/user [:user/id (:user/id user)]})])
      (μ/log ::callback-created
             :callback-created/callbacks-count (callbacks-count)
             :callback-created/callback (ffirst
@@ -66,17 +64,17 @@
            :set-new-message-ids/final-callbacks-count (callbacks-count))))
 
 (defn- load-callback
-  [user uuid]
+  [uuid]
   (let [callback (d/pull (db/db) '[* {:callback/user [*]}] [:callback/uuid uuid])]
     (μ/log ::callback-loaded :callback-loaded/callback callback)
-    (when (not= (:user/id user) (-> callback :callback/user :user/id))
-      (throw (ex-info "Wrong User attempt to load Callback!" {:user user :callback-data callback})))
+    (when (not= (:user/id *current-user*) (-> callback :callback/user :user/id))
+      (throw (ex-info "Wrong User attempt to load Callback!" {:user *current-user* :callback-data callback})))
     callback))
 
 (defn call
-  [user ^java.util.UUID uuid]
-  (let [callback (load-callback user uuid)
+  [^java.util.UUID uuid]
+  (let [callback (load-callback uuid)
         func (:callback/function callback)
-        args (-> callback :callback/arguments (assoc :user user))]
-    (μ/trace ::callback-call [:user-username (utl/username user) :function func :arguments args]
+        args (:callback/arguments callback)]
+    (μ/trace ::callback-call [:function func :arguments args]
              ((utl/resolver func) args))))

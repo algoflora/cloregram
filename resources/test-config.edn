@@ -5,6 +5,8 @@
  
  :bot/instance {:test-server #ig/ref :test/server}
 
+ :bot/default-language-code :fr
+
  :db/connection {:uri "/tmp/cloregram-datalevin"
                  :clear? true}
  

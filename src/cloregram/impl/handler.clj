@@ -1,18 +1,13 @@
 (ns ^:no-doc cloregram.impl.handler
   (:require [cloregram.impl.state :refer [system]]
-            [cloregram.impl.api :refer [api-wrap]]
+            [cloregram.impl.api :refer [api-wrap delete-message]]
             [cloregram.impl.callbacks :as clb]
             [cloregram.impl.users :as u]
+            [cloregram.dynamic :refer :all]
             [cloregram.utils :as utl]
             [com.brunobonacci.mulog :as μ]
             [clojure.string :as str]
             [clojure.edn :as edn]))
-
-(defn delete-message
-  [{:keys [mid user]}]
-  (api-wrap 'delete-message {:chat_id (:user/id user)
-                             :message_id mid})
-  (clb/delete user mid))
 
 (defmulti main-handler #(some #{:message :callback_query :pre_checkout_query} (keys %)))
 
@@ -23,7 +18,7 @@
   (main-handler upd))
 
 (defn- handle-dispatch
-  [_ msg]
+  [msg]
   (cond
     (contains? msg :successful_payment) :payment
     :else :default))
@@ -38,20 +33,19 @@
       (u/set-handler user common-handler nil))))
 
 (defmethod handle :default
-  [user msg]
-  (let [handler (-> user :user/handler-function utl/resolver)
-        args (-> user :user/handler-arguments (assoc :user user :message msg))]
-    (check-handler! user)
+  [msg]
+  (let [handler (-> *current-user* :user/handler-function utl/resolver)
+        args (-> *current-user* :user/handler-arguments (assoc :message msg))]
+    (check-handler! *current-user*)
     (μ/trace ::handler-default
-             {:pairs [:handler-default/function (:handler-function user)
+             {:pairs [:handler-default/function (:handler-function *current-user*)
                       :handler-default/arguments args]
               :capture (fn [resp] {:handler-default/response resp})}
              (handler args))
-    (delete-message {:user user
-                     :mid (:message_id msg)})))
+    (delete-message *current-user* (:message_id msg))))
 
 (defmethod handle :payment
-  [user msg]
+  [msg]
   (let [payment-handler-symbol-fallback 'cloregram.handler/payment
         payment-handler-symbol-project  (->> (utl/get-project-info)
                                              :name
@@ -59,15 +53,14 @@
                                              (symbol))
         payment-handler? (utl/resolver payment-handler-symbol-project)
         payment-handler (or payment-handler? (utl/resolver payment-handler-symbol-fallback))
-        args {:user user
-              :payment (:successful_payment msg)}]
+        args {:payment (:successful_payment msg)}]
     (μ/trace ::handler-payment
-             {:pairs [:handler-payment/function (if payment-handler?
-                                                  payment-handler-symbol-project
-                                                  payment-handler-symbol-fallback)
-                      :handler-payment/arguments args]
-              :capture (fn [resp] {:handler-payment/response resp})}
-             (payment-handler args))))
+      {:pairs [:handler-payment/function (if payment-handler?
+                                           payment-handler-symbol-project
+                                           payment-handler-symbol-fallback)
+               :handler-payment/arguments args]
+       :capture (fn [resp] {:handler-payment/response resp})}
+      (payment-handler args))))
 
 (defmethod main-handler :message
   [upd]
@@ -76,7 +69,9 @@
           user (u/load-or-create (:from msg))]
       (if (and (= "/start" (:text msg)) (some? (:user/msg-id user)) (not= 0 (:user/msg-id user)))
         (reset user upd)
-        (handle user msg)))
+        (binding [*current-user* user]
+          (μ/with-context {:*current-user* *current-user*}
+            (handle msg)))))
     (μ/log ::non-private-chat-update-warning :non-private-chat-update-warning/update upd)))
 
 (defmethod main-handler :callback_query
@@ -86,10 +81,13 @@
         user (u/load-or-create (:from cbq))]
     (check-handler! user)
     (μ/trace ::handling-callback-query
-             {:pairs [:handling-callback-query/callback-query cbq
-                      :handling-callback-query/user user]
+             {:pairs [:handling-callback-query/callback-query cbq]
               :capture (fn [resp] {:handling-callback-query/response resp})}
-             (clb/call user cb-uuid))))
+             (binding [*current-user* user
+                       *from-message-id* (-> cbq :message :message_id)]
+               (μ/with-context {:*current-user* *current-user*
+                                :*from-message-id* *from-message-id*}
+                 (clb/call cb-uuid))))))
 
 (defmethod main-handler :pre_checkout_query
   [upd]

@@ -3,7 +3,9 @@
 
 (def temp-root
 
-  "Returns common filesystem `java.nio.file.Path` object of unique root temp folder for this run: `/tmp/<project_group>/<project_name>/<project_version>/<millis_from_epoch>`. Redefine it if you need another folder or filesystem."
+  ^{:doc "Returns common filesystem `java.nio.file.Path` object of unique root temp folder for this run: `/tmp/<project_group>/<project_name>/<project_version>/<millis_from_epoch>`. Redefine it if you need another folder or filesystem."
+    :see-also "temp-path"
+    :added "0.9.1"}
   
   (let [arr (into-array (concat (filter some? (map val (get-project-info))) [(str (.getTime (java.util.Date.)))]))
         path (java.nio.file.Paths/get "/tmp" arr)]
