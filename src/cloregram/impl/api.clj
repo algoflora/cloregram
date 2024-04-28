@@ -65,18 +65,7 @@
        (cond->> kbd
          true (mapv #(mapv mapf %))
          (:temp optm) (#(conj % [{:text "✖️"
-                                  :callback_data (str (java.util.UUID/randomUUID))}])))})))
-
-(defn- create-temp-delete-callback
-  [user new-msg]
-  (-> new-msg
-      :reply_markup
-      :inline_keyboard
-      last
-      first
-      :callback_data
-      java.util.UUID/fromString
-      (clb/create user 'cloregram.handler/delete-message {:mid (:message_id new-msg)})))
+                                  :callback_data (str (clb/create user 'cloregram.handler/delete-this-message {}))}])))})))
 
 (defn- set-callbacks-message-id
   [user msg]
@@ -157,8 +146,6 @@
         new-msg  (if (to-edit? optm user)
                    (edit-media-in-chat type args-map media)
                    (send-new-media-to-chat type args-map media))]
-    (when (some? kbd)
-      (create-temp-delete-callback user new-msg))
     (set-callbacks-message-id user new-msg)
     new-msg))
 
@@ -174,7 +161,6 @@
   [_ user data kbd optm]
   (let [argm (prepare-arguments-map data kbd optm user)
         new-msg (api-wrap 'send-invoice argm)]
-    (create-temp-delete-callback user new-msg)
     (set-callbacks-message-id user new-msg)
     new-msg))
 
@@ -190,8 +176,6 @@
   (let [argm       (prepare-arguments-map {:text text} kbd optm user)
         new-msg    (send-message-to-chat argm (to-edit? optm user))
         new-msg-id (:message_id new-msg)]
-    (when (and (some? kbd) (:temp optm))
-      (create-temp-delete-callback user new-msg))
     (when (and (not (:temp optm)) (not= new-msg-id (:msg-id user)))
       (u/set-msg-id user new-msg-id))
     (set-callbacks-message-id user new-msg)

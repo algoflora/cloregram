@@ -6,7 +6,12 @@
             [clojure.java.io :as io]
             [nano-id.core :refer [nano-id]]
             [cheshire.core :refer [generate-string]]
+            [cheshire.generate :as generate]
             [org.httpkit.client :refer [post]]))
+
+(generate/add-encoder java.io.File
+  (fn [file json-generator]
+    (generate/write-string json-generator (prn-str file))))
 
 (defn keys-hyphens->underscores ; NOT recursive!
   [m]
@@ -48,13 +53,14 @@
     vuid))
 
 (defn send-callback-query
-  [vuid cbd]
+  [msg vuid cbd]
   (let [v-user (vuid @state/v-users)]
     (send-update vuid {:callback_query {:id (java.util.UUID/randomUUID)
-                                       :from (-> v-user
-                                                 (dissoc :msg-id :messages)
-                                                 (assoc :is-bot true)
-                                                 (keys-hyphens->underscores))
+                                        :from (-> v-user
+                                                  (dissoc :msg-id :messages)
+                                                  (assoc :is-bot true)
+                                                  (keys-hyphens->underscores))
+                                        :message msg
                                         :data cbd}})))
 
 (defn- assert-vuid 
@@ -113,7 +119,7 @@
                        (throw (ex-info "No expected button in Message!" {:button-row row
                                                                          :button-column col
                                                                          :message msg}))))]
-     (send-callback-query vuid cbd)
+     (send-callback-query msg vuid cbd)
      (throw (ex-info "Nil value of :reply_markup, :inline_keyboard or :callback_data in Message!"
                      {:row row
                       :column col
@@ -128,7 +134,7 @@
                      (filter #(= btn-text (:text %)))
                      (first)
                      (:callback_data))]
-     (send-callback-query vuid cbd)
+     (send-callback-query msg vuid cbd)
      (throw (ex-info "No expected button in Message!" {:button-text btn-text
                                                        :message msg})))
    msg))

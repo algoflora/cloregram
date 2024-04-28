@@ -2,6 +2,7 @@
   (:require [com.brunobonacci.mulog :as μ]
             [cloregram.database :as db]
             [cloregram.utils :as utl]
+            [cloregram.dynamic :refer :all]
             [datalevin.core :as d]
             [clojure.edn :as edn]))
 
@@ -44,7 +45,7 @@
            :callbacks-retracted/callbacks-count (callbacks-count))))
 
 (defn set-new-message-ids
-  [mid uuids]
+  [user mid uuids]
   (let [uuids-to-retract (apply disj (set (mapv first (d/q '[:find ?uuid
                                                        :in $ ?uid ?mid
                                                        :where
@@ -52,11 +53,11 @@
                                                        [?cb :callback/message-id ?mid]
                                                        [?cb :callback/uuid ?uuid]
                                                        #_(not [?cb :callback/uuid ?uuids])] ; TODO: Fix Datalevin with not and collections
-                                                     (db/db) (:user/id *current-user*) mid))) (set uuids))]
+                                                     (db/db) (:user/id user) mid))) (set uuids))]
     (d/transact! (db/conn) (mapv #(vector :db/retractEntity [:callback/uuid %]) uuids-to-retract))
     (d/transact! (db/conn) (mapv #(into {} [[:callback/uuid %] [:callback/message-id mid]]) uuids))
     (μ/log ::set-new-message-ids
-           :set-new-message-ids/user *current-user*
+           :set-new-message-ids/user user
            :set-new-message-ids/message-id mid
            :set-new-message-ids/callback-uuids uuids
            :set-new-message-ids/retracted-callbacks-uuids uuids-to-retract
@@ -71,9 +72,9 @@
     callback))
 
 (defn call
-  [mid ^java.util.UUID uuid]
+  [^java.util.UUID uuid]
   (let [callback (load-callback uuid)
         func (:callback/function callback)
-        args (-> callback :callback/arguments (assoc :mid mid))]
-    (μ/trace ::callback-call [:user-username (utl/username *current-user*) :function func :arguments args]
+        args (:callback/arguments callback)]
+    (μ/trace ::callback-call [:function func :arguments args]
              ((utl/resolver func) args))))
