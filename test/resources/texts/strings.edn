@@ -1,0 +1,6 @@
+{:increment {:en "Incremented: %d"}
+ :decrement {:en "Decremented: %d"}
+ :temp {:1 {:en "Temp message"}
+        :2 {:en "New temp message"}
+        :3 {:en "New temp message 2"}}
+ :image-expected {:en "Image expected!"}}

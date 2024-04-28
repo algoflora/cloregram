@@ -1,3 +1,7 @@
+## 0.11.0 - 2024-04-28
+* Added namespace `cloregram.dynamic` with dynamic Vars `*current-user` and `*from-message-id*`
+* Added internationalisation logic and namespace `cloregram.texts`
+
 ## 0.10.3 - 2024-04-25
 * Added forgotten file `src/cloregram/impl/users.clj` (facepalm...)
 * Fixed bug about not restoring user's handler on callbackmquery processing

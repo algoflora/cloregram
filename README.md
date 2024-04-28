@@ -14,6 +14,7 @@
   - [Payments](#payments)
   - [Interacting Datalevin database](#interacting-datalevin-database)
   - [Datalevin schema and initial data](#datalevin-schema-and-initial-data)
+  - [Internationalisation](#internationalisation)
 - [Testing](#testing)
 - [Logging](#logging)
 - [Configuration](#configuration)
@@ -62,13 +63,15 @@ Every user interacting with the bot is recorded in the database. User entity has
 | `:user/msg-id` | Id of **main** message. *Mostly for internal usage!* | ☑️ | |
 | `:user/handler` | Current [handler](#handlers) for [Message](https://core.telegram.org/bots/api#message) with args. *Mostly for internal usage!* | ☑️ | |
 
+In most cases current interacting with bot User is binded to `*current-user*` dynamic Var. Read further for more details and examples.
+
 ### API
 
 Public API functions to interact with user are located in `cloregram.api` namespace. For now, support of many features like locations etc is missing. Support of media is very limited. Framework is still in active development.
 
 Example usage:
 ```clojure
-(cloregram.api/send-message user (format "*Hello!* Number is %d.\n\nWhat we will do?" n)
+(cloregram.api/send-message *current-user* (format "*Hello!* Number is %d.\n\nWhat we will do?" n)
                                  [[["+" 'my-cloregram-bot.handlers/increment {:n n}]["-" 'my-cloregram-bot.handlers/decrement {:n n}]]]
                                  :markdown)
 ```
@@ -96,14 +99,17 @@ In most cases we need button that performing certain action when clicked. For su
 One of key points in Cloregram are handler functions.
 Handler function takes a map of parameters. Always there will be key `:user` containing [User](#user) map.
 
-If handler function is supposed to handle [Message](https://core.telegram.org/bots/api#message), then it will have [Message](https://core.telegram.org/bots/api#message) map in parameters map on key `:message'.
+All handling logic will have in scope dynamic Var `*current-user*` binded to [User](#user) from whom update was accepted. If current update carring callback query, then dynamic Var `*from-message-id*` wouldbe binded to ID of messasge where button with callback query was clicked. This is useful e.g. if you need to delete temporal message after some action from it. To use this vars you have to require `cloregram.dynamic` namespace: `(require '[cloregram.dynamic :refer :all])`.
+
+If handler function is supposed to handle [Message](https://core.telegram.org/bots/api#message), then it will have [Message](https://core.telegram.org/bots/api#message) map in parameters map on key `:message`.
 
 The main entry point is `my-cloregram-bot.handler/common`. It will be called on start or on any [Message](https://core.telegram.org/bots/api#message) input from user if this behaviour wasn't changed with calling `cloregram.users/set-handler`.
 
 Following example of common handler will greet user by first name and repeat his text message:
 ```clojure
 (ns my-cloregram-bot.handler
-  (:require [cloregram.api :as api]))
+  (:require [cloregram.api :as api]
+            [cloregram.dynamic :refer :all]))
 
 (defn common
   [{:keys [user message]}]
@@ -120,23 +126,24 @@ Look at extended example that will increment or decrement number value depending
 
 ```clojure
 (ns my-cloregram-bot.handler
-  (:require [cloregram.api :as api]))
+  (:require [cloregram.api :as api]
+            [cloregram.dynamic :refer :all]))
 
 (defn common
-  [{:keys [user]}]
-  (api/send-message user (format "Hello, %s! Initial number is 0." (:user/first-name user))
+  [_]
+  (api/send-message *current-user* (format "Hello, %s! Initial number is 0." (:user/first-name *current-user*))
                     [[["+" 'my-cloregram-bot.handler/increment {:n 0}]["-" 'my-cloregram-bot.handler/decrement {:n 0}]]]))
 
 (defn increment
-  [{:keys [n user]}]
+  [{:keys [n]}]
   (let [n (inc n)]
-    (api/send-message user (format "Number was incremented: %d" n)
+    (api/send-message *current-user* (format "Number was incremented: %d" n)
                       [[["+" 'my-cloregram-bot.handler/increment {:n n}]["-" 'my-cloregram-bot.handler/decrement {:n n}]]])))
 
 (defn decrement
-  [{:keys [n user]}]
+  [{:keys [n]}]
   (let [n (dec n)]
-    (api/send-message user (format "Number was decremented: %d" n)
+    (api/send-message *current-user* (format "Number was decremented: %d" n)
                     [[["+" 'my-cloregram-bot.handler/increment {:n n}]["-" 'my-cloregram-bot.handler/decrement {:n n}]]])))
 ```
 
@@ -163,6 +170,52 @@ Also `cloregram.db` namespace has two useful functions to keep the [schema](http
 |------|-------------|---------|
 | `(cloregram.db/update-schema)` | Wriring to database internal Cloregram schema ([User](#user) and Callback entities) and all entities from project's `resources/schema` folder. Schema entities data have to be located in **.edn** files. For conviency good to have different files for each entity. Nested folders are supported. | Take attention that this function is automatically launching every application startup. So kindly use `resources/schema` folder only for schema entities, but not for data. Otherwise data will be rewrited every startup even if it was changed by application. One more problem is that for now `update-schema` not removing entities attributes that are not in schema any more - ([Issue #6](https://github.com/algoflora/cloregram/issues/6)).
 | `(cloregram.db/load-data)` | Writing to database data from project's `resources/data` folder. Data have to be in **.edn** files. For conviency good to have different files for each entity. Nested folders are supported. | Take attention that this function is not called anywhere in code except `cloregram.test.fixtures/load-initial-data` test fixture. So you have to manage manual calling of `load-data` after project startup at first launch in production. Don't forget remove this call later or all involved data will be always overwritten from scratch. This behaviour expected to be changed in [Issue #6](https://github.com/algoflora/cloregram/issues/6).
+
+### Internationalisation
+
+For internationalisation can be used built-in `cloregram.texts` namespace. At first you have to create folder 'texts' in project's resource path. In that folder you an put any number of **.edn** files, each representing clojure nested map. These maps will be deeply merged on startup. On the deepest level all values must be a map with language codes as keys and corresponding strings as values.
+
+For example you have file `resources/texts/main.edn`:
+
+```clojure
+{:main {:en "Select action:"
+        :fr "Sélectionnez l'action:"}
+ :greeting {:en "Hello, %s!"
+            :fr "Bonjour, %s!"}}
+```
+
+as well as `resources/texts/buttons.edn`:
+
+```clojure
+{:buttons {:greet-en {:en "Greet in English"
+                      :fr "Saluer en anglais"}
+		   :greet-fr {:en "Greet in French"
+	                  :fr "Saluer en français"}
+           :back {:en "Back"
+                  :fr "Dos"}}}
+```
+
+Now you can use `cloregram.texts/txt` and `cloregram.texts/txti` functions. Difference is that `txti` function accepts explicit language code as fifst argument, while `txt` function uses `:language-code` field of `*current-user*`. Both functions accept various arguments possibly used in string formatting.
+
+```clojure
+(ns my-cloregram-bot.handler
+  (:require [cloregram.api :as api]
+            [cloregram.dynamic :refer :all]
+            [cloregram.texts :refer [txt txti]]))
+			
+(defn common
+  [_]
+  (api/send-message *current-user* 
+                    (txt :main) 
+					[[[(txt [:buttons :greet-en]) 'my-cloregram-bot.handler/greet {:lang :en}]]
+                     [[(txt [:buttons :greet-fr]) 'my-cloregram-bot.handler/greet {:lang :fr}]]]))
+
+(defn greet
+  [{:keys [lang]}]
+  (api/send-message *current-user*
+                    (txti lang :greeting (:user/first-name *current-user*))
+					[[[(txt [:buttons :back]) 'my-cloregram.handler/common]]]))
+```
 
 ## Testing
 
