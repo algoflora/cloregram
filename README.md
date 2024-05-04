@@ -234,8 +234,8 @@ The `cloregram.validation.users` namespace is responsible for working with virtu
 ```clojure
 (require '[cloregram.validation.users :as u])
 
-(u/add :user-1) ; creates virtual user with username "user-1"
-(u/add :user-2) ; creates virtual user with username "user-2"
+(u/add :user-1) ; creates virtual user with username "user-1" and default language code "en"
+(u/add :user-2 "fr") ; creates virtual user with username "user-2" and language code "fr""
 
 (u/main-message :user-1) ; => nil
 (u/last-temp-mesage :user-2) ; => nil
