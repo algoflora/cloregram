@@ -4,12 +4,12 @@
 
 (defn add
   
-  "Creates virtual user with username and first-name `vuid`, language-code 'en' and empty mesages storage. Writes this user into test infrastructure virtual users state storage with key `vuid`."
+  "Creates virtual user with username and first-name `vuid`, optional language-code `lang` or 'en' by default and empty mesages storage. Writes this user into test infrastructure virtual users state storage with key `vuid`."
 
-  {:changed "0.9.1"}
+  {:changed "0.11.1"}
 
-  [vuid]
-  (impl/add-v-user vuid))
+  ([vuid] (impl/add-v-user vuid "en"))
+  ([vuid lang] (impl/add-v-user vuid lang)))
 
 (defn get-v-user-by-vuid
   

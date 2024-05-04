@@ -56,14 +56,14 @@
                                (recur (- t interval) (vuid @v-users))))))))
 
 (defn add-v-user
-  [vuid]
+  [vuid lang]
   (let [v-user {:id (inc (count @v-users))
                 :msg-id 0
                 :main-msg-id nil
                 :first-name (name vuid)
                 :last-name nil
                 :username (name vuid)
-                :language-code "en"
+                :language-code lang
                 :messages (sorted-map)
                 :waiting-for-response? false}]
     (swap! v-users #(assoc % vuid v-user))

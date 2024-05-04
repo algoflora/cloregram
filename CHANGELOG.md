@@ -1,3 +1,6 @@
+## 0.11.1 - 2024-05-04
+* Added optional language code argument to function `cloregram.validation.users/add`
+
 ## 0.11.0 - 2024-04-28
 * Added namespace `cloregram.dynamic` with dynamic Vars `*current-user` and `*from-message-id*`
 * Added internationalisation logic and namespace `cloregram.texts`
