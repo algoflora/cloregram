@@ -1,3 +1,6 @@
+## 0.11.2 - 2024-05-14
+* Now bot is adding token to webhook url for better routing
+
 ## 0.11.1 - 2024-05-04
 * Added optional language code argument to function `cloregram.validation.users/add`
 

@@ -31,13 +31,16 @@
   (nano-id))
 
 (defmethod ig/init-key :bot/handler ; TODO: Check update_id
-  [_ {:keys [webhook-key]}]
+  [_ {:keys [webhook-key token]}]
   (fn [req]
+    (μ/log :REQ :req req)
     (let [headers (:headers req)
           upd (-> req :body slurp (parse-string true))]
       
-      (if (or (= webhook-key (headers "X-Telegram-Bot-Api-Secret-Token"))
-              (= webhook-key (headers (clojure.string/lower-case "X-Telegram-Bot-Api-Secret-Token"))))
+      (if (and
+           (= token (-> req :uri (subs 1)))
+           (or (= webhook-key (headers "X-Telegram-Bot-Api-Secret-Token"))
+               (= webhook-key (headers (clojure.string/lower-case "X-Telegram-Bot-Api-Secret-Token")))))
         (μ/trace ::main-handler [:update upd]
                  (main-handler upd)
                  {:status 200
@@ -116,7 +119,7 @@
         bot (tbot/create config)
         schema (if https? "https" "http")]
     (api-wrap- 'set-webhook bot (cond-> {:content-type :multipart
-                                         :url (format "%s://%s:%d" schema ip port)
+                                         :url (format "%s://%s:%d/%s" schema ip port token)
                                          :secret_token webhook-key}
                                   https? (assoc :certificate (clojure.java.io/file
                                                               (or certificate "./ssl/cert.pem")))))

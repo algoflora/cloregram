@@ -2,14 +2,15 @@
 
  :bot/token "0000000000:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
  
- :bot/handler {:webhook-key #ig/ref :bot/webhook-key}
+ :bot/handler {:token #ig/ref :bot/token
+               :webhook-key #ig/ref :bot/webhook-key}
 
  :bot/https? false
  :bot/ip "0.0.0.0"
  :bot/port 8443
 
  :bot/api-url nil
- 
+
  :bot/server {:options {:ip #ig/ref :bot/ip
                         :port #ig/ref :bot/port
                         :https? #ig/ref :bot/https?

@@ -1,4 +1,4 @@
-(defproject io.github.algoflora/cloregram "0.11.1"
+(defproject io.github.algoflora/cloregram "0.11.2"
   :description "Clojure framework for making complex Telegram Bots/Applications"
   ;:url "https://cloregram.io"
   :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"
@@ -34,7 +34,7 @@
                                            [compojure "1.7.0"]
                                            [ring/ring-json "0.5.1"]
                                            [fivetonine/collage "0.3.0"]]
-                            :resource-paths ["test/resources"]}
+                             :resource-paths ["test/resources"]}
             :repl [:testing-stuff]
             :test [:testing-stuff]
             :uberjar {:aot :all
