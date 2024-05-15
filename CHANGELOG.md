@@ -1,3 +1,6 @@
+## 0.11.4 - 2024-05-15
+* Added 2-arity version of `cloregram.users/set-handler` function
+
 ## 0.11.3 - 2024-05-15
 * Fixed bug with emty temp messages on validation
 
