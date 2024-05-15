@@ -41,7 +41,7 @@
            (= token (-> req :uri (subs 1)))
            (or (= webhook-key (headers "X-Telegram-Bot-Api-Secret-Token"))
                (= webhook-key (headers (clojure.string/lower-case "X-Telegram-Bot-Api-Secret-Token")))))
-        (μ/trace ::main-handler [:update upd]
+        (μ/trace ::main-handler [:main-handler/update upd]
                  (main-handler upd)
                  {:status 200
                   :headers {"Content-Type" "application/json"}
