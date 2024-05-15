@@ -13,6 +13,6 @@
   "Set qualified symbol `handler` with `args` to `user`. This handler will be called instead of common one in case of text or media input from user."
 
   {:changed "0.10.1"}
-  
+
   [user handler args]
   (impl/set-handler user handler args))

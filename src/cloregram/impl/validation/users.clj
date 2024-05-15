@@ -33,7 +33,7 @@
 
 (defn last-temp-message
   [v-user]
-  (process-temp-messages #(% (apply max (keys %))) v-user))
+  (process-temp-messages #(% (apply max (if (empty? %) [nil] (keys %)))) v-user))
 
 (defn get-response-or-current
   [vuid func-symbol timeout]

@@ -1,3 +1,6 @@
+## 0.11.3 - 2024-05-15
+* Fixed bug with emty temp messages on validation
+
 ## 0.11.2 - 2024-05-14
 * Now bot is adding token to webhook url for better routing
 
