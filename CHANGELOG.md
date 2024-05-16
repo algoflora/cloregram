@@ -1,3 +1,8 @@
+## 0.12.0 - 2024-05-16
+* Changed core handlers namespace form `cloregram.handler` to `cloregram.handlers`
+* Changed core handler function name from `common` to `main`
+* Changed `jetty` server to `[http-kit "2.8.0"]`. Say hi to virtual threads! :)
+
 ## 0.11.4 - 2024-05-15
 * Added 2-arity version of `cloregram.users/set-handler` function
 

@@ -13,7 +13,7 @@
   (fn [file json-generator]
     (generate/write-string json-generator (prn-str file))))
 
-(defn keys-hyphens->underscores ; NOT recursive!
+(defn- keys-hyphens->underscores ; NOT recursive!
   [m]
   (into {} (map (fn [[k v]] [(-> k name (.replace \- \_) keyword) v]) m)))
 

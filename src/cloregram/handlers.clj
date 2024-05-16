@@ -1,4 +1,4 @@
-(ns cloregram.handler
+(ns cloregram.handlers
   (:require [cloregram.api :refer [send-message delete-message]]
             [cloregram.dynamic :refer :all]))
 
@@ -12,7 +12,7 @@
   [_]
   (delete-message *current-user* *from-message-id*))
 
-(defn common
+(defn main
 
   "Core handler of system. Must be overriden in project."
   

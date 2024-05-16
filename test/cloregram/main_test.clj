@@ -1,7 +1,7 @@
 (ns cloregram.main-test
   (:require [clojure.test :refer :all]
             [clojure.java.io :as io]
-            [cloregram.handler]
+            [cloregram.handlers]
             [cloregram.test-handlers]
             [cloregram.api :as api]
             [cloregram.users :as users]
@@ -13,7 +13,7 @@
 
 (defn main-test
   []
-  (with-redefs [cloregram.handler/common cloregram.test-handlers/core]
+  (with-redefs [cloregram.handlers/main cloregram.test-handlers/main]
     (testing "Core"
       (is (= nil (callbacks-count)))
       (c/send-text :testuser-1 "Hello, bot!")
@@ -138,7 +138,7 @@
         (api/send-invoice (users/load-by-username (name :testuser-1))
                           invoice-data
                           "PAY TEST"
-                          [[["BUTTON" 'cloregram.handler/common]]])
+                          [[["BUTTON" 'cloregram.handlers/common]]])
 
         (is (= 1 (u/count-temp-messages :testuser-1)))
         (is (= 5 (callbacks-count)))
@@ -154,7 +154,7 @@
         (api/send-invoice (users/load-by-username (name :testuser-1))
                           invoice-data
                           "PAY TEST"
-                          [[["BUTTON" 'cloregram.handler/common]]])
+                          [[["BUTTON" 'cloregram.handlers/common]]])
 
         (-> (u/last-temp-message :testuser-1)
             (i/check-invoice invoice-data)

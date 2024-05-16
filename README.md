@@ -1,3 +1,5 @@
+[![Clojars Project](https://img.shields.io/clojars/v/io.github.algoflora/cloregram.svg)](https://clojars.org/io.github.algoflora/cloregram)
+
 # algoflora/cloregram
 
 **[Clojure](https://clojure.org) and [Datalevin](https://github.com/juji-io/datalevin) framework for making complex Telegram Bots/Applications**
@@ -30,10 +32,12 @@
  
 Cloregram has several main ideas:
 1. **Main and temporal messages** - there is one main actual message that mostly reacts and interacting with user. For certain cases can be used such a "temporal" messages with button to delete them. Temporal messages appear with notification, when main one is changing smoothly.
-2. **Stateless approach** - actually not completely stateless, but Cloregram does not save exact user state. Instead, each button points to unique Callback entity with user ref, function symbol and [EDN](https://github.com/edn-format/edn)-serialised arguments saved in [Datalevin](https://github.com/juji-io/datalevin). Only interaction with user input (text/media etc) needs to change user state. This approach allows to describe more robust and predictible bot behaviour.
+2. **Nearly stateless approach** - Cloregram does not save exact user state. Instead, each button points to unique Callback entity with user ref, function symbol and [EDN](https://github.com/edn-format/edn)-serialised arguments saved in [Datalevin](https://github.com/juji-io/datalevin). Only interaction with user input (text/media etc) needs to change user state. This approach allows to describe more robust and predictible bot behaviour.
 3. **Virtual users testing** - Cloregram comes with ready-made integration testing framework. It mocks Telegram API server to allow developer describe users behaviour and test bot outcome in very convenient and flexible way.
 
 ## Installation
+
+It is highly recommended to use Java 21+ to benefit from JVM virtual threads.
 
 The simplest way to start project on Cloregram framework is to use [Leiningen](https://leiningen.org) template:
 ```
@@ -103,11 +107,11 @@ All handling logic will have in scope dynamic Var `*current-user*` binded to [Us
 
 If handler function is supposed to handle [Message](https://core.telegram.org/bots/api#message), then it will have [Message](https://core.telegram.org/bots/api#message) map in parameters map on key `:message`.
 
-The main entry point is `my-cloregram-bot.handler/common`. It will be called on start or on any [Message](https://core.telegram.org/bots/api#message) input from user if this behaviour wasn't changed with calling `cloregram.users/set-handler`.
+The main entry point is `my-cloregram-bot.handlers/main`. It will be called on start or on any [Message](https://core.telegram.org/bots/api#message) input from user if this behaviour wasn't changed with calling `cloregram.users/set-handler`.
 
 Following example of common handler will greet user by first name and repeat his text message:
 ```clojure
-(ns my-cloregram-bot.handler
+(ns my-cloregram-bot.handlers
   (:require [cloregram.api :as api]
             [cloregram.dynamic :refer :all]))
 
@@ -125,33 +129,33 @@ If handler function is suposed to handle [Callback Query](https://core.telegram.
 Look at extended example that will increment or decrement number value depending of button clicked:
 
 ```clojure
-(ns my-cloregram-bot.handler
+(ns my-cloregram-bot.handlers
   (:require [cloregram.api :as api]
             [cloregram.dynamic :refer :all]))
 
-(defn common
+(defn main
   [_]
   (api/send-message *current-user* (format "Hello, %s! Initial number is 0." (:user/first-name *current-user*))
-                    [[["+" 'my-cloregram-bot.handler/increment {:n 0}]["-" 'my-cloregram-bot.handler/decrement {:n 0}]]]))
+                    [[["+" 'my-cloregram-bot.handlers/increment {:n 0}]["-" 'my-cloregram-bot.handlers/decrement {:n 0}]]]))
 
 (defn increment
   [{:keys [n]}]
   (let [n (inc n)]
     (api/send-message *current-user* (format "Number was incremented: %d" n)
-                      [[["+" 'my-cloregram-bot.handler/increment {:n n}]["-" 'my-cloregram-bot.handler/decrement {:n n}]]])))
+                      [[["+" 'my-cloregram-bot.handlers/increment {:n n}]["-" 'my-cloregram-bot.handlers/decrement {:n n}]]])))
 
 (defn decrement
   [{:keys [n]}]
   (let [n (dec n)]
     (api/send-message *current-user* (format "Number was decremented: %d" n)
-                    [[["+" 'my-cloregram-bot.handler/increment {:n n}]["-" 'my-cloregram-bot.handler/decrement {:n n}]]])))
+                    [[["+" 'my-cloregram-bot.handlers/increment {:n n}]["-" 'my-cloregram-bot.handlers/decrement {:n n}]]])))
 ```
 
 Note that in this example any input except for button clicks will call `common` handler and reset number value to null! 
 
 ### Payments
 
-To make user pay for something use API function `cloregram.api/send-invoice`. When user succesfully paid, payment handler is called. Payment handler have to be located in `my-cloregram-bot.handler/payment` function. This function take parameters map with keys [:user](#user) and [:payment](https://core.telegram.org/bots/api#successfulpayment). Use user data and `:invoice_payload` field in payment map to determine further behaviour.
+To make user pay for something use API function `cloregram.api/send-invoice`. When user succesfully paid, payment handler is called. Payment handler have to be located in `my-cloregram-bot.handlers/payment` function. This function take parameters map with keys [:user](#user) and [:payment](https://core.telegram.org/bots/api#successfulpayment). Use user data and `:invoice_payload` field in payment map to determine further behaviour.
 
 ### Interacting Datalevin database
 
@@ -198,23 +202,23 @@ as well as `resources/texts/buttons.edn`:
 Now you can use `cloregram.texts/txt` and `cloregram.texts/txti` functions. Difference is that `txti` function accepts explicit language code as fifst argument, while `txt` function uses `:language-code` field of `*current-user*`. Both functions accept various arguments possibly used in string formatting.
 
 ```clojure
-(ns my-cloregram-bot.handler
+(ns my-cloregram-bot.handlers
   (:require [cloregram.api :as api]
             [cloregram.dynamic :refer :all]
             [cloregram.texts :refer [txt txti]]))
 			
-(defn common
+(defn main
   [_]
   (api/send-message *current-user* 
                     (txt :main) 
-					[[[(txt [:buttons :greet-en]) 'my-cloregram-bot.handler/greet {:lang :en}]]
-                     [[(txt [:buttons :greet-fr]) 'my-cloregram-bot.handler/greet {:lang :fr}]]]))
+					[[[(txt [:buttons :greet-en]) 'my-cloregram-bot.handlers/greet {:lang :en}]]
+                     [[(txt [:buttons :greet-fr]) 'my-cloregram-bot.handlers/greet {:lang :fr}]]]))
 
 (defn greet
   [{:keys [lang]}]
   (api/send-message *current-user*
                     (txti lang :greeting (:user/first-name *current-user*))
-					[[[(txt [:buttons :back]) 'my-cloregram.handler/common]]]))
+					[[[(txt [:buttons :back]) 'my-cloregram.handlers/common]]]))
 ```
 
 ## Testing

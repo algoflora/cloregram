@@ -1,4 +1,4 @@
-(ns ^:no-doc cloregram.impl.handler
+(ns ^:no-doc cloregram.impl.handlers
   (:require [cloregram.impl.state :refer [system]]
             [cloregram.impl.api :refer [api-wrap delete-message]]
             [cloregram.impl.callbacks :as clb]
@@ -28,9 +28,9 @@
 (defn- check-handler!
   [user]
   (let [user-handler (:user/handler-function user)
-        common-handler (->> (utl/get-project-info) :name (format "%s.handler/common") symbol)]
-    (when-not (= common-handler user-handler)
-      (u/set-handler user common-handler nil))))
+        main-handler (->> (utl/get-project-info) :name (format "%s.handlers/main") symbol)]
+    (when-not (= main-handler user-handler)
+      (u/set-handler user main-handler nil))))
 
 (defmethod handle :default
   [msg]
@@ -46,10 +46,10 @@
 
 (defmethod handle :payment
   [msg]
-  (let [payment-handler-symbol-fallback 'cloregram.handler/payment
+  (let [payment-handler-symbol-fallback 'cloregram.handlers/payment
         payment-handler-symbol-project  (->> (utl/get-project-info)
                                              :name
-                                             (format "%s.handler/payment")
+                                             (format "%s.handlers/payment")
                                              (symbol))
         payment-handler? (utl/resolver payment-handler-symbol-project)
         payment-handler (or payment-handler? (utl/resolver payment-handler-symbol-fallback))
