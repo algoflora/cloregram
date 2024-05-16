@@ -1,3 +1,6 @@
+## 0.12.1 - 2024-05-16
+* Added `cloregram.dynamic/*executor*` dynamic var with executor for virtual threads if Java 21+ used 
+
 ## 0.12.0 - 2024-05-16
 * Changed core handlers namespace form `cloregram.handler` to `cloregram.handlers`
 * Changed core handler function name from `common` to `main`
