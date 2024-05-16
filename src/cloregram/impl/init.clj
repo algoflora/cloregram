@@ -3,13 +3,13 @@
             [cheshire.core :refer [parse-string]]
             [com.brunobonacci.mulog :as μ]
             [nano-id.core :refer [nano-id]]
-            [ring.adapter.jetty :refer [run-jetty]]
+            [org.httpkit.server :refer [run-server]]
             [datalevin.core :as d]
             [clojure.java.io :as io]
             [telegrambot-lib.core :as tbot]
             [cloregram.impl.database :as db]
             [cloregram.impl.state :refer [system]]
-            [cloregram.impl.handler :refer [main-handler]]
+            [cloregram.impl.handlers :refer [main-handler]]
             [cloregram.impl.middleware :as mw]
             [cloregram.impl.api :refer [api-wrap-]]
             [cloregram.logging :refer [stop-publishers!]]))
@@ -33,7 +33,6 @@
 (defmethod ig/init-key :bot/handler ; TODO: Check update_id
   [_ {:keys [webhook-key token]}]
   (fn [req]
-    (μ/log :REQ :req req)
     (let [headers (:headers req)
           upd (-> req :body slurp (parse-string true))]
       
@@ -95,10 +94,10 @@
     (μ/trace ::webhook-server-start
              {:pairs [:webhook-server-start/options opts]
               :capture (fn [server] {:webhook-server-start/server server})}
-             (run-jetty (-> handler
-                            mw/wrap-exception
-                            wrap-tracking-events-bot)
-                        opts))))
+             (run-server (-> handler
+                             mw/wrap-exception
+                             wrap-tracking-events-bot)
+                         opts))))
 
 (defmethod ig/halt-key! :bot/server
   [_ server]

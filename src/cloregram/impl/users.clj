@@ -45,7 +45,7 @@
                                 :user/first-name (:first_name udata)
                                 :user/last-name (:last_name udata)
                                 :user/language-code (:language_code udata)
-                                :user/handler-function (symbol (str (:name (utl/get-project-info)) ".handler/common"))
+                                :user/handler-function (symbol (str (:name (utl/get-project-info)) ".handlers/main"))
                                 :user/handler-arguments {}}
                                (filter #(-> % second some?))
                                (into {}))])

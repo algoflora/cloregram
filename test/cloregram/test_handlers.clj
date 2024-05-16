@@ -10,7 +10,7 @@
             [fivetonine.collage.util :as clgu]
             [fivetonine.collage.core :as clg]))
 
-(defn core
+(defn main
   [{:keys [message]}]
   (μ/trace ::core [:core/message message]
            (api/send-message *current-user*

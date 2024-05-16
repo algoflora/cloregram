@@ -1,7 +1,7 @@
 (ns cloregram.media-test
   (:require [clojure.test :refer :all]
             [clojure.java.io :as io]
-            [cloregram.handler]
+            [cloregram.handlers]
             [cloregram.test-handlers]
             [cloregram.api :as api]
             [cloregram.users :as users]
@@ -11,7 +11,7 @@
 
 (defn media-test
   []
-  (with-redefs [cloregram.handler/common cloregram.test-handlers/photo-handler]
+  (with-redefs [cloregram.handlers/main cloregram.test-handlers/photo-handler]
     (testing "Photo"
       (c/send-photo :testuser-1 "Algoflora Logo" "algoflora.png")
       (let [msg (u/last-temp-message :testuser-1)

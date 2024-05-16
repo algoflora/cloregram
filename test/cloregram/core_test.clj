@@ -3,7 +3,6 @@
             [cloregram.main-test :refer [main-test]]
             [cloregram.media-test :refer [media-test]]
             [cloregram.validation.fixtures :as fix]
-            [cloregram.handler]
             [cloregram.test-handlers]
             [cloregram.validation.users :as u]))
 

@@ -65,7 +65,7 @@
        (cond->> kbd
          true (mapv #(mapv mapf %))
          (:temp optm) (#(conj % [{:text "✖️"
-                                  :callback_data (str (clb/create user 'cloregram.handler/delete-this-message {}))}])))})))
+                                  :callback_data (str (clb/create user 'cloregram.handlers/delete-this-message {}))}])))})))
 
 (defn- set-callbacks-message-id
   [user msg]
