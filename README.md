@@ -74,6 +74,7 @@ In most cases current interacting with bot User is binded to `*current-user*` dy
 Public API functions to interact with user are located in `cloregram.api` namespace. For now, support of many features like locations etc is missing. Support of media is very limited. Framework is still in active development.
 
 Example usage:
+
 ```clojure
 (cloregram.api/send-message *current-user* (format "*Hello!* Number is %d.\n\nWhat we will do?" n)
                                  [[["+" 'my-cloregram-bot.handlers/increment {:n n}]["-" 'my-cloregram-bot.handlers/decrement {:n n}]]]
@@ -110,6 +111,7 @@ If handler function is supposed to handle [Message](https://core.telegram.org/bo
 The main entry point is `my-cloregram-bot.handlers/main`. It will be called on start or on any [Message](https://core.telegram.org/bots/api#message) input from user if this behaviour wasn't changed with calling `cloregram.users/set-handler`.
 
 Following example of common handler will greet user by first name and repeat his text message:
+
 ```clojure
 (ns my-cloregram-bot.handlers
   (:require [cloregram.api :as api]
@@ -174,6 +176,10 @@ Also `cloregram.db` namespace has two useful functions to keep the [schema](http
 |------|-------------|---------|
 | `(cloregram.db/update-schema)` | Wriring to database internal Cloregram schema ([User](#user) and Callback entities) and all entities from project's `resources/schema` folder. Schema entities data have to be located in **.edn** files. For conviency good to have different files for each entity. Nested folders are supported. | Take attention that this function is automatically launching every application startup. So kindly use `resources/schema` folder only for schema entities, but not for data. Otherwise data will be rewrited every startup even if it was changed by application. One more problem is that for now `update-schema` not removing entities attributes that are not in schema any more - ([Issue #6](https://github.com/algoflora/cloregram/issues/6)).
 | `(cloregram.db/load-data)` | Writing to database data from project's `resources/data` folder. Data have to be in **.edn** files. For conviency good to have different files for each entity. Nested folders are supported. | Take attention that this function is not called anywhere in code except `cloregram.test.fixtures/load-initial-data` test fixture. So you have to manage manual calling of `load-data` after project startup at first launch in production. Don't forget remove this call later or all involved data will be always overwritten from scratch. This behaviour expected to be changed in [Issue #6](https://github.com/algoflora/cloregram/issues/6).
+
+### Concurrency
+
+Cloregram using [http-kit server](https://github.com/http-kit/http-kit/wiki/3-Server), that is using JVM vitual threads if possible (using Java 21+). Also there is `cloregram.dynamic/*executor*` dynamic var, that is binded to `java.util.concurrent/newVirtualThreadPerTaskExecutor` return value in case of Java 21+ or usual familiar `clojure.lang.Agent/soloExecutor` otherwise.
 
 ### Internationalisation
 
