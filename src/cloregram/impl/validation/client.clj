@@ -47,9 +47,10 @@
                                                  :response resp
                                                  :uuuid uuuid
                                                  :update upd}))
-              :else (μ/log ::async-update-response {:async-update-response/response resp
-                                                    :async-update-response/update-uuid uuuid
-                                                    :async-update-response/update upd}))))
+              :else (μ/log ::async-update-response
+                           :async-update-response/response resp
+                           :async-update-response/update-uuid uuuid
+                           :async-update-response/update upd))))
     vuid))
 
 (defn send-callback-query
