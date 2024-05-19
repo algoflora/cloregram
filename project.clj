@@ -1,4 +1,4 @@
-(defproject io.github.algoflora/cloregram "0.12.1"
+(defproject io.github.algoflora/cloregram "0.12.2"
   :description "Clojure framework for making complex Telegram Bots/Applications"
   ;:url "https://cloregram.io"
   :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"
@@ -10,7 +10,7 @@
                  [com.brunobonacci/mulog-zipkin "0.9.0"]
                  [com.brunobonacci/where "0.5.6"]
                  
-                 [telegrambot-lib "2.13.0"]
+                 [telegrambot-lib "2.13.0-SNAPSHOT"]
 
                  [ring/ring-core "1.12.1"]
                  [http-kit "2.8.0"]

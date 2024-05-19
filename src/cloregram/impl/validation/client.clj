@@ -25,7 +25,8 @@
                      :data data})))
   (let [upd-id (swap! state/update-id inc)
         uuuid (nano-id)
-        upd (merge {:update_id upd-id} data)]
+        upd (merge {:update_id upd-id} data)
+        ctx (μ/local-context)]
     (μ/log ::sending-update
            :sending-update/update-uuid uuuid
            :sending-update/address @state/webhook-address
@@ -34,7 +35,9 @@
     (swap! state/v-users #(assoc-in % [vuid :waiting-for-response?] true))
     (post @state/webhook-address {:body (generate-string upd)
                                   :headers {"X-Telegram-Bot-Api-Secret-Token" @state/webhook-token
-                                            "Content-Type" "application/json"}}
+                                            "Content-Type" "application/json"
+                                            "mulog-pass-root-trace" (:mulog/root-trace ctx)
+                                            "mulog-pass-parent-trace" (:mulog/parent-trace ctx)}}
           (fn async-callback [{:keys [status error] :as resp}]
             (cond
               (some? error) (throw (ex-info "<ASYNC> Client error occured on sending update"
@@ -67,8 +70,10 @@
 (defn- assert-vuid 
   [msg vuid]
   (let [v-user (vu/get-v-user-by-vuid vuid)]
+    (when (nil? msg)
+      (throw (ex-info "Interacting with nil Message!" {:virtual-user v-user})))
     (when (not= (:chat_id msg) (:id v-user))
-      (throw (ex-info "Wrong User interacting with Message!" {:expected-virtual-user v-user
+      (throw (ex-info "Wrong User interacting with Message!" {:virtual-user v-user
                                                               :message msg})))))
 
 (defn send-message

@@ -3,7 +3,7 @@
             [cheshire.core :refer [parse-string]]
             [com.brunobonacci.mulog :as μ]
             [nano-id.core :refer [nano-id]]
-            [org.httpkit.server :refer [run-server]]
+            [org.httpkit.server :refer [run-server server-stop!]]
             [datalevin.core :as d]
             [clojure.java.io :as io]
             [telegrambot-lib.core :as tbot]
@@ -20,11 +20,14 @@
 
 (defn shutdown!
   []
+  (println "Halting system...")
   (μ/trace ::sutting-down
-           (ig/halt! @system))
-  (println "Everything finished. Good bye!")
+    (ig/halt! @system))
+  (println "Stopping μ/log publishers...")
   (stop-publishers!)
-  (shutdown-agents))
+  (println "Shutting down agents...")
+  (shutdown-agents)
+  (println "Everything finished. Good bye!"))
 
 (defmethod ig/init-key :bot/webhook-key
   [_ _]
@@ -96,13 +99,14 @@
               :capture (fn [server] {:webhook-server-start/server server})}
              (run-server (-> handler
                              mw/wrap-exception
-                             wrap-tracking-events-bot)
+                             wrap-tracking-events-bot
+                             mw/pass-mulog-trace)
                          opts))))
 
 (defmethod ig/halt-key! :bot/server
   [_ server]
   (μ/trace ::server-shutdown
-           (.stop server)))
+    (server :timeout 300)))
 
 (defn- μ-headers-fn
   []
@@ -157,5 +161,5 @@
 
 (defmethod ig/init-key :project/config
   [_ config]
-  (μ/log ::project-config-loaded :project-config config)
+  (μ/log ::project-config-loaded :project-config-loaded/project-config config)
   config)

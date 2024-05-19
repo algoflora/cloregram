@@ -25,20 +25,13 @@
 
 (defmulti ^:private handle handle-dispatch)
 
-(defn- check-handler!
-  [user]
-  (let [user-handler (:user/handler-function user)
-        main-handler (->> (utl/get-project-info) :name (format "%s.handlers/main") symbol)]
-    (when-not (= main-handler user-handler)
-      (u/set-handler user main-handler nil))))
-
 (defmethod handle :default
   [msg]
   (let [handler (-> *current-user* :user/handler-function utl/resolver)
         args (-> *current-user* :user/handler-arguments (assoc :message msg))]
-    (check-handler! *current-user*)
+    (clb/check-handler! *current-user*)
     (μ/trace ::handler-default
-             {:pairs [:handler-default/function (:handler-function *current-user*)
+             {:pairs [:handler-default/function (:user/handler-function *current-user*)
                       :handler-default/arguments args]
               :capture (fn [resp] {:handler-default/response resp})}
              (handler args))
@@ -79,7 +72,6 @@
   (let [cbq (:callback_query upd)
         cb-uuid (-> cbq :data java.util.UUID/fromString)
         user (u/load-or-create (:from cbq))]
-    (check-handler! user)
     (μ/trace ::handling-callback-query
              {:pairs [:handling-callback-query/callback-query cbq]
               :capture (fn [resp] {:handling-callback-query/response resp})}

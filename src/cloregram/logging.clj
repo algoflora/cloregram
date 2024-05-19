@@ -1,5 +1,6 @@
 (ns cloregram.logging
   (:require [cloregram.utils :refer [get-project-info]]
+            [cloregram.dynamic :refer :all]
             [com.brunobonacci.mulog :as μ]
             [where.core :refer [where]]
             [clojure.string :as str]
@@ -93,4 +94,4 @@
   []
   (μ/log ::publishers-stop)
   (Thread/sleep 5000)
-  (mapv (fn [f] (f)) @publishers))
+  (doseq [f @publishers] #(f)))
