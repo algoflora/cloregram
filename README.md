@@ -110,14 +110,14 @@ If handler function is supposed to handle [Message](https://core.telegram.org/bo
 
 The main entry point is `my-cloregram-bot.handlers/main`. It will be called on start or on any [Message](https://core.telegram.org/bots/api#message) input from user if this behaviour wasn't changed with calling `cloregram.users/set-handler`.
 
-Following example of common handler will greet user by first name and repeat his text message:
+Following example of main handler will greet user by first name and repeat his text message:
 
 ```clojure
 (ns my-cloregram-bot.handlers
   (:require [cloregram.api :as api]
             [cloregram.dynamic :refer :all]))
 
-(defn common
+(defn main
   [{:keys [user message]}]
   (api/send-message user
                     (format "Hi, %s!\n\nYou have said \"%s\", haven't you?"
@@ -153,7 +153,7 @@ Look at extended example that will increment or decrement number value depending
                     [[["+" 'my-cloregram-bot.handlers/increment {:n n}]["-" 'my-cloregram-bot.handlers/decrement {:n n}]]])))
 ```
 
-Note that in this example any input except for button clicks will call `common` handler and reset number value to null! 
+Note that in this example any input except for button clicks will call `main` handler and reset number value to null! 
 
 ### Payments
 
@@ -217,14 +217,14 @@ Now you can use `cloregram.texts/txt` and `cloregram.texts/txti` functions. Diff
   [_]
   (api/send-message *current-user* 
                     (txt :main) 
-					[[[(txt [:buttons :greet-en]) 'my-cloregram-bot.handlers/greet {:lang :en}]]
+                    [[[(txt [:buttons :greet-en]) 'my-cloregram-bot.handlers/greet {:lang :en}]]
                      [[(txt [:buttons :greet-fr]) 'my-cloregram-bot.handlers/greet {:lang :fr}]]]))
 
 (defn greet
   [{:keys [lang]}]
   (api/send-message *current-user*
                     (txti lang :greeting (:user/first-name *current-user*))
-					[[[(txt [:buttons :back]) 'my-cloregram.handlers/common]]]))
+                    [[[(txt [:buttons :back]) 'my-cloregram-bot.handlers/main]]]))
 ```
 
 ## Testing
