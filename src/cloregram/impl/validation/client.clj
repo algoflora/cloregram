@@ -73,7 +73,7 @@
     (when (nil? msg)
       (throw (ex-info "Interacting with nil Message!" {:virtual-user v-user})))
     (when (not= (:chat_id msg) (:id v-user))
-      (throw (ex-info "Wrong User interacting with Message!" {:virtual-user v-user
+      (throw (ex-info "Wrong virtual user interacting with Message!" {:virtual-user v-user
                                                               :message msg})))))
 
 (defn send-message
