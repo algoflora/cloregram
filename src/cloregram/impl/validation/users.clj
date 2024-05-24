@@ -25,7 +25,6 @@
   (let [msg-id (:main-msg-id v-user)
         msgs (-> v-user :messages (dissoc msg-id))
         msgs# (into {} (filter #(not (contains? (val %) :silent)) msgs))]
-    (μ/log ::process-temp-messages :all-msgs (:messages v-user) :msgs msgs :msgs# msgs# :v-user v-user :f f)
     (f msgs#)))
 
 (defn count-temp-messages
