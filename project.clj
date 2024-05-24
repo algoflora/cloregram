@@ -10,7 +10,7 @@
                  [com.brunobonacci/mulog-zipkin "0.9.0"]
                  [com.brunobonacci/where "0.5.6"]
                  
-                 [telegrambot-lib "2.13.0-SNAPSHOT"]
+                 [telegrambot-lib "2.13.0"]
 
                  [ring/ring-core "1.12.1"]
                  [http-kit "2.8.0"]
