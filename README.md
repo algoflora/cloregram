@@ -1,4 +1,4 @@
-[![Clojars Project](https://img.shields.io/clojars/v/io.github.algoflora/cloregram.svg)](https://clojars.org/io.github.algoflora/cloregram)
+[![Cljdoc page](https://cljdoc.org/badge/io.github.algoflora/cloregram)](https://cljdoc.org/d/io.github.algoflora/cloregram) [![Clojars Project](https://img.shields.io/clojars/v/io.github.algoflora/cloregram.svg)](https://clojars.org/io.github.algoflora/cloregram)
 
 # algoflora/cloregram
 
