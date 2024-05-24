@@ -1,6 +1,5 @@
 (ns cloregram.logging
   (:require [cloregram.utils :refer [get-project-info]]
-            [cloregram.dynamic :refer :all]
             [com.brunobonacci.mulog :as μ]
             [where.core :refer [where]]
             [clojure.string :as str]
