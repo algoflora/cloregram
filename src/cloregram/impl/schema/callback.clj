@@ -17,6 +17,10 @@
                    :db/cardinality :db.cardinality/one
                    :db/doc "The User for whom this Callbak is intended"}
 
+   :callback/is-service {:db/valueType :db.type/boolean
+                         :db/cardinality :db.cardinality/one
+                         :db/doc "Indicates is this callback a service one. If `true` then User's Callback will not reset."}
+
    :callback/message-id {:db/valueType :db.type/long
                          :db/cardinality :db.cardinality/one
                          :db/doc "ID of Message this Callback is associated with"}})

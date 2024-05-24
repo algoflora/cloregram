@@ -9,12 +9,16 @@
             [cloregram.impl.validation.core])
   (:gen-class))
 
-(Thread/setDefaultUncaughtExceptionHandler
- (reify Thread$UncaughtExceptionHandler
-   (uncaughtException [_ thread ex]
-     (μ/log ::uncaught-exception :exception ex :thread (.getName thread))
-     (Thread. shutdown!)
-     (throw ex))))
+(defn set-exceptions-handler
+  []
+  (Thread/setDefaultUncaughtExceptionHandler
+   (reify Thread$UncaughtExceptionHandler
+     (uncaughtException [_ thread ex]
+       (μ/log ::uncaught-exception :exception ex :thread (.getName thread))
+       (shutdown!)
+       (println (format "Uncaught %s: %s" (type ex) (.getMessage ex)))))))
+
+(set-exceptions-handler)
 
 (defn- get-conf
   [obj]

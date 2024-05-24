@@ -79,5 +79,5 @@
 
 (defmethod ig/halt-key! :test/server
   [_ server]
-  (server :timeout 3)
+  (server :timeout 300)
   (μ/log ::validation-server-shut-down))

@@ -93,4 +93,4 @@
   []
   (μ/log ::publishers-stop)
   (Thread/sleep 5000)
-  (mapv (fn [f] (f)) @publishers))
+  (doseq [f @publishers] #(f)))
