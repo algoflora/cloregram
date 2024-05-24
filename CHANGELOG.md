@@ -1,3 +1,7 @@
+## 0.12.2 - 2024-05-24
+* Fixed bug with user custom handler reset when closing temporal message
+* Some minor improvements
+
 ## 0.12.1 - 2024-05-16
 * Added `cloregram.dynamic/*executor*` dynamic var with executor for virtual threads if Java 21+ used 
 
