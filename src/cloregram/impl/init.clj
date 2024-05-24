@@ -3,7 +3,7 @@
             [cheshire.core :refer [parse-string]]
             [com.brunobonacci.mulog :as μ]
             [nano-id.core :refer [nano-id]]
-            [org.httpkit.server :refer [run-server server-stop!]]
+            [org.httpkit.server :refer [run-server]]
             [datalevin.core :as d]
             [clojure.java.io :as io]
             [telegrambot-lib.core :as tbot]
