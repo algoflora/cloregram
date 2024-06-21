@@ -41,7 +41,7 @@ It is highly recommended to use Java 21+ to benefit from JVM virtual threads.
 
 The simplest way to start project on Cloregram framework is to use [Leiningen](https://leiningen.org) template:
 ```
-lein new algoflora/cloregram my-cloregram-bot
+lein new io.github.algoflora/cloregram my-cloregram-bot
 ```
 
 To check it use following commands:
